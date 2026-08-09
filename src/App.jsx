@@ -1,8 +1,19 @@
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import MainHome from "./pages/MainHome";
+import MainProject from "./pages/MainProject";
+import MainDoc from "./pages/MainDoc";
+
 function App() {
   return (
-    <div>
-      <h1>Itda 프로젝트 시작!</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/home" element={<MainHome />} />
+        <Route path="/project" element={<MainProject />} />
+        <Route path="/doc" element={<MainDoc />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
