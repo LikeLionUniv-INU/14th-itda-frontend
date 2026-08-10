@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import DocBridge로고 from "../assets/DocBridge로고.png";
+import DocBridge로고 from "../assets/image/DocBridge로고.png";
 
 export const PageWrapper = styled.div`
   min-height: 100vh;
@@ -132,8 +132,8 @@ export const Table = styled.table`
     font-size: 14px;
   }
   th {
-    background: #f8f9fa;
-    color: #666;
+    background: #f3f2fc;
+    color: #828282;
     font-weight: 500;
   }
   td {
@@ -164,7 +164,7 @@ export const EmptyContainer = styled.div`
 
   p {
     font-size: 13px;
-    color: #888;
+    color: #000000;
     margin-bottom: 20px;
   }
 `;

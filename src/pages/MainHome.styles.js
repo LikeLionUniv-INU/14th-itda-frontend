@@ -61,7 +61,7 @@ export const PrimaryButton = styled.button`
   display: flex;
   align-items: center;
   gap: 4px;
-  background-color: #4f46e5;
+  background-color: #4548f6;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -72,8 +72,8 @@ export const PrimaryButton = styled.button`
 
 export const OutlineButton = styled.button`
   background-color: white;
-  color: #4f46e5;
-  border: 1px solid #4f46e5;
+  color: #4548f6;
+  border: 1px solid #4548f6;
   padding: 8px 16px;
   border-radius: 6px;
   font-weight: 600;
@@ -92,7 +92,7 @@ export const Avatar = styled.div`
   height: 32px;
   border-radius: 50%;
   background-color: #e0e7ff;
-  color: #4f46e5;
+  color: #4548f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +107,7 @@ export const Content = styled.main`
 `;
 
 export const Banner = styled.div`
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  background: linear-gradient(135deg, #efeefe 0%, #e0e7ff 100%);
   border-radius: 12px;
   padding: 30px 40px;
   margin-bottom: 40px;
@@ -117,11 +117,11 @@ export const BannerText = styled.div`
   h2 {
     font-size: 22px;
     margin-bottom: 10px;
-    color: #1e1b4b;
+    color: #000000;
   }
   p {
     font-size: 14px;
-    color: #4338ca;
+    color: #5b5858;
     line-height: 1.5;
   }
 `;
