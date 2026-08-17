@@ -1,26 +1,23 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderPlus, FileText } from "lucide-react";
-import Header from "../components/Header";
-import * as S from "./MainHome.styles";
+import { FolderPlus } from "lucide-react";
+import Header from "../../components/Header";
+import * as S from "./MainProject.styles";
 
-export default function MainHome({
+export default function MainProject({
   userName = "김멋사",
   projects = [],
-  documents = [],
   onNavigate,
   onCreateProject,
-  onCreateDocument,
   onJoinProject,
   onSelectProject,
-  onSelectDocument,
 }) {
   const navigate = useNavigate();
 
   return (
     <S.PageWrapper>
       <Header
-        activeTab="home"
+        activeTab="project"
         showNav={true}
         userName={userName}
         onNavigate={onNavigate}
@@ -58,7 +55,7 @@ export default function MainHome({
           </S.EmptyContainer>
         ) : (
           <S.ProjectGrid>
-            {projects.slice(0, 4).map((p) => (
+            {projects.map((p) => (
               <S.ProjectCard
                 key={p.id}
                 onClick={() => {
@@ -79,48 +76,6 @@ export default function MainHome({
               </S.ProjectCard>
             ))}
           </S.ProjectGrid>
-        )}
-
-        {/* 최근 문서 */}
-        <S.SectionHeader>
-          <h3>최근 문서</h3>
-        </S.SectionHeader>
-
-        {documents.length === 0 ? (
-          <S.EmptyContainer>
-            <FileText size={50} color="#8F92A1" />
-            <h4>작성한 문서가 아직 없어요</h4>
-            <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-          </S.EmptyContainer>
-        ) : (
-          <S.Table>
-            <thead>
-              <tr>
-                <th>문서 이름</th>
-                <th>프로젝트</th>
-                <th>언어</th>
-                <th>버전</th>
-                <th>최종 업데이트</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.slice(0, 5).map((doc) => (
-                <tr
-                  key={doc.id}
-                  onClick={() => {
-                    if (onSelectDocument) onSelectDocument(doc.id);
-                    else navigate(`/doc/${doc.id}`);
-                  }}
-                >
-                  <td className="doc-name">{doc.name}</td>
-                  <td>{doc.project}</td>
-                  <td>{doc.lang}</td>
-                  <td>{doc.version}</td>
-                  <td>{doc.updated}</td>
-                </tr>
-              ))}
-            </tbody>
-          </S.Table>
         )}
       </S.Content>
     </S.PageWrapper>

@@ -117,14 +117,13 @@ const Login = ({ onNavigateToSignup }) => {
             </S.FeatureText>
           </S.FeatureItem>
         </S.FeatureList>
-
-        <S.MapGraphic>네트워크 지도 그래픽 영역</S.MapGraphic>
+        <S.MapGraphic />
       </S.LeftSection>
 
       {/* 우측 로그인 폼 카드 */}
       <S.RightSection>
         <S.Card>
-          <S.LogoBox>로고이미지넣기</S.LogoBox>
+          <S.Logo />
           <S.CardTitle>환영합니다</S.CardTitle>
           <S.CardSubtitle>
             계정에 로그인하여 워크스페이스를 계속 이용하세요.

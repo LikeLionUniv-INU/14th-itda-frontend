@@ -12,7 +12,7 @@ export default function Header({ showNav = true, onCreateProject }) {
             <S.MenuItem to="/home">홈</S.MenuItem>
             <S.MenuItem to="/project">프로젝트</S.MenuItem>
             <S.MenuItem to="/doc">문서</S.MenuItem>
-            <S.MenuItem to="/setting">설정</S.MenuItem>
+            <S.MenuItem to="/set">설정</S.MenuItem>
           </S.Nav>
         )}
       </S.HeaderLeft>

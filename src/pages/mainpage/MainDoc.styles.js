@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import popup from "../assets/image/popup.png";
+import popup from "../assets/image/popup.svg";
 
 export const PageWrapper = styled.div`
   background-color: #f8f9fa;
@@ -18,7 +18,6 @@ export const Banner = styled.div`
   border-radius: 12px;
   padding: 30px 40px;
   margin-bottom: 40px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,71 +55,6 @@ export const SectionHeader = styled.div`
     font-size: 18px;
     color: #111;
   }
-`;
-
-export const MoreLink = styled.a`
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  color: #888;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-
-  &:hover {
-    color: #333;
-  }
-`;
-
-export const ProjectGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
-`;
-
-export const ProjectCard = styled.div`
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 20px;
-
-  cursor: pointer;
-  transition: transform 0.1s ease;
-
-  h4 {
-    font-size: 15px;
-    margin-bottom: 6px;
-  }
-  .langs {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 16px;
-  }
-  .time {
-    font-size: 11px;
-    color: #999;
-  }
-`;
-
-export const AvatarGroup = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-`;
-
-export const MiniAvatar = styled.div`
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background-color: #f3f4f6;
-  color: #4f46e5;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
 `;
 
 export const Table = styled.table`
@@ -177,20 +111,5 @@ export const EmptyContainer = styled.div`
     font-size: 12px;
     color: #888;
     margin-bottom: 16px;
-  }
-`;
-
-export const ActionButton = styled.button`
-  padding: 8px 18px;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #4338ca;
   }
 `;

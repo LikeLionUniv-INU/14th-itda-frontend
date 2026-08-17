@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { NavLink } from "react-router-dom";
-import DocBridge로고 from "../assets/image/DocBridge로고.png";
+import DocBridge로고 from "../assets/image/DocBridge로고.svg";
 
 export const Header = styled.header`
   display: flex;

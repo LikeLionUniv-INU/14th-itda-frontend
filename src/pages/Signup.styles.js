@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import DocBridge로고 from "../assets/image/DocBridge로고.svg";
 
 export const Container = styled.div`
   display: flex;

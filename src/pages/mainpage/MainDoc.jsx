@@ -4,79 +4,51 @@ import { FileText } from "lucide-react";
 import Header from "../components/Header";
 import * as S from "./MainDoc.styles";
 
-// 더미데이터
-const dummyDocs = [
-  {
-    id: 1,
-    name: "스토리보드",
-    project: "글로벌 이커머스 앱",
-    lang: "한국어",
-    version: "ver.1",
-    updated: "2시간 전",
-  },
-  {
-    id: 2,
-    name: "스토리보드",
-    project: "글로벌 이커머스 앱",
-    lang: "English",
-    version: "ver.1",
-    updated: "2시간 전",
-  },
-  {
-    id: 3,
-    name: "기획서",
-    project: "마케팅 웹사이트",
-    lang: "한국어",
-    version: "ver.2",
-    updated: "2일 전",
-  },
-  {
-    id: 4,
-    name: "기획서",
-    project: "마케팅 웹사이트",
-    lang: "한국어",
-    version: "ver.2",
-    updated: "2일 전",
-  },
-  {
-    id: 5,
-    name: "기획서",
-    project: "마케팅 웹사이트",
-    lang: "日本語",
-    version: "ver.2",
-    updated: "2일 전",
-  },
-];
-
 export default function MainDoc({
-  documents = dummyDocs, // 더미데이터
+  userName = "김멋사",
+  documents = [],
   onNavigate,
   onCreateProject,
-  onCreateDocument,
+  onJoinProject,
+  onSelectDocument,
 }) {
+  const navigate = useNavigate();
+
   return (
     <S.PageWrapper>
       <Header
-        activeTab="document"
+        activeTab="doc"
         showNav={true}
+        userName={userName}
         onNavigate={onNavigate}
         onCreateProject={onCreateProject}
+        onJoinProject={onJoinProject}
       />
 
       <S.Content>
+        {/* 상단 배너 */}
+        <S.Banner>
+          <S.BannerText>
+            <h2>안녕하세요, {userName}님!</h2>
+            <p>
+              여러 언어의 문서를 하나의 기준으로 관리하고,
+              <br />
+              글로벌 팀과 함께 효율적으로 협업해 보세요!
+            </p>
+          </S.BannerText>
+          <S.Popup />
+        </S.Banner>
+
+        {/* 최근 문서 */}
         <S.SectionHeader>
           <h3>최근 문서</h3>
         </S.SectionHeader>
 
-        {/* 데이터 유무 */}
         {documents.length === 0 ? (
           <S.EmptyContainer>
             <FileText size={50} color="#8F92A1" />
             <h4>작성한 문서가 아직 없어요</h4>
             <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-            <S.ActionButton onClick={onCreateDocument}>
-              문서 작성하기
-            </S.ActionButton>
           </S.EmptyContainer>
         ) : (
           <S.Table>
@@ -91,7 +63,13 @@ export default function MainDoc({
             </thead>
             <tbody>
               {documents.map((doc) => (
-                <tr key={doc.id}>
+                <tr
+                  key={doc.id}
+                  onClick={() => {
+                    if (onSelectDocument) onSelectDocument(doc.id);
+                    else navigate(`/doc/${doc.id}`);
+                  }}
+                >
                   <td className="doc-name">{doc.name}</td>
                   <td>{doc.project}</td>
                   <td>{doc.lang}</td>

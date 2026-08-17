@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import DocBridge로고 from "../assets/image/DocBridge로고.svg";
+import map from "../assets/image/map.svg";
 
 export const Container = styled.div`
   display: flex;
@@ -15,7 +17,7 @@ export const Container = styled.div`
 
 export const LeftSection = styled.div`
   flex: 1;
-  padding: 60px 80px;
+  padding: 90px 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -79,13 +81,12 @@ export const FeatureText = styled.div`
 `;
 
 export const MapGraphic = styled.div`
-  width: 100%;
-  height: 200px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
+  background-image: url(${map});
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 400px;
+  height: 400px;
 `;
 
 export const RightSection = styled.div`
@@ -94,6 +95,15 @@ export const RightSection = styled.div`
   align-items: center;
   justify-content: center;
   padding: 40px;
+`;
+
+export const Logo = styled.div`
+  background-image: url(${DocBridge로고});
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 150px;
+  height: 40px;
 `;
 
 export const Card = styled.div`
@@ -106,19 +116,6 @@ export const Card = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-`;
-
-export const LogoBox = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-
-  h2 {
-    font-size: 26px;
-    font-weight: 800;
-    color: #2942f1;
-  }
 `;
 
 export const CardTitle = styled.h2`
