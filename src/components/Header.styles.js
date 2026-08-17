@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import DocBridge로고 from "../assets/image/DocBridge로고.png";
 
 export const Header = styled.header`
@@ -12,6 +12,7 @@ export const Header = styled.header`
   border-bottom: 1px solid #eee;
 `;
 
+// 로고 이미지 + 카테고리바
 export const HeaderLeft = styled.div`
   display: flex;
   align-items: center;
@@ -19,12 +20,7 @@ export const HeaderLeft = styled.div`
   height: 100%;
 `;
 
-export const LogoLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-`;
-
+// 로고 이미지
 export const Logo = styled.div`
   background-image: url(${DocBridge로고});
   background-size: contain;
@@ -32,15 +28,14 @@ export const Logo = styled.div`
   background-position: center;
   width: 150px;
   height: 40px;
-  cursor: pointer;
 `;
 
+// 카테고리바 (홈, 프로젝트, 문서, 설정)
 export const Nav = styled.nav`
   display: flex;
-  gap: 24px;
+  gap: 12px;
   height: 100%;
 `;
-
 export const MenuItem = styled(NavLink)`
   display: flex;
   align-items: center;
@@ -59,35 +54,39 @@ export const MenuItem = styled(NavLink)`
   }
 `;
 
+// 프로젝트 생성, 입장 버튼 + 알림 + 프로필
 export const HeaderRight = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 28px;
 `;
 
-export const PrimaryButton = styled.button`
+// 프로젝트 생성 버튼
+export const ProjectCreateButton = styled.button`
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #2c35eb;
-  color: #fff;
+  background: #4548f6;
+  color: #ffffff;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
 `;
 
-export const OutlineButton = styled.button`
-  background: #fff;
-  color: #2c35eb;
-  border: 1px solid #2c35eb;
+// 프로젝트 입장 버튼
+export const ProjectEnterButton = styled.button`
+  background: #ffffff;
+  color: #4548f6;
+  border: 1px solid #4548f6;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
 `;
 
+// 알림
 export const IconButton = styled.button`
   background: none;
   border: none;
@@ -96,6 +95,7 @@ export const IconButton = styled.button`
   color: #666;
 `;
 
+// 프로필
 export const Avatar = styled.div`
   width: 32px;
   height: 32px;

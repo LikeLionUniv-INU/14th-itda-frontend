@@ -6,9 +6,7 @@ export default function Header({ showNav = true, onCreateProject }) {
   return (
     <S.Header>
       <S.HeaderLeft>
-        <S.LogoLink>
-          <S.Logo />
-        </S.LogoLink>
+        <S.Logo />
         {showNav && (
           <S.Nav>
             <S.MenuItem to="/home">홈</S.MenuItem>
@@ -20,14 +18,11 @@ export default function Header({ showNav = true, onCreateProject }) {
       </S.HeaderLeft>
 
       <S.HeaderRight>
-        <S.PrimaryButton onClick={onCreateProject}>
+        <S.ProjectCreateButton onClick={onCreateProject}>
           프로젝트 생성 <Plus size={16} />
-        </S.PrimaryButton>
-        <S.OutlineButton>프로젝트 입장</S.OutlineButton>
-        <S.IconButton>
-          <Bell size={20} />
-        </S.IconButton>
-        <S.Avatar>S</S.Avatar>
+        </S.ProjectCreateButton>
+        <S.ProjectEnterButton>프로젝트 입장</S.ProjectEnterButton>
+        <S.Avatar>0</S.Avatar>
       </S.HeaderRight>
     </S.Header>
   );

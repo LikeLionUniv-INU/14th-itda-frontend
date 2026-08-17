@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import DocBridge로고 from "../assets/image/DocBridge로고.png";
+import popup from "../assets/image/popup.png";
 
 export const PageWrapper = styled.div`
   background-color: #f8f9fa;
@@ -7,103 +7,10 @@ export const PageWrapper = styled.div`
   font-family: sans-serif;
 `;
 
-export const Header = styled.header`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 80px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-`;
-
-// 로고 이미지 + 카테고리바
-export const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  height: 100%;
-`;
-
-// 로고 이미지
-export const Logo = styled.div`
-  background-image: url(${DocBridge로고});
-  background-size: contain; /* 이미지 비율을 유지 */
-  background-repeat: no-repeat; /* 이미지 반복 X */
-  background-position: center; /* 가운데 정렬 */
-  width: 150px;
-  height: 40px;
-`;
-
-// 카테고리바 (홈, 프로젝트, 문서, 설정)
-export const Nav = styled.nav`
-  display: flex;
-  gap: 24px;
-  height: 100%;
-`;
-export const NavItem = styled.span`
-  font-size: 15px;
-  font-weight: ${(props) => (props.$active ? "bold" : "normal")};
-  color: ${(props) => (props.$active ? "#2C35EB" : "#000000")};
-  border-bottom: ${(props) => (props.$active ? "2px solid #2C35EB" : "2px solid transparent")};
-  padding: 0 4px;
-  height: 100%;
-  box-sizing: border-box;
-  cursor: pointer;
-`;
-
-export const HeaderRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-export const PrimaryButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background-color: #4548f6;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-`;
-
-export const OutlineButton = styled.button`
-  background-color: white;
-  color: #4548f6;
-  border: 1px solid #4548f6;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-`;
-
-export const IconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-`;
-
-export const Avatar = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #e0e7ff;
-  color: #4548f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  cursor: pointer;
-`;
-
 export const Content = styled.main`
   max-width: 1000px;
-  margin: 30px auto;
-  padding: 0 20px;
+  margin: 32px auto;
+  padding: 0 10px;
 `;
 
 export const Banner = styled.div`
@@ -111,6 +18,11 @@ export const Banner = styled.div`
   border-radius: 12px;
   padding: 30px 40px;
   margin-bottom: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 `;
 
 export const BannerText = styled.div`
@@ -126,6 +38,15 @@ export const BannerText = styled.div`
   }
 `;
 
+export const Popup = styled.div`
+  background-image: url(${popup});
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 40%;
+  height: 120px;
+`;
+
 export const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -138,9 +59,18 @@ export const SectionHeader = styled.div`
 `;
 
 export const MoreLink = styled.a`
+  background: none;
+  border: none;
+  padding: 0;
   font-size: 13px;
   color: #888;
-  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    color: #333;
+  }
 `;
 
 export const ProjectGrid = styled.div`
@@ -155,6 +85,10 @@ export const ProjectCard = styled.div`
   border: 1px solid #eee;
   border-radius: 8px;
   padding: 20px;
+
+  cursor: pointer;
+  transition: transform 0.1s ease;
+
   h4 {
     font-size: 15px;
     margin-bottom: 6px;
@@ -205,19 +139,58 @@ export const Table = styled.table`
   }
 
   th {
-    background-color: #f9fafb;
-    color: #6b7280;
+    background-color: #f3f2fc;
+    color: #828282;
     font-weight: 500;
   }
 
   td {
-    border-top: 1px solid #f3f4f6;
-    color: #374151;
+    border-top: 1px solid #ffffff;
+    color: #000000;
   }
 
   .doc-name {
     font-weight: 600;
-    text-decoration: underline;
     cursor: pointer;
+  }
+`;
+
+export const EmptyContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 40px;
+
+  h4 {
+    margin: 12px 0 4px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  p {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 16px;
+  }
+`;
+
+export const ActionButton = styled.button`
+  padding: 8px 18px;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #4338ca;
   }
 `;
