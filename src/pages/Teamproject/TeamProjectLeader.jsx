@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import * as S from "./TeamProjectLeader.styles";
+import { useNavigate } from "react-router-dom"; // 1. useNavigate import 추가
+import Header from "../../components/Header";
+import DocIcon from "../../assets/image/doc icon.svg";
+import * as S from "./TeamProject.styles";
 
-// 상대 시간 계산 함수 (현재시간 - 업데이트 시간)
 const getRelativeTime = (dateString) => {
   if (!dateString) return "";
   const now = new Date();
@@ -18,111 +20,40 @@ const getRelativeTime = (dateString) => {
   return `${diffInDays}일 전`;
 };
 
-// 성 이니셜 추출 함수 (한국어 첫 글자 / 영문 첫 글자 대문자)
 const getInitial = (name) => {
   if (!name) return "";
   return name.trim().charAt(0).toUpperCase();
 };
 
-// 백엔드 연동 전 더미 데이터 예시
-const DUMMY_PROJECT = {
+const EMPTY_PROJECT = {
   id: "p1",
   title: "AI 서비스 플랫폼",
   defaultLanguage: "한국어",
   createdAt: "2026.06.30",
-  members: [
-    { id: "m1", name: "김서연", role: "팀장", isLeader: true },
-    { id: "m2", name: "Sarah", role: "팀원", isLeader: false },
-    { id: "m3", name: "남건후", role: "팀원", isLeader: false },
-    { id: "m4", name: "Emily", role: "팀원", isLeader: false },
-    { id: "m5", name: "박지성", role: "팀원", isLeader: false },
-  ],
-  // 테스트 시 docs를 []로 바꾸면 '아직 데이터 없을 시' 화면으로 전환됩니다.
-  docs: [
-    {
-      id: "d1",
-      title: "기능 명세서",
-      projectName: "AI 서비스 플랫폼",
-      languages: ["한국어", "English", "日本語"],
-      selectedLang: "한국어",
-      versions: ["ver. 1", "ver. 2"],
-      currentVersion: "ver. 1",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2시간 전
-    },
-    {
-      id: "d2",
-      title: "화면 설계서",
-      projectName: "AI 서비스 플랫폼",
-      languages: ["한국어", "English", "日本語"],
-      selectedLang: "English",
-      versions: ["ver. 1"],
-      currentVersion: "ver. 1",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    },
-    {
-      id: "d3",
-      title: "스토리보드",
-      projectName: "AI 서비스 플랫폼",
-      languages: ["한국어", "English", "日本語"],
-      selectedLang: "한국어",
-      versions: ["ver. 1", "ver. 2", "ver. 3"],
-      currentVersion: "ver. 3",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1일 전
-    },
-    {
-      id: "d4",
-      title: "기획서",
-      projectName: "AI 서비스 플랫폼",
-      languages: ["한국어", "English", "日本語"],
-      selectedLang: "한국어",
-      versions: ["ver. 1", "ver. 2"],
-      currentVersion: "ver. 2",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2일 전
-    },
-  ],
-  activities: [
-    {
-      id: "a1",
-      userName: "김서연",
-      docTitle: "스토리보드",
-      version: "version3",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1시간 전
-    },
-    {
-      id: "a2",
-      userName: "김서연",
-      docTitle: "스토리보드",
-      version: "version2",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    },
-    {
-      id: "a3",
-      userName: "남건후",
-      docTitle: "스토리보드",
-      version: "version1",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    },
-  ],
+  members: [{ id: "m1", name: "김서연", role: "팀장", isLeader: true }],
+  docs: [],
+  activities: [],
 };
 
 export default function TeamProjectLeader({
-  isLeader = true, // 팀장 여부 (true: [문서 생성] 버튼 노출, false: 미노출)
-  project = DUMMY_PROJECT,
+  isLeader = true,
+  project = EMPTY_PROJECT,
   inviteCode = "DOC-BRIDGE-2026-X9Y8",
-  onNavigate, // 페이지 이동 핸들러
+  onNavigate,
 }) {
-  // 모달 상태 관리
+  const navigate = useNavigate(); // 2. navigate 함수 선언
+
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // 문서 모아보기 드롭다운 상태 관리 (문서 ID : 선택된 버전)
   const [selectedVersions, setSelectedVersions] = useState(() => {
     const initialMap = {};
-    project.docs.forEach((doc) => {
-      // default는 가장 최근 버전
-      initialMap[doc.id] =
-        doc.currentVersion || doc.versions[doc.versions.length - 1];
-    });
+    if (project.docs) {
+      project.docs.forEach((doc) => {
+        initialMap[doc.id] =
+          doc.currentVersion || doc.versions[doc.versions.length - 1];
+      });
+    }
     return initialMap;
   });
 
@@ -133,40 +64,24 @@ export default function TeamProjectLeader({
     }));
   };
 
-  // 배너 참여자 성 이니셜 노출 처리 (최대 3개까지, 그 이상은 +N 처리)
-  const memberInitials = project.members
+  const memberInitials = (project.members || [])
     .slice(0, 3)
     .map((m) => getInitial(m.name));
-  const extraMemberCount = project.members.length - 3;
+  const extraMemberCount = (project.members || []).length - 3;
 
   const hasDocs = project.docs && project.docs.length > 0;
   const hasActivities = project.activities && project.activities.length > 0;
 
   return (
     <S.PageWrapper>
-      {/* 1. 네비게이션 */}
-      <S.Header>
-        <S.HeaderLeft onClick={() => onNavigate && onNavigate("home")}>
-          <S.LogoPlaceholder />
-        </S.HeaderLeft>
-        <S.HeaderRight>
-          {/* 팀장 화면에서만 [문서 생성] 버튼 노출 */}
-          {isLeader && (
-            <S.OutlineButton onClick={() => setIsCreateDocModalOpen(true)}>
-              문서 생성
-            </S.OutlineButton>
-          )}
-          {/* [나가기] 누르면 메인화면으로 이동 */}
-          <S.PrimaryButton onClick={() => onNavigate && onNavigate("home")}>
-            나가기
-          </S.PrimaryButton>
-        </S.HeaderRight>
-      </S.Header>
+      <Header
+        type="project"
+        onCreateDoc={isLeader ? () => setIsCreateDocModalOpen(true) : undefined}
+        onExit={() => onNavigate && onNavigate("home")}
+      />
 
       <S.Container>
-        {/* 메인 좌측 콘텐츠 */}
         <S.MainSection>
-          {/* 2. 배너 */}
           <S.BannerCard>
             <S.BannerTitle>{project.title}</S.BannerTitle>
             <S.BannerMeta>
@@ -192,16 +107,14 @@ export default function TeamProjectLeader({
             </S.BannerMeta>
           </S.BannerCard>
 
-          {/* 3. 최근 문서 */}
           <S.Card>
             <S.CardHeader>
               <h3>최근 문서</h3>
-              <S.MoreButton onClick={() => onNavigate && onNavigate("docList")}>
-                <span>전체보기</span>
-                <S.ArrowPlaceholder />
+              {/* 3. onClick 이벤트 핸들러 변경 */}
+              <S.MoreButton onClick={() => navigate("/teamp-doc")}>
+                <span>{"전체보기 >"} </span>
               </S.MoreButton>
             </S.CardHeader>
-
             {hasDocs ? (
               <S.Table>
                 <thead>
@@ -220,7 +133,12 @@ export default function TeamProjectLeader({
                         onNavigate && onNavigate("docDetail", doc.id)
                       }
                     >
-                      <td className="font-bold">{doc.title}</td>
+                      <td className="font-bold">
+                        <S.TitleWithIcon>
+                          <S.DocIconImg src={DocIcon} alt="문서 아이콘" />
+                          <span>{doc.title}</span>
+                        </S.TitleWithIcon>
+                      </td>
                       <td>{doc.selectedLang || doc.languages[0]}</td>
                       <td>{selectedVersions[doc.id] || doc.currentVersion}</td>
                       <td>{getRelativeTime(doc.updatedAt)}</td>
@@ -229,9 +147,8 @@ export default function TeamProjectLeader({
                 </tbody>
               </S.Table>
             ) : (
-              /* 데이터 없을 시 화면 디자인 */
               <S.EmptyBox>
-                <S.EmptyIconPlaceholder />
+                <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
                 {isLeader && (
@@ -243,9 +160,7 @@ export default function TeamProjectLeader({
             )}
           </S.Card>
 
-          {/* 하단 영역 (활동 요약 / 프로젝트 멤버) */}
           <S.BottomRow>
-            {/* 4. 활동 요약 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>활동 요약</h3>
@@ -274,13 +189,12 @@ export default function TeamProjectLeader({
               )}
             </S.HalfCard>
 
-            {/* 5. 프로젝트 멤버 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>프로젝트 멤버</h3>
               </S.CardHeader>
               <S.MemberList>
-                {project.members.map((member) => (
+                {(project.members || []).map((member) => (
                   <S.MemberItem key={member.id}>
                     <S.MemberLeft>
                       <S.MemberAvatar>{getInitial(member.name)}</S.MemberAvatar>
@@ -292,7 +206,6 @@ export default function TeamProjectLeader({
                   </S.MemberItem>
                 ))}
               </S.MemberList>
-              {/* 멤버 초대하기 클릭 시 초대코드 모달 오픈 */}
               <S.InviteButton onClick={() => setIsInviteModalOpen(true)}>
                 <span>+</span> 멤버 초대하기
               </S.InviteButton>
@@ -300,7 +213,6 @@ export default function TeamProjectLeader({
           </S.BottomRow>
         </S.MainSection>
 
-        {/* 6. 문서 모아보기 (우측 사이드바) */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -317,7 +229,7 @@ export default function TeamProjectLeader({
                         onNavigate && onNavigate("docDetail", doc.id)
                       }
                     >
-                      <S.DocIconPlaceholder />
+                      <S.SidebarDocIconImg src={DocIcon} alt="문서 아이콘" />
                       <S.DocInfo>
                         <h4>{doc.title}</h4>
                         <p className="langs">{doc.languages.join(", ")}</p>
@@ -327,7 +239,6 @@ export default function TeamProjectLeader({
                       </S.DocInfo>
                     </S.DocItemLeft>
 
-                    {/* 버전을 드롭다운으로 선택해 보기 (Default: 최근 버전) */}
                     <S.VersionSelect
                       value={selectedVersions[doc.id] || doc.currentVersion}
                       onChange={(e) =>
@@ -345,7 +256,7 @@ export default function TeamProjectLeader({
               </S.GatheredList>
             ) : (
               <S.SidebarEmptyBox>
-                <S.EmptyIconPlaceholder />
+                <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
                 {isLeader && (
@@ -359,9 +270,6 @@ export default function TeamProjectLeader({
         </S.SidebarSection>
       </S.Container>
 
-      {/* --- 모달 영역 --- */}
-
-      {/* 문서 생성 모달 */}
       {isCreateDocModalOpen && (
         <S.ModalOverlay onClick={() => setIsCreateDocModalOpen(false)}>
           <S.ModalContent onClick={(e) => e.stopPropagation()}>
@@ -386,23 +294,22 @@ export default function TeamProjectLeader({
               </S.InputGroup>
             </S.ModalBody>
             <S.ModalFooter>
-              <S.OutlineButton onClick={() => setIsCreateDocModalOpen(false)}>
+              <S.ModalCancelButton onClick={() => setIsCreateDocModalOpen(false)}>
                 취소
-              </S.OutlineButton>
-              <S.PrimaryButton
+              </S.ModalCancelButton>
+              <S.ModalSubmitButton
                 onClick={() => {
                   setIsCreateDocModalOpen(false);
                   onNavigate && onNavigate("docCreate");
                 }}
               >
                 생성하기
-              </S.PrimaryButton>
+              </S.ModalSubmitButton>
             </S.ModalFooter>
           </S.ModalContent>
         </S.ModalOverlay>
       )}
 
-      {/* 초대 코드 노출 모달 */}
       {isInviteModalOpen && (
         <S.ModalOverlay onClick={() => setIsInviteModalOpen(false)}>
           <S.ModalContent onClick={(e) => e.stopPropagation()}>
@@ -424,9 +331,9 @@ export default function TeamProjectLeader({
               </S.CodeBox>
             </S.ModalBody>
             <S.ModalFooter>
-              <S.PrimaryButton onClick={() => setIsInviteModalOpen(false)}>
+              <S.ModalSubmitButton onClick={() => setIsInviteModalOpen(false)}>
                 확인
-              </S.PrimaryButton>
+              </S.ModalSubmitButton>
             </S.ModalFooter>
           </S.ModalContent>
         </S.ModalOverlay>

@@ -40,7 +40,7 @@ export default function MainDoc({
 
         {/* 최근 문서 */}
         <S.SectionHeader>
-          <h3>최근 문서</h3>
+          최근 문서
         </S.SectionHeader>
 
         {documents.length === 0 ? (

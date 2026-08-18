@@ -53,11 +53,10 @@ export const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  h3 {
-    font-size: 18px;
-    color: #111;
-  }
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #111;
+  font-weight: bold;
 `;
 
 export const MoreLink = styled.a`
@@ -78,8 +77,7 @@ export const MoreLink = styled.a`
 export const ProjectGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 `;
 
 export const ProjectCard = styled.div`

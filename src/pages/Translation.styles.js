@@ -8,7 +8,7 @@ const spin = keyframes`
 export const PageWrapper = styled.div`
   width: 100vw;
   height: 100vh;
-  background-color: #fffcfc;
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@ export const SparkleIconWrapper = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #f0f1fd;
+  background-color: #C3C3F9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,7 +39,7 @@ export const SparkleIconWrapper = styled.div`
 export const SparkleIcon = styled.div`
   width: 32px;
   height: 32px;
-  background-color: #2942f1;
+  background-color: #2942F1;
   clip-path: polygon(
     50% 0%,
     63% 37%,
@@ -77,7 +77,7 @@ export const ProgressSection = styled.div`
 export const ProgressBarTrack = styled.div`
   flex: 1;
   height: 14px;
-  background-color: #dcdcdc;
+  background-color: #D9D9D9;
   border-radius: 10px;
   overflow: hidden;
 `;
@@ -85,7 +85,7 @@ export const ProgressBarTrack = styled.div`
 export const ProgressBarFill = styled.div`
   height: 100%;
   width: ${(props) => props.$percentage}%;
-  background-color: #4253e2;
+  background-color: #2942F1;
   border-radius: 10px;
   transition: width 0.4s ease-in-out;
 `;
@@ -94,7 +94,8 @@ export const ProgressText = styled.span`
   font-size: 18px;
   font-weight: 800;
   color: #000000;
-  width: 48px;
+  width: 52px;
+  text-align: right;
 `;
 
 export const CardsWrapper = styled.div`
@@ -113,30 +114,34 @@ export const CardGrid = styled.div`
 export const LangCard = styled.div`
   width: 220px;
   height: 270px;
-  background-color: #ffffff;
-  border: 1px solid #dcdcdc;
+  background-color: #FFFFFF;
+  border: 1px solid #D9D9D9;
   border-radius: 16px;
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 `;
 
+// 국기 사진 세팅용 연보라색 동그라미
 export const FlagCircle = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #f0f1fd;
+  background-color: #C3C3F9;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
-`;
+  overflow: hidden;
 
-export const FlagEmoji = styled.span`
-  font-size: 38px;
-  line-height: 1;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 `;
 
 export const LangName = styled.h3`
@@ -157,25 +162,28 @@ export const StatusBadge = styled.div`
   font-weight: 700;
   margin-bottom: 16px;
 
+  /* 완료 상태 */
   ${(props) =>
     props.$status === "COMPLETED" &&
     `
-    background-color: #D1E7DD;
-    color: #0F5132;
+    background-color: #C3C3F9;
+    color: #267D23;
   `}
 
+  /* 번역 중 상태 */
   ${(props) =>
     props.$status === "IN_PROGRESS" &&
     `
-    background-color: #F0F1FD;
-    color: #4253E2;
+    background-color: #C3C3F9;
+    color: #2942F1;
   `}
 
+  /* 대기 중 상태 */
   ${(props) =>
     props.$status === "WAITING" &&
     `
-    background-color: #FCE8E6;
-    color: #F52727;
+    background-color: #D9D9D9;
+    color: #FF0000;
   `}
 
   .spinner {
@@ -190,26 +198,27 @@ export const DescriptionText = styled.p`
   text-align: center;
   line-height: 1.4;
   word-break: keep-all;
+  margin: 0;
 `;
 
 export const NavButton = styled.button`
   background: none;
   border: none;
   font-size: 20px;
-  color: ${(props) => (props.disabled ? "#DCDCDC" : "#B6B6B6")};
+  color: ${(props) => (props.disabled ? "#D9D9D9" : "#828282")};
   cursor: ${(props) => (props.disabled ? "default" : "pointer")};
   padding: 8px;
 
   &:hover {
-    color: ${(props) => (props.disabled ? "#DCDCDC" : "#000000")};
+    color: ${(props) => (props.disabled ? "#D9D9D9" : "#000000")};
   }
 `;
 
 export const ToastMessage = styled.div`
   position: absolute;
   bottom: -20px;
-  background-color: #3138e7;
-  color: #ffffff;
+  background-color: #503DF4;
+  color: #FFFFFF;
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 13px;

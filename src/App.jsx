@@ -7,7 +7,9 @@ import MainDoc from "./pages/mainpage/MainDoc";
 import MainSetting from "./pages/mainpage/MainSetting";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import TeamProjectLeader from "./pages/TeamProjectLeader";
+import TeamProjectLeader from "./pages/Teamproject/TeamProjectLeader";
+import TeamProjectMember from "./pages/Teamproject/TeamProjectMember";
+import TeamProjectDocs from "./pages/Teamproject/TeamProjectDocs";
 import Translation from "./pages/Translation";
 
 function App() {
@@ -21,6 +23,8 @@ function App() {
         <Route path="/doc" element={<MainDoc />} />
         <Route path="/set" element={<MainSetting />} />
         <Route path="/teamp-leader" element={<TeamProjectLeader />} />
+        <Route path="/teamp-member" element={<TeamProjectMember />} />
+        <Route path="/teamp-doc" element={<TeamProjectDocs />} />
         <Route path="/trans" element={<Translation />} />
       </Routes>
     </BrowserRouter>

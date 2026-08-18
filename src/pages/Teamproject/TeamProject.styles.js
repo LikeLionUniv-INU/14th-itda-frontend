@@ -1,62 +1,11 @@
 import styled from "styled-components";
 
+// 페이지 레이아웃
 export const PageWrapper = styled.div`
-  background-color: #fffcfc;
+  background-color: #f8f9fa;
   min-height: 100vh;
   font-family: sans-serif;
   color: #000000;
-`;
-
-export const Header = styled.header`
-  height: 64px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #dcdcdc;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
-`;
-
-export const HeaderLeft = styled.div`
-  cursor: pointer;
-`;
-
-export const HeaderRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-export const OutlineButton = styled.button`
-  height: 36px;
-  padding: 0 16px;
-  background-color: #ffffff;
-  border: 1px solid #4253e2;
-  color: #4253e2;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #f0f1fd;
-  }
-`;
-
-export const PrimaryButton = styled.button`
-  height: 36px;
-  padding: 0 20px;
-  background-color: #4253e2;
-  border: none;
-  color: #ffffff;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #3138e7;
-  }
 `;
 
 export const Container = styled.div`
@@ -65,6 +14,7 @@ export const Container = styled.div`
   padding: 0 20px;
   display: flex;
   gap: 20px;
+  align-items: stretch;
 `;
 
 export const MainSection = styled.div`
@@ -76,22 +26,25 @@ export const MainSection = styled.div`
 
 export const SidebarSection = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
 
+// 배너
 export const BannerCard = styled.div`
-  background: linear-gradient(135deg, #f0f1fd 0%, #ffffff 100%);
-  border: 1px solid #dcdcdc;
+  background: linear-gradient(90deg, #ffffff 0%, #BEBAF1 150%);
+  border: 1px solid #d6d5d5;
   border-radius: 12px;
-  padding: 28px 32px;
+  padding: 24px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 `;
 
 export const BannerTitle = styled.h2`
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  color: #2942f1;
+  color: #462fea;
 `;
 
 export const BannerMeta = styled.div`
@@ -129,7 +82,7 @@ export const MiniAvatar = styled.div`
   height: 22px;
   border-radius: 50%;
   background-color: ${(props) => (props.$isMore ? "#828282" : "#F0F1FD")};
-  color: ${(props) => (props.$isMore ? "#FFFFFF" : "#4253E2")};
+  color: ${(props) => (props.$isMore ? "#FFFFFF" : "#462FEA")};
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -138,23 +91,27 @@ export const MiniAvatar = styled.div`
   border: 1px solid #ffffff;
 `;
 
+// 최근 문서
 export const Card = styled.div`
   background-color: #ffffff;
-  border: 1px solid #dcdcdc;
+  border: 1px solid #d6d5d5;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 24px;
 `;
 
 export const CardHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 8px;
   margin-bottom: 16px;
+  border-bottom: 1px solid #d6d5d5;
 
   h3 {
     font-size: 15px;
     font-weight: 700;
-    color: #3138e7;
+    color: #462fea;
+    margin: 0;
   }
 `;
 
@@ -163,6 +120,7 @@ export const MoreButton = styled.button`
   border: none;
   color: #828282;
   font-size: 12px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -197,12 +155,31 @@ export const Table = styled.table`
     padding: 12px 14px;
     font-size: 12px;
     color: #000000;
-    border-bottom: 1px solid #fffcfc;
+    border-bottom: 1px solid #f5f5f5;
   }
 
   .font-bold {
     font-weight: 700;
   }
+`;
+
+export const TitleWithIcon = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const DocIconImg = styled.img`
+  width: 18px;
+  height: 22px;
+  object-fit: contain;
+`;
+
+export const EmptyDocIconImg = styled.img`
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 12px;
 `;
 
 export const BottomRow = styled.div`
@@ -215,6 +192,7 @@ export const HalfCard = styled(Card)`
   padding: 20px;
 `;
 
+// 활동 요약
 export const ActivityList = styled.div`
   display: flex;
   flex-direction: column;
@@ -232,7 +210,7 @@ export const ActivityAvatar = styled.div`
   height: 26px;
   border-radius: 50%;
   background-color: #f0f1fd;
-  color: #2942f1;
+  color: #462fea;
   font-size: 11px;
   font-weight: 700;
   display: flex;
@@ -243,7 +221,7 @@ export const ActivityAvatar = styled.div`
 
 export const ActivityContent = styled.div`
   p {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: #000000;
     line-height: 1.3;
@@ -252,14 +230,15 @@ export const ActivityContent = styled.div`
 
   span {
     font-size: 10px;
-    color: #b6b6b6;
+    color: #828282;
   }
 `;
 
+// 프로젝트 멤버
 export const MemberList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 16px;
 `;
 
@@ -276,81 +255,92 @@ export const MemberLeft = styled.div`
 `;
 
 export const MemberAvatar = styled.div`
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background-color: #f0f1fd;
-  color: #2942f1;
-  font-size: 10px;
-  font-weight: 700;
+  border: 1px solid #d6d5d5;
+  color: #462fea;
+  font-size: 11px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
 export const MemberName = styled.span`
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: #000000;
 `;
 
 export const RoleBadge = styled.span`
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  background-color: ${(props) => (props.$isLeader ? "#3138E7" : "#FFFFFF")};
-  color: ${(props) => (props.$isLeader ? "#FFFFFF" : "#3138E7")};
-  border: ${(props) => (props.$isLeader ? "none" : "1px solid #3138E7")};
+  background-color: ${(props) => (props.$isLeader ? "#462FEA" : "#FFFFFF")};
+  color: ${(props) => (props.$isLeader ? "#FFFFFF" : "#462FEA")};
+  border: ${(props) => (props.$isLeader ? "none" : "1px solid #462FEA")};
 `;
 
 export const InviteButton = styled.button`
   width: 100%;
   background: none;
   border: none;
-  color: #2942f1;
-  font-size: 12px;
-  font-weight: 600;
+  color: #462fea;
+  font-size: 13px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 6px 0;
 
   &:hover {
-    color: #3138e7;
+    opacity: 0.8;
   }
 `;
 
+// ==========================================
+// [수정됨] 문서 모아보기 (Sidebar 영역)
+// ==========================================
 export const SidebarCard = styled(Card)`
-  height: 100%;
-  padding: 24px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
 `;
 
 export const SidebarHeader = styled.div`
-  margin-bottom: 20px;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #d6d5d5;
 
   h3 {
     font-size: 15px;
     font-weight: 700;
-    color: #3138e7;
-    margin-bottom: 4px;
+    color: #462fea;
+    margin: 0 0 4px 0;
   }
 
   p {
     font-size: 11px;
     color: #828282;
+    margin: 0;
   }
 `;
 
 export const GatheredList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 export const DocItemCard = styled.div`
-  border: 1px solid #dcdcdc;
+  border: 1px solid #d6d5d5;
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
@@ -362,66 +352,78 @@ export const DocItemCard = styled.div`
 export const DocItemLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
 `;
 
+export const SidebarDocIconImg = styled.img`
+  width: 28px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+`;
+
 export const DocInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+
   h4 {
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0 0 3px 0;
+  }
+
+  .langs {
+    font-size: 11px;
     font-weight: 700;
     color: #000000;
     margin-bottom: 2px;
   }
 
-  .langs {
-    font-size: 10px;
-    font-weight: 600;
-    color: #000000;
-    margin-bottom: 2px;
-  }
-
   .time {
-    font-size: 9px;
+    font-size: 10px;
     color: #828282;
   }
 `;
 
 export const VersionSelect = styled.select`
   background-color: #f0f1fd;
-  color: #3138e7;
+  color: #462fea;
   border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 5px 10px;
   font-size: 11px;
   font-weight: 600;
   outline: none;
   cursor: pointer;
 `;
 
+// 공통 모달 및 빈 상태
 export const EmptyBox = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  flex: 1;
+  padding: 30px 0;
 
   h4 {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: #000000;
-    margin: 12px 0 4px 0;
+    margin: 6px 0 4px 0;
   }
 
   p {
     font-size: 11px;
     color: #828282;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 `;
 
 export const SidebarEmptyBox = styled(EmptyBox)`
-  padding: 100px 0;
+  padding: 40px 0;
 `;
 
 export const EmptyTextContainer = styled.div`
@@ -429,62 +431,31 @@ export const EmptyTextContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 30px 0;
+  padding: 40px 0;
 
   p {
-    font-size: 10px;
+    font-size: 11px;
     color: #828282;
-    line-height: 1.4;
+    line-height: 1.5;
+    text-align: center;
   }
 `;
 
 export const ActionButton = styled.button`
-  background-color: #4253e2;
+  background-color: #462fea;
   color: #ffffff;
   border: none;
   border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 11px;
+  padding: 10px 20px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 
   &:hover {
-    background-color: #3138e7;
+    opacity: 0.9;
   }
 `;
 
-export const LogoPlaceholder = styled.div`
-  width: 120px;
-  height: 32px;
-  background-color: #f0f1fd;
-  border: 1px dashed #4253e2;
-  border-radius: 4px;
-`;
-
-export const ArrowPlaceholder = styled.span`
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  background-color: #b6b6b6;
-`;
-
-export const DocIconPlaceholder = styled.div`
-  width: 28px;
-  height: 34px;
-  border: 1px solid #4253e2;
-  border-radius: 4px;
-  background-color: #f0f1fd;
-`;
-
-export const EmptyIconPlaceholder = styled.div`
-  width: 60px;
-  height: 70px;
-  border: 2px dashed #b6b6b6;
-  border-radius: 8px;
-  background-color: #f0f1fd;
-`;
-
-/* ===== 모달 스타일 ===== */
 export const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -540,6 +511,38 @@ export const ModalFooter = styled.div`
   gap: 8px;
 `;
 
+export const ModalCancelButton = styled.button`
+  height: 36px;
+  padding: 0 16px;
+  background-color: #ffffff;
+  border: 1px solid #462fea;
+  color: #462fea;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f0f1fd;
+  }
+`;
+
+export const ModalSubmitButton = styled.button`
+  height: 36px;
+  padding: 0 20px;
+  background-color: #462fea;
+  border: none;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
 export const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
@@ -555,13 +558,13 @@ export const InputGroup = styled.div`
   select {
     height: 36px;
     padding: 0 10px;
-    border: 1px solid #dcdcdc;
+    border: 1px solid #d6d5d5;
     border-radius: 6px;
     font-size: 13px;
     outline: none;
 
     &:focus {
-      border-color: #2942f1;
+      border-color: #462fea;
     }
   }
 `;
@@ -573,18 +576,18 @@ export const CodeBox = styled.div`
   background-color: #f0f1fd;
   padding: 10px 14px;
   border-radius: 6px;
-  border: 1px solid #dcdcdc;
+  border: 1px solid #d6d5d5;
 
   span {
     font-size: 14px;
     font-weight: 700;
-    color: #2942f1;
+    color: #462fea;
   }
 
   button {
     background-color: #ffffff;
-    border: 1px solid #4253e2;
-    color: #4253e2;
+    border: 1px solid #462fea;
+    color: #462fea;
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 11px;

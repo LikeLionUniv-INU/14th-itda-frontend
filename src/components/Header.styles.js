@@ -6,7 +6,7 @@ export const Header = styled.header`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 270px;
+  gap: ${(props) => (props.$type === "project" ? "780px" : "270px")};
 
   height: 64px;
   background: #fff;
@@ -37,6 +37,7 @@ export const Nav = styled.nav`
   gap: 12px;
   height: 100%;
 `;
+
 export const MenuItem = styled(NavLink)`
   display: flex;
   align-items: center;
@@ -55,14 +56,14 @@ export const MenuItem = styled(NavLink)`
   }
 `;
 
-// 프로젝트 생성, 입장 버튼 + 알림 + 프로필
+// 오른쪽 영역
 export const HeaderRight = styled.div`
   display: flex;
   align-items: center;
   gap: 28px;
 `;
 
-// 프로젝트 생성 버튼
+// 메인: 프로젝트 생성 버튼
 export const ProjectCreateButton = styled.button`
   display: flex;
   align-items: center;
@@ -76,7 +77,7 @@ export const ProjectCreateButton = styled.button`
   cursor: pointer;
 `;
 
-// 프로젝트 입장 버튼
+// 메인: 프로젝트 입장 버튼
 export const ProjectEnterButton = styled.button`
   background: #ffffff;
   color: #4548f6;
@@ -87,13 +88,26 @@ export const ProjectEnterButton = styled.button`
   cursor: pointer;
 `;
 
-// 알림
-export const IconButton = styled.button`
-  background: none;
-  border: none;
+// 팀프로젝트: 문서 생성 버튼
+export const DocCreateButton = styled.button`
+  background: #ffffff;
+  color: #4548f6;
+  border: 1px solid #4548f6;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 8px;
-  color: #666;
+`;
+
+// 팀프로젝트: 나가기 버튼
+export const ExitButton = styled.button`
+  background: #4548f6;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
 `;
 
 // 프로필

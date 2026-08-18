@@ -41,7 +41,7 @@ export default function MainProject({
 
         {/* 내 프로젝트 */}
         <S.SectionHeader>
-          <h3>내 프로젝트</h3>
+          내 프로젝트
         </S.SectionHeader>
 
         {projects.length === 0 ? (

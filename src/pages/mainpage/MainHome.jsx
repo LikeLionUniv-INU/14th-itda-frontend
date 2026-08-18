@@ -42,7 +42,7 @@ export default function MainHome({
 
         {/* 내 프로젝트 */}
         <S.SectionHeader>
-          <h3>내 프로젝트</h3>
+          내 프로젝트
         </S.SectionHeader>
 
         {projects.length === 0 ? (
@@ -81,7 +81,7 @@ export default function MainHome({
 
         {/* 최근 문서 */}
         <S.SectionHeader>
-          <h3>최근 문서</h3>
+          최근 문서
         </S.SectionHeader>
 
         {documents.length === 0 ? (
