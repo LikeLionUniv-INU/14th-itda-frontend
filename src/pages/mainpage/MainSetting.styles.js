@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const PageWrapper = styled.div`
-  background-color: #FFFCFC;
+  background-color: #FAFAFD;
   min-height: 100vh;
   font-family: sans-serif;
   color: #000000;
@@ -16,11 +16,11 @@ export const Container = styled.div`
   align-items: flex-start;
 `;
 
-/* ===== 왼쪽 사이드바 ===== */
+// 왼쪽 사이드바
 export const Sidebar = styled.aside`
   width: 200px;
-  background-color: #FFFFFF;
-  border: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
   border-radius: 12px;
   padding: 24px 16px;
 `;
@@ -52,12 +52,12 @@ export const NavItem = styled.div`
   cursor: pointer;
 
   &:hover {
-    background-color: #F0F1FD;
-    color: #3138E7;
+    background-color: #f0f1fd;
+    color: #3138e7;
   }
 `;
 
-/* ===== 오른쪽 메인 영역 ===== */
+// 메인 콘텐츠
 export const MainContent = styled.main`
   flex: 1;
   display: flex;
@@ -66,8 +66,8 @@ export const MainContent = styled.main`
 `;
 
 export const SectionCard = styled.section`
-  background-color: #FFFFFF;
-  border: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
   border-radius: 12px;
   padding: 28px 32px;
 `;
@@ -79,7 +79,7 @@ export const SectionTitle = styled.h3`
   margin-bottom: 24px;
 `;
 
-/* 프로필 레이아웃 */
+// 프로필
 export const ProfileFlex = styled.div`
   display: flex;
   gap: 24px;
@@ -89,8 +89,8 @@ export const ProfileFlex = styled.div`
 export const AvatarCard = styled.div`
   width: 150px;
   height: 160px;
-  background-color: #FFFFFF;
-  border: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -103,8 +103,8 @@ export const AvatarCircle = styled.div`
   width: 76px;
   height: 76px;
   border-radius: 50%;
-  background-color: #F0F1FD;
-  color: #2942F1;
+  background-color: #f0f1fd;
+  color: #2942f1;
   font-size: 32px;
   font-weight: 700;
   display: flex;
@@ -116,9 +116,9 @@ export const ChangePhotoButton = styled.button`
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #FFFFFF;
-  border: 1px solid #4253E2;
-  color: #4253E2;
+  background-color: #ffffff;
+  border: 1px solid #4253e2;
+  color: #4253e2;
   border-radius: 6px;
   padding: 5px 12px;
   font-size: 12px;
@@ -126,49 +126,53 @@ export const ChangePhotoButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: #F0F1FD;
+    background-color: #f0f1fd;
   }
 `;
 
-/* 폼 요소 */
+// 폼 레이아웃
 export const FormGrid = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 `;
 
 export const Row = styled.div`
   display: flex;
   gap: 16px;
+  width: 100%;
 `;
 
 export const InputGroup = styled.div`
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 
   label {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     color: #000000;
   }
 `;
 
+// 입력 요소
 export const Input = styled.input`
   width: 100%;
   height: 40px;
-  padding: 0 12px;
-  border: 1px solid #DCDCDC;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 0 16px;
+  border: 1px solid #dcdcdc;
+  border-radius: 4px;
+  font-size: 14px;
   color: #000000;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   outline: none;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: #2942F1;
+    border-color: #2942f1;
   }
 `;
 
@@ -176,38 +180,37 @@ export const Select = styled.select`
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  border: 1px solid #DCDCDC;
-  border-radius: 6px;
+  border: 1px solid #dcdcdc;
+  border-radius: 4px;
   font-size: 13px;
   color: #000000;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   outline: none;
   cursor: pointer;
-
-  &:focus {
-    border-color: #2942F1;
-  }
+  box-sizing: border-box;
 `;
 
 export const Textarea = styled.textarea`
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #DCDCDC;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 14px 16px;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  font-size: 14px;
   color: #000000;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   outline: none;
+  box-sizing: border-box;
   resize: none;
+  line-height: 1.5;
 
   &:focus {
-    border-color: #2942F1;
+    border-color: #2942f1;
   }
 `;
 
 // 계정 관리
 export const AccountBox = styled.div`
-  border: 1px solid #DCDCDC;
+  border: 1px solid #dcdcdc;
   border-radius: 8px;
   overflow: hidden;
 `;
@@ -217,16 +220,16 @@ export const AccountRow = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #DCDCDC;
+  border-bottom: 1px solid #dcdcdc;
   cursor: pointer;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background-color: #FFFCFC;
+    background-color: #fffcfc;
   }
 `;
 

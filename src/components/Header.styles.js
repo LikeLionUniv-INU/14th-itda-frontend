@@ -4,9 +4,10 @@ import DocBridge로고 from "../assets/image/DocBridge로고.svg";
 
 export const Header = styled.header`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 80px;
+  justify-content: center;
+  gap: 270px;
+
   height: 64px;
   background: #fff;
   border-bottom: 1px solid #eee;

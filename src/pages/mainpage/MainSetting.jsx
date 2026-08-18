@@ -3,7 +3,6 @@ import {
   Home,
   Folder,
   FileText,
-  Users,
   Settings,
   Camera,
   Lock,
@@ -14,7 +13,7 @@ import {
 import Header from "../../components/Header";
 import * as S from "./MainSetting.styles";
 
-// 더미데이터
+// 더미 데이터
 const DUMMY_USER_DATA = {
   name: "김서연",
   email: "sedd@gmail.com",

@@ -10,10 +10,10 @@ const getRelativeTime = (dateString) => {
 
   if (diffInMinutes < 1) return "방금 전";
   if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-  
+
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours}시간 전`;
-  
+
   const diffInDays = Math.floor(diffInHours / 24);
   return `${diffInDays}일 전`;
 };
@@ -120,7 +120,8 @@ export default function TeamProjectLeader({
     const initialMap = {};
     project.docs.forEach((doc) => {
       // default는 가장 최근 버전
-      initialMap[doc.id] = doc.currentVersion || doc.versions[doc.versions.length - 1];
+      initialMap[doc.id] =
+        doc.currentVersion || doc.versions[doc.versions.length - 1];
     });
     return initialMap;
   });
@@ -133,7 +134,9 @@ export default function TeamProjectLeader({
   };
 
   // 배너 참여자 성 이니셜 노출 처리 (최대 3개까지, 그 이상은 +N 처리)
-  const memberInitials = project.members.slice(0, 3).map((m) => getInitial(m.name));
+  const memberInitials = project.members
+    .slice(0, 3)
+    .map((m) => getInitial(m.name));
   const extraMemberCount = project.members.length - 3;
 
   const hasDocs = project.docs && project.docs.length > 0;
@@ -213,7 +216,9 @@ export default function TeamProjectLeader({
                   {project.docs.map((doc) => (
                     <tr
                       key={doc.id}
-                      onClick={() => onNavigate && onNavigate("docDetail", doc.id)}
+                      onClick={() =>
+                        onNavigate && onNavigate("docDetail", doc.id)
+                      }
                     >
                       <td className="font-bold">{doc.title}</td>
                       <td>{doc.selectedLang || doc.languages[0]}</td>
@@ -249,7 +254,9 @@ export default function TeamProjectLeader({
                 <S.ActivityList>
                   {project.activities.map((act) => (
                     <S.ActivityItem key={act.id}>
-                      <S.ActivityAvatar>{getInitial(act.userName)}</S.ActivityAvatar>
+                      <S.ActivityAvatar>
+                        {getInitial(act.userName)}
+                      </S.ActivityAvatar>
                       <S.ActivityContent>
                         <p>
                           {act.docTitle}_{act.version}이 업로드 되었습니다.
@@ -306,7 +313,9 @@ export default function TeamProjectLeader({
                 {project.docs.map((doc) => (
                   <S.DocItemCard key={doc.id}>
                     <S.DocItemLeft
-                      onClick={() => onNavigate && onNavigate("docDetail", doc.id)}
+                      onClick={() =>
+                        onNavigate && onNavigate("docDetail", doc.id)
+                      }
                     >
                       <S.DocIconPlaceholder />
                       <S.DocInfo>
@@ -321,7 +330,9 @@ export default function TeamProjectLeader({
                     {/* 버전을 드롭다운으로 선택해 보기 (Default: 최근 버전) */}
                     <S.VersionSelect
                       value={selectedVersions[doc.id] || doc.currentVersion}
-                      onChange={(e) => handleVersionChange(doc.id, e.target.value)}
+                      onChange={(e) =>
+                        handleVersionChange(doc.id, e.target.value)
+                      }
                     >
                       {doc.versions.map((ver) => (
                         <option key={ver} value={ver}>
@@ -405,7 +416,9 @@ export default function TeamProjectLeader({
               </p>
               <S.CodeBox>
                 <span>{inviteCode}</span>
-                <button onClick={() => navigator.clipboard.writeText(inviteCode)}>
+                <button
+                  onClick={() => navigator.clipboard.writeText(inviteCode)}
+                >
                   복사
                 </button>
               </S.CodeBox>

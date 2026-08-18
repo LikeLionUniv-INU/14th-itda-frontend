@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const PageWrapper = styled.div`
-  background-color: #FFFCFC;
+  background-color: #fffcfc;
   min-height: 100vh;
   font-family: sans-serif;
   color: #000000;
@@ -9,8 +9,8 @@ export const PageWrapper = styled.div`
 
 export const Header = styled.header`
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dcdcdc;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,32 +30,32 @@ export const HeaderRight = styled.div`
 export const OutlineButton = styled.button`
   height: 36px;
   padding: 0 16px;
-  background-color: #FFFFFF;
-  border: 1px solid #4253E2;
-  color: #4253E2;
+  background-color: #ffffff;
+  border: 1px solid #4253e2;
+  color: #4253e2;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 
   &:hover {
-    background-color: #F0F1FD;
+    background-color: #f0f1fd;
   }
 `;
 
 export const PrimaryButton = styled.button`
   height: 36px;
   padding: 0 20px;
-  background-color: #4253E2;
+  background-color: #4253e2;
   border: none;
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 
   &:hover {
-    background-color: #3138E7;
+    background-color: #3138e7;
   }
 `;
 
@@ -79,8 +79,8 @@ export const SidebarSection = styled.div`
 `;
 
 export const BannerCard = styled.div`
-  background: linear-gradient(135deg, #F0F1FD 0%, #FFFFFF 100%);
-  border: 1px solid #DCDCDC;
+  background: linear-gradient(135deg, #f0f1fd 0%, #ffffff 100%);
+  border: 1px solid #dcdcdc;
   border-radius: 12px;
   padding: 28px 32px;
   display: flex;
@@ -91,7 +91,7 @@ export const BannerCard = styled.div`
 export const BannerTitle = styled.h2`
   font-size: 24px;
   font-weight: 700;
-  color: #2942F1;
+  color: #2942f1;
 `;
 
 export const BannerMeta = styled.div`
@@ -135,12 +135,12 @@ export const MiniAvatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #FFFFFF;
+  border: 1px solid #ffffff;
 `;
 
 export const Card = styled.div`
-  background-color: #FFFFFF;
-  border: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
   border-radius: 12px;
   padding: 24px;
 `;
@@ -154,7 +154,7 @@ export const CardHeader = styled.div`
   h3 {
     font-size: 15px;
     font-weight: 700;
-    color: #3138E7;
+    color: #3138e7;
   }
 `;
 
@@ -178,7 +178,7 @@ export const Table = styled.table`
   border-collapse: collapse;
 
   th {
-    background-color: #F0F1FD;
+    background-color: #f0f1fd;
     color: #828282;
     font-size: 12px;
     font-weight: 500;
@@ -189,7 +189,7 @@ export const Table = styled.table`
   tbody tr {
     cursor: pointer;
     &:hover {
-      background-color: #FFFCFC;
+      background-color: #fffcfc;
     }
   }
 
@@ -197,7 +197,7 @@ export const Table = styled.table`
     padding: 12px 14px;
     font-size: 12px;
     color: #000000;
-    border-bottom: 1px solid #FFFCFC;
+    border-bottom: 1px solid #fffcfc;
   }
 
   .font-bold {
@@ -231,8 +231,8 @@ export const ActivityAvatar = styled.div`
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background-color: #F0F1FD;
-  color: #2942F1;
+  background-color: #f0f1fd;
+  color: #2942f1;
   font-size: 11px;
   font-weight: 700;
   display: flex;
@@ -252,7 +252,7 @@ export const ActivityContent = styled.div`
 
   span {
     font-size: 10px;
-    color: #B6B6B6;
+    color: #b6b6b6;
   }
 `;
 
@@ -279,8 +279,8 @@ export const MemberAvatar = styled.div`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #F0F1FD;
-  color: #2942F1;
+  background-color: #f0f1fd;
+  color: #2942f1;
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -308,7 +308,7 @@ export const InviteButton = styled.button`
   width: 100%;
   background: none;
   border: none;
-  color: #2942F1;
+  color: #2942f1;
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -318,7 +318,7 @@ export const InviteButton = styled.button`
   padding: 4px 0;
 
   &:hover {
-    color: #3138E7;
+    color: #3138e7;
   }
 `;
 
@@ -333,7 +333,7 @@ export const SidebarHeader = styled.div`
   h3 {
     font-size: 15px;
     font-weight: 700;
-    color: #3138E7;
+    color: #3138e7;
     margin-bottom: 4px;
   }
 
@@ -350,13 +350,13 @@ export const GatheredList = styled.div`
 `;
 
 export const DocItemCard = styled.div`
-  border: 1px solid #DCDCDC;
+  border: 1px solid #dcdcdc;
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 `;
 
 export const DocItemLeft = styled.div`
@@ -388,8 +388,8 @@ export const DocInfo = styled.div`
 `;
 
 export const VersionSelect = styled.select`
-  background-color: #F0F1FD;
-  color: #3138E7;
+  background-color: #f0f1fd;
+  color: #3138e7;
   border: none;
   border-radius: 4px;
   padding: 4px 8px;
@@ -439,8 +439,8 @@ export const EmptyTextContainer = styled.div`
 `;
 
 export const ActionButton = styled.button`
-  background-color: #4253E2;
-  color: #FFFFFF;
+  background-color: #4253e2;
+  color: #ffffff;
   border: none;
   border-radius: 6px;
   padding: 8px 16px;
@@ -449,15 +449,15 @@ export const ActionButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: #3138E7;
+    background-color: #3138e7;
   }
 `;
 
 export const LogoPlaceholder = styled.div`
   width: 120px;
   height: 32px;
-  background-color: #F0F1FD;
-  border: 1px dashed #4253E2;
+  background-color: #f0f1fd;
+  border: 1px dashed #4253e2;
   border-radius: 4px;
 `;
 
@@ -465,23 +465,23 @@ export const ArrowPlaceholder = styled.span`
   display: inline-block;
   width: 10px;
   height: 10px;
-  background-color: #B6B6B6;
+  background-color: #b6b6b6;
 `;
 
 export const DocIconPlaceholder = styled.div`
   width: 28px;
   height: 34px;
-  border: 1px solid #4253E2;
+  border: 1px solid #4253e2;
   border-radius: 4px;
-  background-color: #F0F1FD;
+  background-color: #f0f1fd;
 `;
 
 export const EmptyIconPlaceholder = styled.div`
   width: 60px;
   height: 70px;
-  border: 2px dashed #B6B6B6;
+  border: 2px dashed #b6b6b6;
   border-radius: 8px;
-  background-color: #F0F1FD;
+  background-color: #f0f1fd;
 `;
 
 /* ===== 모달 스타일 ===== */
@@ -499,7 +499,7 @@ export const ModalOverlay = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   width: 360px;
   border-radius: 12px;
   padding: 20px;
@@ -555,13 +555,13 @@ export const InputGroup = styled.div`
   select {
     height: 36px;
     padding: 0 10px;
-    border: 1px solid #DCDCDC;
+    border: 1px solid #dcdcdc;
     border-radius: 6px;
     font-size: 13px;
     outline: none;
 
     &:focus {
-      border-color: #2942F1;
+      border-color: #2942f1;
     }
   }
 `;
@@ -570,28 +570,28 @@ export const CodeBox = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #F0F1FD;
+  background-color: #f0f1fd;
   padding: 10px 14px;
   border-radius: 6px;
-  border: 1px solid #DCDCDC;
+  border: 1px solid #dcdcdc;
 
   span {
     font-size: 14px;
     font-weight: 700;
-    color: #2942F1;
+    color: #2942f1;
   }
 
   button {
-    background-color: #FFFFFF;
-    border: 1px solid #4253E2;
-    color: #4253E2;
+    background-color: #ffffff;
+    border: 1px solid #4253e2;
+    color: #4253e2;
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 11px;
     cursor: pointer;
 
     &:hover {
-      background-color: #F0F1FD;
+      background-color: #f0f1fd;
     }
   }
 `;

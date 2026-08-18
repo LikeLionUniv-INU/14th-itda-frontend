@@ -46,7 +46,7 @@ export default function MainProject({
 
         {projects.length === 0 ? (
           <S.EmptyContainer>
-            <FolderPlus size={50} color="#8F92A1" />
+            <S.ProjectIcon />
             <h4>아직 생성된 프로젝트가 없어요.</h4>
             <p>프로젝트를 생성하고 팀과 함께 문서를 관리해보세요.</p>
             <S.ActionButton onClick={onCreateProject}>

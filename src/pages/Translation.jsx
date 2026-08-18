@@ -64,12 +64,13 @@ export default function Translation({
   const [startIndex, setStartIndex] = useState(0);
 
   // 완료 메시지 토스트 상태
-  const [isCompleteMessageVisible, setIsCompleteMessageVisible] = useState(false);
+  const [isCompleteMessageVisible, setIsCompleteMessageVisible] =
+    useState(false);
 
   // Progress Bar 계산 (문서 1개 완료 시 1/n 씩 증가)
   const totalCount = targetLanguages.length;
   const completedCount = Object.values(langStatuses).filter(
-    (status) => status === "COMPLETED"
+    (status) => status === "COMPLETED",
   ).length;
   const percentage = Math.round((completedCount / totalCount) * 100);
 
@@ -81,12 +82,12 @@ export default function Translation({
       setLangStatuses((prev) => {
         const next = { ...prev };
         const inProgressLang = targetLanguages.find(
-          (code) => next[code] === "IN_PROGRESS"
+          (code) => next[code] === "IN_PROGRESS",
         );
         if (inProgressLang) {
           next[inProgressLang] = "COMPLETED";
           const waitingLang = targetLanguages.find(
-            (code) => next[code] === "WAITING"
+            (code) => next[code] === "WAITING",
           );
           if (waitingLang) {
             next[waitingLang] = "IN_PROGRESS";

@@ -1,5 +1,6 @@
 import styled from "styled-components";
-import popup from "../assets/image/popup.svg";
+import popup from "../../assets/image/popup.svg";
+import projecticon from "../../assets/image/project icon.svg";
 
 export const PageWrapper = styled.div`
   background-color: #f8f9fa;
@@ -144,4 +145,15 @@ export const ActionButton = styled.button`
   &:hover {
     background-color: #4338ca;
   }
+`;
+
+export const ProjectIcon = styled.div`
+  background-image: url("${projecticon}");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  width: 80px;
+  height: 80px;
+  margin-bottom: 12px;
 `;

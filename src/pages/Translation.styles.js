@@ -8,7 +8,7 @@ const spin = keyframes`
 export const PageWrapper = styled.div`
   width: 100vw;
   height: 100vh;
-  background-color: #FFFCFC;
+  background-color: #fffcfc;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@ export const SparkleIconWrapper = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #F0F1FD;
+  background-color: #f0f1fd;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,10 +39,16 @@ export const SparkleIconWrapper = styled.div`
 export const SparkleIcon = styled.div`
   width: 32px;
   height: 32px;
-  background-color: #2942F1;
+  background-color: #2942f1;
   clip-path: polygon(
-    50% 0%, 63% 37%, 100% 50%, 63% 63%,
-    50% 100%, 37% 63%, 0% 50%, 37% 37%
+    50% 0%,
+    63% 37%,
+    100% 50%,
+    63% 63%,
+    50% 100%,
+    37% 63%,
+    0% 50%,
+    37% 37%
   );
 `;
 
@@ -71,7 +77,7 @@ export const ProgressSection = styled.div`
 export const ProgressBarTrack = styled.div`
   flex: 1;
   height: 14px;
-  background-color: #DCDCDC;
+  background-color: #dcdcdc;
   border-radius: 10px;
   overflow: hidden;
 `;
@@ -79,7 +85,7 @@ export const ProgressBarTrack = styled.div`
 export const ProgressBarFill = styled.div`
   height: 100%;
   width: ${(props) => props.$percentage}%;
-  background-color: #4253E2;
+  background-color: #4253e2;
   border-radius: 10px;
   transition: width 0.4s ease-in-out;
 `;
@@ -107,8 +113,8 @@ export const CardGrid = styled.div`
 export const LangCard = styled.div`
   width: 220px;
   height: 270px;
-  background-color: #FFFFFF;
-  border: 1px solid #DCDCDC;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
   border-radius: 16px;
   padding: 24px 16px;
   display: flex;
@@ -121,7 +127,7 @@ export const FlagCircle = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #F0F1FD;
+  background-color: #f0f1fd;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,8 +208,8 @@ export const NavButton = styled.button`
 export const ToastMessage = styled.div`
   position: absolute;
   bottom: -20px;
-  background-color: #3138E7;
-  color: #FFFFFF;
+  background-color: #3138e7;
+  color: #ffffff;
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 13px;
@@ -212,7 +218,13 @@ export const ToastMessage = styled.div`
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 `;

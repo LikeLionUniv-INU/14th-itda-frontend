@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
-import Header from "../components/Header";
+import Header from "../../components/Header";
 import * as S from "./MainDoc.styles";
 
 export default function MainDoc({
@@ -46,7 +45,7 @@ export default function MainDoc({
 
         {documents.length === 0 ? (
           <S.EmptyContainer>
-            <FileText size={50} color="#8F92A1" />
+            <S.DocIcon />
             <h4>작성한 문서가 아직 없어요</h4>
             <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
           </S.EmptyContainer>
