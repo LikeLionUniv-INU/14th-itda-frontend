@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Sparkles, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Check,
+  Sparkles,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import * as S from "./Translation.styles";
 
 export default function Translation({ isLeader = true, projectId = 1 }) {
@@ -37,8 +43,8 @@ export default function Translation({ isLeader = true, projectId = 1 }) {
     const timer1 = setTimeout(() => {
       setLanguages((prev) =>
         prev.map((lang) =>
-          lang.id === 2 ? { ...lang, status: "IN_PROGRESS" } : lang
-        )
+          lang.id === 2 ? { ...lang, status: "IN_PROGRESS" } : lang,
+        ),
       );
     }, 3000);
 
@@ -48,15 +54,15 @@ export default function Translation({ isLeader = true, projectId = 1 }) {
           if (lang.id === 2) return { ...lang, status: "COMPLETED" };
           if (lang.id === 3) return { ...lang, status: "IN_PROGRESS" };
           return lang;
-        })
+        }),
       );
     }, 6000);
 
     const timer3 = setTimeout(() => {
       setLanguages((prev) =>
         prev.map((lang) =>
-          lang.id === 3 ? { ...lang, status: "COMPLETED" } : lang
-        )
+          lang.id === 3 ? { ...lang, status: "COMPLETED" } : lang,
+        ),
       );
       setShowToast(true);
     }, 9000);
@@ -77,8 +83,12 @@ export default function Translation({ isLeader = true, projectId = 1 }) {
     };
   }, [isLeader, projectId, navigate]);
 
-  const completedCount = languages.filter((l) => l.status === "COMPLETED").length;
-  const progressPercentage = Math.round((completedCount / languages.length) * 100);
+  const completedCount = languages.filter(
+    (l) => l.status === "COMPLETED",
+  ).length;
+  const progressPercentage = Math.round(
+    (completedCount / languages.length) * 100,
+  );
 
   return (
     <S.PageWrapper>
@@ -142,9 +152,7 @@ export default function Translation({ isLeader = true, projectId = 1 }) {
         </S.CardsWrapper>
 
         {showToast && (
-          <S.ToastMessage>
-            ✓ 전체 문서의 번역이 완료되었습니다.
-          </S.ToastMessage>
+          <S.ToastMessage>✓ 전체 문서의 번역이 완료되었습니다.</S.ToastMessage>
         )}
       </S.CenterContainer>
     </S.PageWrapper>

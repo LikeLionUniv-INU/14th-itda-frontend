@@ -43,9 +43,7 @@ export default function Header({
                 문서 생성
               </S.DocCreateButton>
             )}
-            <S.ExitButton onClick={handleExit}>
-              나가기
-            </S.ExitButton>
+            <S.ExitButton onClick={handleExit}>나가기</S.ExitButton>
           </>
         ) : (
           <>

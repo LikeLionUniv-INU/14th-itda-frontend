@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, Globe, Languages, BookOpen } from "lucide-react";
+import { Mail, Lock, Globe, Languages, User } from "lucide-react";
 import * as S from "./Signup.styles";
 
 const Signup = ({ onNavigateToLogin }) => {
@@ -43,7 +43,7 @@ const Signup = ({ onNavigateToLogin }) => {
   // 이메일 검증
   const handleEmailBlur = () => {
     if (email && !validateEmail(email)) {
-      setEmailError("올바른 이메일 형식이 아닙니다");
+      setEmailError("올바른 이메일 형식이 아닙니다.");
     } else {
       setEmailError("");
     }
@@ -94,205 +94,227 @@ const Signup = ({ onNavigateToLogin }) => {
 
   return (
     <S.Container>
-      {/* 좌측 브랜드 안내 영역 */}
-      <S.LeftSection>
-        <S.MainTitle>
-          언어의 경계를 넘어
-          <br />
-          모두의 이해를 잇다
-          <br />
-          <span>하나의 협업으로</span>
-        </S.MainTitle>
-        <S.SubDescription>
-          하나의 문서만 작성하세요.
-          <br />
-          변경사항은 자동으로 동기화되고,
-          <br />
-          글로벌 팀은 언제나 같은 내용을 이해합니다.
-        </S.SubDescription>
+      {/* MainWrapper 추가: 양쪽 섹션을 1200px 범위 내 중앙으로 모아주는 역할 */}
+      <S.MainWrapper>
+        {/* 좌측 브랜드 안내 영역 */}
+        <S.LeftSection>
+          <S.ContentWrapper>
+            <S.MainTitle>
+              언어의 경계를 넘어
+              <br />
+              모두의 이해를 잇다
+              <br />
+              <span>하나의 협업으로</span>
+            </S.MainTitle>
+            <S.SubDescription>
+              하나의 문서만 작성하세요.
+              <br />
+              변경사항은 자동으로 동기화되고,
+              <br />
+              글로벌 팀은 언제나 같은 내용을 이해합니다.
+            </S.SubDescription>
+          </S.ContentWrapper>
 
-        <S.FeatureList>
-          <S.FeatureItem>
-            <S.FeatureIconBox />
-            <S.FeatureText>
-              <strong>글로벌 협업</strong>
-              <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
-            </S.FeatureText>
-          </S.FeatureItem>
-          <S.FeatureItem>
-            <S.FeatureIconBox />
-            <S.FeatureText>
-              <strong>AI 자동 동기화</strong>
-              <span>
-                수정된 내용만 번역하여 모든 언어 문서를 최신 상태로 유지합니다.
-              </span>
-            </S.FeatureText>
-          </S.FeatureItem>
-          <S.FeatureItem>
-            <S.FeatureIconBox />
-            <S.FeatureText>
-              <strong>팀 협업</strong>
-              <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
-            </S.FeatureText>
-          </S.FeatureItem>
-          <S.FeatureItem>
-            <S.FeatureIconBox />
-            <S.FeatureText>
-              <strong>버전 관리</strong>
-              <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
-            </S.FeatureText>
-          </S.FeatureItem>
-        </S.FeatureList>
+          <S.FeatureList>
+            <S.FeatureItem>
+              <S.FeatureIconBox />
+              <S.FeatureText>
+                <strong>글로벌 협업</strong>
+                <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox />
+              <S.FeatureText>
+                <strong>AI 자동 동기화</strong>
+                <span>
+                  수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
+                  유지합니다.
+                </span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox />
+              <S.FeatureText>
+                <strong>팀 협업</strong>
+                <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox />
+              <S.FeatureText>
+                <strong>버전 관리</strong>
+                <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+          </S.FeatureList>
 
-        <S.MapGraphic>네트워크 지도 그래픽 영역</S.MapGraphic>
-      </S.LeftSection>
+          <S.MapGraphic />
+        </S.LeftSection>
 
-      {/* 우측 회원가입 폼 카드 */}
-      <S.RightSection>
-        <S.Card>
-          <S.LogoBox>로고이미지넣기</S.LogoBox>
-          <S.CardTitle>계정을 생성하세요</S.CardTitle>
-          <S.CardSubtitle>
-            워크스페이스를 만들고 협업을 시작하세요.
-          </S.CardSubtitle>
+        {/* 우측 회원가입 폼 카드 */}
+        <S.RightSection>
+          <S.Card>
+            <S.Logo />
+            <S.CardTitle>계정을 생성하세요</S.CardTitle>
+            <S.CardSubtitle>
+              워크스페이스를 만들고 협업을 시작하세요.
+            </S.CardSubtitle>
 
-          <S.Form onSubmit={handleSubmit}>
-            {/* 이름 / 성 (영문) */}
-            <S.InputGroup>
-              <label>이름 (영어)</label>
+            <S.Form onSubmit={handleSubmit}>
+              {/* 이름 / 성 (영문) */}
+              <S.InputGroup>
+                <label>이름 (영어)</label>
+                <S.RowGroup>
+                  <div>
+                    <S.InputWrapper>
+                      <User size={18} />
+                      <S.Input
+                        type="text"
+                        placeholder="이름 (First name)"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        onBlur={handleFirstNameBlur}
+                        hasError={!!firstNameError}
+                        hasIcon
+                      />
+                    </S.InputWrapper>
+                    {firstNameError && (
+                      <S.ErrorText>{firstNameError}</S.ErrorText>
+                    )}
+                  </div>
+                  <div>
+                    <S.InputWrapper>
+                      <User size={18} />
+                      <S.Input
+                        type="text"
+                        placeholder="성 (Last name)"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        onBlur={handleLastNameBlur}
+                        hasError={!!lastNameError}
+                        hasIcon
+                      />
+                    </S.InputWrapper>
+                    {lastNameError && (
+                      <S.ErrorText>{lastNameError}</S.ErrorText>
+                    )}
+                  </div>
+                </S.RowGroup>
+              </S.InputGroup>
+
+              {/* 이메일 */}
+              <S.InputGroup>
+                <label>이메일</label>
+                <S.InputWrapper>
+                  <Mail size={18} />
+                  <S.Input
+                    type="text"
+                    placeholder="이메일을 입력하세요."
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    hasError={!!emailError}
+                    hasIcon
+                  />
+                </S.InputWrapper>
+                {emailError && <S.ErrorText>{emailError}</S.ErrorText>}
+              </S.InputGroup>
+
+              {/* 비밀번호 */}
+              <S.InputGroup>
+                <label>비밀번호</label>
+                <S.InputWrapper>
+                  <Lock size={18} />
+                  <S.Input
+                    type="password"
+                    placeholder="비밀번호를 입력해주세요."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onBlur={handlePasswordBlur}
+                    hasError={!!passwordError}
+                    hasIcon
+                  />
+                </S.InputWrapper>
+                {passwordError && <S.ErrorText>{passwordError}</S.ErrorText>}
+              </S.InputGroup>
+
+              {/* 비밀번호 확인 */}
+              <S.InputGroup>
+                <label>비밀번호 확인</label>
+                <S.InputWrapper>
+                  <Lock size={18} />
+                  <S.Input
+                    type="password"
+                    placeholder="비밀번호를 다시 입력해주세요"
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    onBlur={handleConfirmBlur}
+                    hasError={!!confirmError}
+                    hasIcon
+                  />
+                </S.InputWrapper>
+                {confirmError && <S.ErrorText>{confirmError}</S.ErrorText>}
+              </S.InputGroup>
+
+              {/* 국적 및 사용 언어 */}
               <S.RowGroup>
-                <div>
+                <S.InputGroup>
+                  <label>국적</label>
                   <S.InputWrapper>
-                    <S.Input
-                      type="text"
-                      placeholder="이름을 입력해주세요."
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      onBlur={handleFirstNameBlur}
-                      hasError={!!firstNameError}
-                    />
+                    <Globe size={18} />
+                    <S.Select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      hasIcon
+                    >
+                      <option value="" disabled hidden>
+                        국적 선택
+                      </option>
+                      <option value="KR">대한민국</option>
+                      <option value="US">미국</option>
+                      <option value="JP">일본</option>
+                      <option value="CN">중국</option>
+                    </S.Select>
                   </S.InputWrapper>
-                  {firstNameError && (
-                    <S.ErrorText>{firstNameError}</S.ErrorText>
-                  )}
-                </div>
-                <div>
+                </S.InputGroup>
+
+                <S.InputGroup>
+                  <label>사용 언어</label>
                   <S.InputWrapper>
-                    <S.Input
-                      type="text"
-                      placeholder="성을 입력해주세요.(영어)"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      onBlur={handleLastNameBlur}
-                      hasError={!!lastNameError}
-                    />
+                    <Languages size={18} />
+                    <S.Select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      hasIcon
+                    >
+                      <option value="" disabled hidden>
+                        언어 선택
+                      </option>
+                      <option value="ko">한국어</option>
+                      <option value="en">English</option>
+                      <option value="ja">日本語</option>
+                      <option value="zh">中文</option>
+                    </S.Select>
                   </S.InputWrapper>
-                  {lastNameError && <S.ErrorText>{lastNameError}</S.ErrorText>}
-                </div>
+                </S.InputGroup>
               </S.RowGroup>
-            </S.InputGroup>
 
-            {/* 이메일 */}
-            <S.InputGroup>
-              <label>이메일</label>
-              <S.InputWrapper>
-                <Mail size={18} />
-                <S.Input
-                  type="text"
-                  placeholder="이메일을 입력하세요."
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={handleEmailBlur}
-                  hasError={!!emailError}
-                  hasIcon
-                />
-              </S.InputWrapper>
-              {emailError && <S.ErrorText>{emailError}</S.ErrorText>}
-            </S.InputGroup>
+              {/* 로그인 이동 링크 */}
+              <S.FooterLink>
+                이미 계정이 있으신가요?
+                <button type="button" onClick={onNavigateToLogin}>
+                  로그인
+                </button>
+              </S.FooterLink>
 
-            {/* 비밀번호 */}
-            <S.InputGroup>
-              <label>비밀번호</label>
-              <S.InputWrapper>
-                <Lock size={18} />
-                <S.Input
-                  type="password"
-                  placeholder="비밀번호를 입력해주세요."
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onBlur={handlePasswordBlur}
-                  hasError={!!passwordError}
-                  hasIcon
-                />
-              </S.InputWrapper>
-              {passwordError && <S.ErrorText>{passwordError}</S.ErrorText>}
-            </S.InputGroup>
-
-            {/* 비밀번호 확인 */}
-            <S.InputGroup>
-              <label>비밀번호 확인</label>
-              <S.InputWrapper>
-                <Lock size={18} />
-                <S.Input
-                  type="password"
-                  placeholder="비밀번호를 다시 입력해주세요"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  onBlur={handleConfirmBlur}
-                  hasError={!!confirmError}
-                  hasIcon
-                />
-              </S.InputWrapper>
-              {confirmError && <S.ErrorText>{confirmError}</S.ErrorText>}
-            </S.InputGroup>
-
-            {/* 국적 및 사용 언어 */}
-            <S.RowGroup>
-              <S.InputGroup>
-                <label>국적</label>
-                <S.InputWrapper>
-                  <Globe size={18} />
-                  <S.Select
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                  >
-                    <option value="" disabled hidden>
-                      국적을 선택해주세요.
-                    </option>
-                    <option value="KR">대한민국</option>
-                    <option value="US">미국</option>
-                    <option value="JP">일본</option>
-                    <option value="CN">중국</option>
-                  </S.Select>
-                </S.InputWrapper>
-              </S.InputGroup>
-
-              <S.InputGroup>
-                <label>사용 언어</label>
-                <S.InputWrapper>
-                  <Languages size={18} />
-                  <S.Select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                  >
-                    <option value="" disabled hidden>
-                      사용 언어를 선택해주세요.
-                    </option>
-                    <option value="ko">한국어</option>
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
-                    <option value="zh">中文</option>
-                  </S.Select>
-                </S.InputWrapper>
-              </S.InputGroup>
-            </S.RowGroup>
-
-            <S.SubmitButton type="submit" disabled={!isFormValid}>
-              회원가입
-            </S.SubmitButton>
-          </S.Form>
-        </S.Card>
-      </S.RightSection>
+              <S.SubmitButton type="submit" disabled={!isFormValid}>
+                회원가입
+              </S.SubmitButton>
+            </S.Form>
+          </S.Card>
+        </S.RightSection>
+      </S.MainWrapper>
     </S.Container>
   );
 };

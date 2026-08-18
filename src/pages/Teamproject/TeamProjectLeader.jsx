@@ -294,7 +294,9 @@ export default function TeamProjectLeader({
               </S.InputGroup>
             </S.ModalBody>
             <S.ModalFooter>
-              <S.ModalCancelButton onClick={() => setIsCreateDocModalOpen(false)}>
+              <S.ModalCancelButton
+                onClick={() => setIsCreateDocModalOpen(false)}
+              >
                 취소
               </S.ModalCancelButton>
               <S.ModalSubmitButton

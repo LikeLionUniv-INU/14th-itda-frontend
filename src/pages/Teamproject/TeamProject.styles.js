@@ -32,7 +32,7 @@ export const SidebarSection = styled.div`
 
 // 배너
 export const BannerCard = styled.div`
-  background: linear-gradient(90deg, #ffffff 0%, #BEBAF1 150%);
+  background: linear-gradient(90deg, #ffffff 0%, #bebaf1 150%);
   border: 1px solid #d6d5d5;
   border-radius: 12px;
   padding: 24px 32px;

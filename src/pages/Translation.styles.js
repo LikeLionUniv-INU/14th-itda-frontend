@@ -8,7 +8,7 @@ const spin = keyframes`
 export const PageWrapper = styled.div`
   width: 100vw;
   height: 100vh;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@ export const SparkleIconWrapper = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #C3C3F9;
+  background-color: #c3c3f9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,7 +39,7 @@ export const SparkleIconWrapper = styled.div`
 export const SparkleIcon = styled.div`
   width: 32px;
   height: 32px;
-  background-color: #2942F1;
+  background-color: #2942f1;
   clip-path: polygon(
     50% 0%,
     63% 37%,
@@ -77,7 +77,7 @@ export const ProgressSection = styled.div`
 export const ProgressBarTrack = styled.div`
   flex: 1;
   height: 14px;
-  background-color: #D9D9D9;
+  background-color: #d9d9d9;
   border-radius: 10px;
   overflow: hidden;
 `;
@@ -85,7 +85,7 @@ export const ProgressBarTrack = styled.div`
 export const ProgressBarFill = styled.div`
   height: 100%;
   width: ${(props) => props.$percentage}%;
-  background-color: #2942F1;
+  background-color: #2942f1;
   border-radius: 10px;
   transition: width 0.4s ease-in-out;
 `;
@@ -114,8 +114,8 @@ export const CardGrid = styled.div`
 export const LangCard = styled.div`
   width: 220px;
   height: 270px;
-  background-color: #FFFFFF;
-  border: 1px solid #D9D9D9;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
   border-radius: 16px;
   padding: 24px 16px;
   display: flex;
@@ -130,7 +130,7 @@ export const FlagCircle = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #C3C3F9;
+  background-color: #c3c3f9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,8 +217,8 @@ export const NavButton = styled.button`
 export const ToastMessage = styled.div`
   position: absolute;
   bottom: -20px;
-  background-color: #503DF4;
-  color: #FFFFFF;
+  background-color: #503df4;
+  color: #ffffff;
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 13px;

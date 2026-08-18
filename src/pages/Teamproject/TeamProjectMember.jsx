@@ -71,13 +71,12 @@ export default function TeamProjectMember({
 
   return (
     <S.PageWrapper>
-
       <Header
         type="project"
         isLeader={false}
         onCreateDoc={null}
         onExit={() => onNavigate && onNavigate("home")}
-        />
+      />
       <S.Container>
         <S.MainSection>
           <S.BannerCard>
@@ -144,7 +143,6 @@ export default function TeamProjectMember({
                 </tbody>
               </S.Table>
             ) : (
-
               <S.EmptyBox>
                 <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>

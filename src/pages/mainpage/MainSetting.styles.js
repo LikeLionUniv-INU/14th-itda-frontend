@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const PageWrapper = styled.div`
-  background-color: #FAFAFD;
+  background-color: #fafafd;
   min-height: 100vh;
   font-family: sans-serif;
   color: #000000;

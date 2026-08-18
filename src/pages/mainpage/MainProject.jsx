@@ -40,9 +40,7 @@ export default function MainProject({
         </S.Banner>
 
         {/* 내 프로젝트 */}
-        <S.SectionHeader>
-          내 프로젝트
-        </S.SectionHeader>
+        <S.SectionHeader>내 프로젝트</S.SectionHeader>
 
         {projects.length === 0 ? (
           <S.EmptyContainer>

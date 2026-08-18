@@ -39,9 +39,7 @@ export default function MainDoc({
         </S.Banner>
 
         {/* 최근 문서 */}
-        <S.SectionHeader>
-          최근 문서
-        </S.SectionHeader>
+        <S.SectionHeader>최근 문서</S.SectionHeader>
 
         {documents.length === 0 ? (
           <S.EmptyContainer>

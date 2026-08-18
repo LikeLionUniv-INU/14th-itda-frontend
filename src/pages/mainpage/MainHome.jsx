@@ -41,9 +41,7 @@ export default function MainHome({
         </S.Banner>
 
         {/* 내 프로젝트 */}
-        <S.SectionHeader>
-          내 프로젝트
-        </S.SectionHeader>
+        <S.SectionHeader>내 프로젝트</S.SectionHeader>
 
         {projects.length === 0 ? (
           <S.EmptyContainer>
@@ -80,9 +78,7 @@ export default function MainHome({
         )}
 
         {/* 최근 문서 */}
-        <S.SectionHeader>
-          최근 문서
-        </S.SectionHeader>
+        <S.SectionHeader>최근 문서</S.SectionHeader>
 
         {documents.length === 0 ? (
           <S.EmptyContainer>
