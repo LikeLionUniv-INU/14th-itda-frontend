@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { Mail, Lock, Globe, Languages, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { signupApi } from "../api/auth";
 import * as S from "./Signup.styles";
 
 const Signup = ({ onNavigateToLogin }) => {
+  const navigate = useNavigate();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -83,17 +86,37 @@ const Signup = ({ onNavigateToLogin }) => {
     validatePassword(password) &&
     password === passwordConfirm;
 
-  const handleSubmit = (e) => {
+  // 회원가입 제출 함수 (API 연동)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
 
-    alert("회원가입이 완료되었습니다!");
-    if (onNavigateToLogin) {
-      onNavigateToLogin();
+    try {
+      const response = await signupApi({
+        firstName,
+        lastName,
+        email,
+        password,
+        country,
+        language,
+      });
+
+      alert(response.message || "회원가입이 완료되었습니다!");
+
+      // 성공 시 로그인 페이지로 이동
+      if (onNavigateToLogin) {
+        onNavigateToLogin();
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      // 409: 중복된 이메일 등 에러 처리
+      const errorMessage =
+        error.response?.data?.message ||
+        "회원가입 처리 중 오류가 발생했습니다.";
+      alert(errorMessage);
     }
   };
-
-  const navigate = useNavigate();
 
   return (
     <S.Container>

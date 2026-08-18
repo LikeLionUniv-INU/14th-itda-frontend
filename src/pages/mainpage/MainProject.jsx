@@ -1,25 +1,52 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderPlus } from "lucide-react";
 import Header from "../../components/Header";
+import { getDashboardProjectsApi } from "../../api/dashboard"; // dashboard API 모듈에서 import
 import * as S from "./MainProject.styles";
 
 export default function MainProject({
-  userName = "김멋사",
-  projects = [],
+  userName: initialUserName,
+  projects: initialProjects = [],
   onNavigate,
   onCreateProject,
   onJoinProject,
   onSelectProject,
 }) {
   const navigate = useNavigate();
+  const [projects, setProjects] = useState(initialProjects);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialProjects.length === 0) {
+      const fetchProjects = async () => {
+        try {
+          setLoading(true);
+          const response = await getDashboardProjectsApi();
+          const resData = response.data?.data || response.data || response;
+          if (resData?.projects) {
+            setProjects(resData.projects);
+          }
+        } catch (error) {
+          console.error("프로젝트 목록을 가져오는 데 실패했습니다.", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchProjects();
+    }
+  }, [initialProjects]);
+
+  if (loading) {
+    return <S.PageWrapper>로딩 중...</S.PageWrapper>;
+  }
 
   return (
     <S.PageWrapper>
       <Header
         activeTab="project"
         showNav={true}
-        userName={userName}
+        userName={initialUserName}
         onNavigate={onNavigate}
         onCreateProject={onCreateProject}
         onJoinProject={onJoinProject}
@@ -29,7 +56,7 @@ export default function MainProject({
         {/* 상단 배너 */}
         <S.Banner>
           <S.BannerText>
-            <h2>안녕하세요, {userName}님!</h2>
+            <h2>안녕하세요, {initialUserName}님!</h2>
             <p>
               여러 언어의 문서를 하나의 기준으로 관리하고,
               <br />
@@ -57,20 +84,33 @@ export default function MainProject({
               <S.ProjectCard
                 key={p.id}
                 onClick={() => {
-                  if (onSelectProject) onSelectProject(p.id);
-                  else navigate(`/project/${p.id}`);
+                  if (onSelectProject) {
+                    onSelectProject(p.id);
+                  } else {
+                    navigate(`/teams/${p.id}`);
+                  }
                 }}
               >
-                <h4>{p.title}</h4>
-                <p className="langs">{p.langs?.join(", ")}</p>
+                <h4>{p.name}</h4>
+                <p className="langs">
+                  {Array.isArray(p.memberLanguages)
+                    ? p.memberLanguages.join(", ")
+                    : p.defaultLanguage}
+                </p>
                 <S.AvatarGroup>
                   {p.members?.map((m, idx) => (
                     <S.MiniAvatar key={idx}>
-                      {typeof m === "string" ? m.charAt(0) : m}
+                      {typeof m === "string"
+                        ? m.charAt(0)
+                        : m.initial || m.firstName?.charAt(0)}
                     </S.MiniAvatar>
                   ))}
                 </S.AvatarGroup>
-                <p className="time">최종 업데이트 • {p.updated}</p>
+                <p className="time">
+                  {p.lastDocumentUpdatedAt
+                    ? `최종 업데이트 • ${p.lastDocumentUpdatedAt}`
+                    : `팀원 ${p.memberCount || 0}명`}
+                </p>
               </S.ProjectCard>
             ))}
           </S.ProjectGrid>
