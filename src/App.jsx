@@ -6,6 +6,8 @@ import MainProject from "./pages/MainProject";
 import MainDoc from "./pages/MainDoc";
 import Test from "./pages/Test";
 import DocEditor from "./pages/DocEditor/DocEditor";
+import DocEdit from "./pages/DocEditor/DocEdit";
+import DocCompare from "./pages/DocEditor/DocCompare";
 
 function App() {
   return (
@@ -15,7 +17,9 @@ function App() {
         <Route path="/project" element={<MainProject />} />
         <Route path="/doc" element={<MainDoc />} />
         <Route path="/test" element={<Test />} />
-        <Route path="/doc-editor" element={<DocEditor />} />
+        <Route path="/doc-create" element={<DocEditor />} />
+        <Route path="/doc-edit" element={<DocEdit />} />
+        <Route path="/doc-compare" element={<DocCompare />} />
       </Routes>
     </BrowserRouter>
   );
