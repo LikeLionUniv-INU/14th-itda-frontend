@@ -45,7 +45,7 @@ export const CanvasArea = styled.div`
   align-items: center;
   justify-content: center;
   width: 672px;
-  height: 590px;
+  height: 620px;
   border-radius: 12px;
   border: 1.5px solid #d6d6d6;
   background-color: #f9f8fe;

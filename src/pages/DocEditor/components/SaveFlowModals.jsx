@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
+import ISO6391 from "iso-639-1"; // 👈 iso-639-1 라이브러리 import
 
-// 에셋 import (경로는 프로젝트 에셋 폴더 위치에 맞게 자동 매핑)
-import BangImg from "../../../assets/image/bang.svg"; // 느낌표 아이콘 (나가기)
-import CheckImg from "../../../assets/image/check.svg"; // 체크 아이콘 (작성완료 확인)
-import GlobalImg from "../../../assets/image/Global.svg"; // 지구본 아이콘 (번역 안내)
+// 에셋 import
+import BangImg from "../../../assets/image/bang.svg";
+import CheckImg from "../../../assets/image/check.svg";
+import GlobalImg from "../../../assets/image/Global.svg";
 
 export default function SaveFlowModals({
   isOpen,
@@ -15,16 +16,38 @@ export default function SaveFlowModals({
   onNextStep,
   onFinalSave,
 }) {
-  if (!isOpen) return null;
+  // iso-639-1로 전 세계 언어의 원어(Native Name) 목록 불러오기
+  const languageOptions = useMemo(() => {
+    const nativeNames = ISO6391.getAllNativeNames(); // ['한국어', 'English', '日本語', 'Español', ...]
+
+    // 자주 쓰이는 주요 언어를 맨 위에 우선 배치
+    const priorityLangs = [
+      "한국어",
+      "English",
+      "日本語",
+      "Tiếng Việt",
+      "中文",
+      "Español",
+      "Français",
+      "Deutsch",
+    ];
+    const otherLangs = nativeNames
+      .filter((lang) => !priorityLangs.includes(lang))
+      .sort((a, b) => a.localeCompare(b));
+
+    return [...priorityLangs, ...otherLangs];
+  }, []);
 
   // 팀원 언어 선택 목록 state
   const [members, setMembers] = useState([
     { id: 1, name: "김민수", checked: true, language: "한국어" },
-    { id: 2, name: "John smith", checked: true, language: "영어" },
-    { id: 3, name: "일본어 이름", checked: true, language: "일본어" },
-    { id: 4, name: "중국어 이름", checked: false, language: "중국어 (간체)" },
-    { id: 5, name: "베트남 이름", checked: false, language: "베트남어" },
+    { id: 2, name: "John smith", checked: true, language: "English" },
+    { id: 3, name: "일본어 이름", checked: true, language: "日本語" },
+    { id: 4, name: "중국어 이름", checked: false, language: "中文" },
+    { id: 5, name: "베트남 이름", checked: false, language: "Tiếng Việt" },
   ]);
+
+  if (!isOpen) return null;
 
   const isAllChecked = members.length > 0 && members.every((m) => m.checked);
 
@@ -46,7 +69,7 @@ export default function SaveFlowModals({
   return (
     <Overlay onClick={onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
-        {/* 1. 나가기 경고 모달 (bang.svg) */}
+        {/* 1. 나가기 경고 모달 */}
         {currentStep === "exit" && (
           <ModalContent>
             <ModalIcon src={BangImg} alt="나가기 경고" />
@@ -61,7 +84,7 @@ export default function SaveFlowModals({
           </ModalContent>
         )}
 
-        {/* 2. 저장 확인 모달 (check.svg) */}
+        {/* 2. 저장 확인 모달 */}
         {currentStep === "complete_confirm" && (
           <ModalContent>
             <ModalIcon src={CheckImg} alt="작성 완료 확인" />
@@ -79,7 +102,7 @@ export default function SaveFlowModals({
           </ModalContent>
         )}
 
-        {/* 3. 번역 안내 모달 (Global.svg) */}
+        {/* 3. 번역 안내 모달 */}
         {currentStep === "translate_intro" && (
           <ModalContent>
             <ModalIcon src={GlobalImg} alt="번역 안내" />
@@ -131,11 +154,11 @@ export default function SaveFlowModals({
                     value={m.language}
                     onChange={(e) => handleChangeLanguage(m.id, e.target.value)}
                   >
-                    <option value="한국어">한국어</option>
-                    <option value="영어">영어</option>
-                    <option value="일본어">일본어</option>
-                    <option value="중국어 (간체)">중국어 (간체)</option>
-                    <option value="베트남어">베트남어</option>
+                    {languageOptions.map((lang, idx) => (
+                      <option key={`${lang}-${idx}`} value={lang}>
+                        {lang}
+                      </option>
+                    ))}
                   </SelectBox>
                 </ListItem>
               ))}
@@ -183,7 +206,6 @@ const ModalContent = styled.div`
   width: 360px;
 `;
 
-/* 에셋 이미지 스타일 */
 const ModalIcon = styled.img`
   width: 56px;
   height: 56px;
@@ -239,7 +261,6 @@ const ActionBtn = styled.button`
   cursor: pointer;
 `;
 
-/* 언어 선택 모달 전용 스타일 */
 const LangModalContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -270,6 +291,8 @@ const ListContainer = styled.div`
   padding: 8px 12px;
   margin-bottom: 24px;
   gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
 `;
 
 const ListItem = styled.div`
@@ -304,4 +327,5 @@ const SelectBox = styled.select`
   font-size: 13px;
   outline: none;
   background-color: #ffffff;
+  max-width: 160px;
 `;
