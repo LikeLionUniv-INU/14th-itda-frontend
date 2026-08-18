@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import * as S from "./Login.styles";
 
@@ -62,6 +63,8 @@ const Login = ({ onNavigateToSignup }) => {
   };
 
   const isFormValid = email.trim() !== "" && password.trim() !== "";
+
+  const navigate = useNavigate();
 
   return (
     <S.Container>
@@ -161,7 +164,7 @@ const Login = ({ onNavigateToSignup }) => {
 
               <S.FooterLink>
                 계정이 없으신가요?{" "}
-                <button type="button" onClick={onNavigateToSignup}>
+                <button type="button" onClick={() => navigate("/signup")}>
                   회원가입
                 </button>
               </S.FooterLink>

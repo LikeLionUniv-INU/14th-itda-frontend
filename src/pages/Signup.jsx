@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Mail, Lock, Globe, Languages, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import * as S from "./Signup.styles";
 
 const Signup = ({ onNavigateToLogin }) => {
@@ -92,11 +93,11 @@ const Signup = ({ onNavigateToLogin }) => {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <S.Container>
-      {/* MainWrapper 추가: 양쪽 섹션을 1200px 범위 내 중앙으로 모아주는 역할 */}
       <S.MainWrapper>
-        {/* 좌측 브랜드 안내 영역 */}
         <S.LeftSection>
           <S.ContentWrapper>
             <S.MainTitle>
@@ -152,7 +153,6 @@ const Signup = ({ onNavigateToLogin }) => {
           <S.MapGraphic />
         </S.LeftSection>
 
-        {/* 우측 회원가입 폼 카드 */}
         <S.RightSection>
           <S.Card>
             <S.Logo />
@@ -162,7 +162,6 @@ const Signup = ({ onNavigateToLogin }) => {
             </S.CardSubtitle>
 
             <S.Form onSubmit={handleSubmit}>
-              {/* 이름 / 성 (영문) */}
               <S.InputGroup>
                 <label>이름 (영어)</label>
                 <S.RowGroup>
@@ -171,7 +170,7 @@ const Signup = ({ onNavigateToLogin }) => {
                       <User size={18} />
                       <S.Input
                         type="text"
-                        placeholder="이름 (First name)"
+                        placeholder="이름을 입력해 주세요"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         onBlur={handleFirstNameBlur}
@@ -188,7 +187,7 @@ const Signup = ({ onNavigateToLogin }) => {
                       <User size={18} />
                       <S.Input
                         type="text"
-                        placeholder="성 (Last name)"
+                        placeholder="성을 입력해 주세요"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         onBlur={handleLastNameBlur}
@@ -203,7 +202,6 @@ const Signup = ({ onNavigateToLogin }) => {
                 </S.RowGroup>
               </S.InputGroup>
 
-              {/* 이메일 */}
               <S.InputGroup>
                 <label>이메일</label>
                 <S.InputWrapper>
@@ -221,7 +219,6 @@ const Signup = ({ onNavigateToLogin }) => {
                 {emailError && <S.ErrorText>{emailError}</S.ErrorText>}
               </S.InputGroup>
 
-              {/* 비밀번호 */}
               <S.InputGroup>
                 <label>비밀번호</label>
                 <S.InputWrapper>
@@ -239,7 +236,6 @@ const Signup = ({ onNavigateToLogin }) => {
                 {passwordError && <S.ErrorText>{passwordError}</S.ErrorText>}
               </S.InputGroup>
 
-              {/* 비밀번호 확인 */}
               <S.InputGroup>
                 <label>비밀번호 확인</label>
                 <S.InputWrapper>
@@ -257,7 +253,6 @@ const Signup = ({ onNavigateToLogin }) => {
                 {confirmError && <S.ErrorText>{confirmError}</S.ErrorText>}
               </S.InputGroup>
 
-              {/* 국적 및 사용 언어 */}
               <S.RowGroup>
                 <S.InputGroup>
                   <label>국적</label>
@@ -269,7 +264,7 @@ const Signup = ({ onNavigateToLogin }) => {
                       hasIcon
                     >
                       <option value="" disabled hidden>
-                        국적 선택
+                        국적을 선택해 주세요
                       </option>
                       <option value="KR">대한민국</option>
                       <option value="US">미국</option>
@@ -289,7 +284,7 @@ const Signup = ({ onNavigateToLogin }) => {
                       hasIcon
                     >
                       <option value="" disabled hidden>
-                        언어 선택
+                        사용 언어를 선택해 주세요
                       </option>
                       <option value="ko">한국어</option>
                       <option value="en">English</option>
@@ -300,10 +295,9 @@ const Signup = ({ onNavigateToLogin }) => {
                 </S.InputGroup>
               </S.RowGroup>
 
-              {/* 로그인 이동 링크 */}
               <S.FooterLink>
                 이미 계정이 있으신가요?
-                <button type="button" onClick={onNavigateToLogin}>
+                <button type="button" onClick={() => navigate("/")}>
                   로그인
                 </button>
               </S.FooterLink>
