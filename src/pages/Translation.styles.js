@@ -166,7 +166,7 @@ export const StatusBadge = styled.div`
   ${(props) =>
     props.$status === "COMPLETED" &&
     `
-    background-color: #C3C3F9;
+    background-color: #DCFAE0;
     color: #267D23;
   `}
 
@@ -174,7 +174,7 @@ export const StatusBadge = styled.div`
   ${(props) =>
     props.$status === "IN_PROGRESS" &&
     `
-    background-color: #C3C3F9;
+    background-color: #D8DCF8;
     color: #2942F1;
   `}
 
@@ -182,7 +182,7 @@ export const StatusBadge = styled.div`
   ${(props) =>
     props.$status === "WAITING" &&
     `
-    background-color: #D9D9D9;
+    background-color: #FFE4E4;
     color: #FF0000;
   `}
 
@@ -217,8 +217,8 @@ export const NavButton = styled.button`
 export const ToastMessage = styled.div`
   position: absolute;
   bottom: -20px;
-  background-color: #503df4;
-  color: #ffffff;
+  background-color: #ECFFEE;
+  color: #000000;
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 13px;
