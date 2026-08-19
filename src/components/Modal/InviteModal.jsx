@@ -64,6 +64,7 @@ const ContentWrapper = styled.div`
 const Title = styled.h2`
   font-size: 20px;
   font-weight: 700;
+  font-family: "Pretendard-Bold";
   color: #111827;
   margin: 0 0 8px 0;
   text-align: center;
