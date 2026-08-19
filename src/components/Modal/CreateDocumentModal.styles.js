@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const ContentWrapper = styled.div`
   position: relative;
-  background-color: #fdf5f5;
+  background-color: #ffffff;
   padding: 32px 28px 28px 28px;
   width: 100%;
   box-sizing: border-box;

@@ -13,10 +13,29 @@ import {
   saveDocument,
   autoSaveDocument,
   requestTranslation,
+  uploadWireframePipeline,
 } from "../../api/documentApi";
 import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
+
+// 기본 빈 페이지 템플릿 생성 헬퍼
+const createEmptyPage = (pageNumber = 1) => ({
+  pageId: Date.now() + Math.random(),
+  pageNumber,
+  screenName: "",
+  screenId: "",
+  imageUrl: "",
+  device: "desktop",
+  pins: [],
+  requirements: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+});
 
 export default function DocEditPage() {
   const navigate = useNavigate();
@@ -27,7 +46,7 @@ export default function DocEditPage() {
     updatedAt: "",
   });
   const [currentVersion, setCurrentVersion] = useState(1);
-  const [pages, setPages] = useState([]);
+  const [pages, setPages] = useState([createEmptyPage(1)]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
@@ -39,11 +58,11 @@ export default function DocEditPage() {
     description: "",
   });
 
+  // 1. 문서 상세 데이터 조회
   const fetchDoc = useCallback(async () => {
     if (!docId) return;
     try {
       const res = await getDocumentDetail(docId, currentVersion);
-      // res.data가 있으면 쓰고, 없으면 res 자체를 사용
       const data = res?.data || res;
       if (!data) return;
 
@@ -53,8 +72,8 @@ export default function DocEditPage() {
       });
       if (data.version) setCurrentVersion(data.version);
 
-      if (data.pages?.length > 0) {
-        const formattedPages = data.pages.map((p) => {
+      if (data.pages && data.pages.length > 0) {
+        const formattedPages = data.pages.map((p, idx) => {
           const reqMap = {
             공통: [],
             기획: [],
@@ -84,7 +103,8 @@ export default function DocEditPage() {
             };
           });
           return {
-            pageId: p.id,
+            pageId: p.id || Date.now() + idx,
+            pageNumber: p.pageNumber || idx + 1,
             screenName: p.screenName || "",
             screenId: p.screenId || "",
             imageUrl: p.wireframeImages?.[0]?.imageUrl || "",
@@ -94,11 +114,18 @@ export default function DocEditPage() {
           };
         });
         setPages(formattedPages);
+      } else {
+        setPages([createEmptyPage(1)]);
       }
     } catch (e) {
       console.error("문서 조회 실패:", e);
     }
   }, [docId, currentVersion]);
+
+  // 페이지 진입 시 데이터 호출
+  useEffect(() => {
+    fetchDoc();
+  }, [fetchDoc]);
 
   // 2. 서버 전송용 Payload 빌더
   const buildSavePayload = (summaryText) => ({
@@ -134,7 +161,7 @@ export default function DocEditPage() {
     })),
   });
 
-  // 3. 임시 저장 (API)
+  // 3. 임시 저장
   const handleTempSave = async () => {
     try {
       await autoSaveDocument(
@@ -148,7 +175,7 @@ export default function DocEditPage() {
     }
   };
 
-  // 4. 최종 저장 & 번역 완료 (API)
+  // 4. 최종 저장 & 번역 완료
   const handleFinalSaveWithTranslate = async (selectedMembers) => {
     try {
       await saveDocument(
@@ -173,7 +200,7 @@ export default function DocEditPage() {
     }
   };
 
-  const currentPage = pages[activePageIndex] || {};
+  const currentPage = pages[activePageIndex] || pages[0] || {};
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
@@ -181,6 +208,29 @@ export default function DocEditPage() {
         i === activePageIndex ? { ...p, ...updatedField } : p,
       ),
     );
+  };
+
+  // 이미지 업로드 처리 (파일 객체 전달 시 파이프라인 실행)
+  const handleUploadImage = async (fileOrUrl) => {
+    if (typeof fileOrUrl === "string") {
+      handleUpdatePage({ imageUrl: fileOrUrl });
+      return;
+    }
+    try {
+      const pageId = currentPage.pageId;
+      const uploadedUrl = await uploadWireframePipeline(
+        docId,
+        currentVersion,
+        pageId,
+        fileOrUrl,
+      );
+      handleUpdatePage({ imageUrl: uploadedUrl });
+    } catch (err) {
+      console.error("이미지 업로드 실패:", err);
+      // 백엔드 업로드 실패 시 로컬 미리보기 대체
+      const localUrl = URL.createObjectURL(fileOrUrl);
+      handleUpdatePage({ imageUrl: localUrl });
+    }
   };
 
   const handleAddPin = ({ x, y }) => {
@@ -280,24 +330,7 @@ export default function DocEditPage() {
                   setFocusedPinId(null);
                 }}
                 onAddPage={() => {
-                  setPages([
-                    ...pages,
-                    {
-                      pageId: Date.now(),
-                      screenName: "",
-                      screenId: "",
-                      imageUrl: "",
-                      device: "desktop",
-                      pins: [],
-                      requirements: {
-                        공통: [],
-                        기획: [],
-                        프론트: [],
-                        백엔드: [],
-                        디자인: [],
-                      },
-                    },
-                  ]);
+                  setPages([...pages, createEmptyPage(pages.length + 1)]);
                   setActivePageIndex(pages.length);
                 }}
               />
@@ -319,7 +352,7 @@ export default function DocEditPage() {
                 pins={currentPage.pins}
                 focusedPinId={focusedPinId}
                 onChangeDevice={(device) => handleUpdatePage({ device })}
-                onUploadImage={(imageUrl) => handleUpdatePage({ imageUrl })}
+                onUploadImage={handleUploadImage}
                 onAddPin={handleAddPin}
                 onUpdatePinPos={(pinId, pos) => {
                   const updatedPins = (currentPage.pins || []).map((p) =>

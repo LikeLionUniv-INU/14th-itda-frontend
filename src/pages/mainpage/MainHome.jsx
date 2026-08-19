@@ -60,8 +60,7 @@ export default function MainHome({
         userName={displayUserName}
         userInitial={userInfo?.initial}
         onNavigate={onNavigate}
-        onCreateProject={onCreateProject}
-        onJoinProject={onJoinProject}
+        onRefresh={() => window.location.reload()}
       />
 
       <S.Content>
