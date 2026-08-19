@@ -1,83 +1,77 @@
 import styled from "styled-components";
 
-export const HeaderContainer = styled.header`
+export const HeaderContainer = styled.div`
+  width: 1200px;
+  height: 61px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 1200px;
-  height: 45px;
-  margin: 0 auto;
-  padding: 0 16px;
-  background-color: #ffffff;
   box-sizing: border-box;
 `;
 
-export const LeftSection = styled.div`
+export const LeftArea = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 331px;
-  height: 45px;
-  box-sizing: border-box;
-`;
-
-export const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
+  gap: 14px;
   cursor: pointer;
-  padding: 0;
-  outline: none;
-
-  svg {
-    stroke: #000000;
-    transition: stroke 0.2s;
-  }
-
-  &:hover svg {
-    stroke: #462fea;
-  }
 `;
 
-export const Title = styled.h1`
+export const BackArrow = styled.svg`
+  width: 24px;
+  height: 24px;
+`;
+
+export const DocTitle = styled.h1`
   font-family: "Pretendard-Bold", sans-serif;
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 22px;
   color: #000000;
   margin: 0;
-  line-height: 1;
-  white-space: nowrap;
 `;
 
-export const RightSection = styled.div`
+export const RightArea = styled.div`
   display: flex;
   align-items: center;
-  height: 45px;
-`;
-
-export const UpdateTime = styled.span`
-  font-family: "Pretendard-SemiBold", sans-serif;
-  font-size: 13px;
-  color: #828282;
-  margin-right: 24px;
-  white-space: nowrap;
-`;
-
-export const ButtonBox = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 420px;
-  height: 42px;
   gap: 20px;
+`;
 
-  & > button {
-    width: 200px;
-    height: 42px;
-    font-family: "Pretendard-SemiBold", sans-serif;
-    font-size: 14px;
-    border-radius: 6px;
-  }
+export const UpdateText = styled.span`
+  font-family: "Pretendard-Regular", sans-serif;
+  font-size: 13px;
+  color: #666666;
+`;
+
+export const VersionBadgeGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const PrevVersionBadge = styled.div`
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid #d6d6d6;
+  background-color: #ffffff;
+  font-family: "Pretendard-Medium", sans-serif;
+  font-size: 13px;
+  color: #555555;
+  display: flex;
+  align-items: center;
+`;
+
+export const ArrowIcon = styled.svg`
+  width: 16px;
+  height: 16px;
+`;
+
+export const CurrVersionBadge = styled.div`
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background-color: #462fea;
+  font-family: "Pretendard-Bold", sans-serif;
+  font-size: 13px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
 `;

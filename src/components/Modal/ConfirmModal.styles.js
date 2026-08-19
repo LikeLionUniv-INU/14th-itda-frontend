@@ -1,28 +1,11 @@
 import styled from "styled-components";
 
-export const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-export const ModalContainer = styled.div`
-  width: ${({ width }) => width || "440px"};
-  background-color: #ffffff;
-  border-radius: 16px;
+export const ContentWrapper = styled.div`
   padding: 36px 28px 28px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 `;
 
 export const IconImage = styled.img`

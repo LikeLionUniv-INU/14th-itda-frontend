@@ -1,237 +1,227 @@
-import React, { useState } from "react";
-import styled from "styled-components";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
 import DocHeader from "./components/DocHeader";
 import SummarySection from "./components/SummarySection";
 import PageNavigator from "./components/PageNavigator";
 import ScreenInfoForm from "./components/ScreenInfoForm";
 import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
-import SaveFlowModals from "./components/SaveFlowModals";
+import EditSummaryModal from "../../components/Modal/EditSummaryModal";
+import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import {
+  getDocumentDetail,
+  saveDocument,
+  autoSaveDocument,
+  requestTranslation,
+} from "../../services/documentApi";
+import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
-
-const getTodayFormatted = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}.${month}.${day}.`;
-};
 
 export default function DocEditPage() {
   const navigate = useNavigate();
   const { docId } = useParams();
 
-  // 기존 Version.1 문서를 불러온 상태의 기본 데이터
+  const [documentInfo, setDocumentInfo] = useState({
+    name: "스토리보드",
+    updatedAt: "",
+  });
   const [currentVersion, setCurrentVersion] = useState(1);
-  const [pages, setPages] = useState([
-    {
-      pageId: 1,
-      screenName: "회원가입 페이지",
-      screenId: "SIGN_UP_001",
-      imageUrl: "",
-      device: "desktop",
-      pins: [
-        { id: 101, number: 1, x: 180, y: 120 },
-        { id: 102, number: 2, x: 180, y: 220 },
-      ],
-      requirements: {
-        공통: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        기획: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        프론트: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        백엔드: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        디자인: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-      },
-    },
-    {
-      pageId: 2,
-      screenName: "로그인 페이지",
-      screenId: "SIGN_IN_001",
-      imageUrl: "",
-      device: "desktop",
-      pins: [],
-      requirements: {
-        공통: [],
-        기획: [],
-        프론트: [],
-        백엔드: [],
-        디자인: [],
-      },
-    },
-  ]);
-
+  const [pages, setPages] = useState([]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
-
-  // 상단 수정사항 요약 리스트
   const [summaryList, setSummaryList] = useState([]);
-
-  // 모달 상태 관리
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    step: "exit",
+  const [isEditSummaryOpen, setIsEditSummaryOpen] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
+  const [newVersionInfo, setNewVersionInfo] = useState({
+    version: 1,
+    description: "",
   });
+
+  // 1. 문서 상세 조회 (API)
+  const fetchDoc = useCallback(async () => {
+    if (!docId) return;
+    try {
+      const res = await getDocumentDetail(docId, currentVersion);
+      const data = res.data;
+      setDocumentInfo({ name: data.name, updatedAt: data.updatedAt });
+      setCurrentVersion(data.version);
+
+      if (data.pages?.length > 0) {
+        const formattedPages = data.pages.map((p) => {
+          const reqMap = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
+          const pins = (p.pins || []).map((pin) => {
+            (pin.requirements || []).forEach((r) => {
+              const tab = r.tabType || "공통";
+              if (reqMap[tab]) {
+                reqMap[tab].push({
+                  id: pin.id,
+                  reqId: r.id,
+                  number: pin.pinNumber,
+                  item: r.itemName || "",
+                  detail: r.content || "",
+                  isRequired: r.isRequired || false,
+                });
+              }
+            });
+            return {
+              id: pin.id,
+              number: pin.pinNumber,
+              x: pin.xCoordinate,
+              y: pin.yCoordinate,
+            };
+          });
+          return {
+            pageId: p.id,
+            screenName: p.screenName || "",
+            screenId: p.screenId || "",
+            imageUrl: p.wireframeImages?.[0]?.imageUrl || "",
+            device: "desktop",
+            pins,
+            requirements: reqMap,
+          };
+        });
+        setPages(formattedPages);
+      }
+    } catch (e) {
+      alert(e.message || "문서 조회 실패");
+    }
+  }, [docId, currentVersion]);
+
+  useEffect(() => {
+    fetchDoc();
+  }, [fetchDoc]);
+
+  // 2. 서버 전송용 Payload 빌더
+  const buildSavePayload = (summaryText) => ({
+    status: "IN_PROGRESS",
+    changeSummary: summaryText || "",
+    pages: pages.map((p, idx) => ({
+      pageNumber: idx + 1,
+      screenName: p.screenName,
+      screenId: p.screenId,
+      pins: (p.pins || []).map((pin) => {
+        const pinReqs = [];
+        INITIAL_ROLES.forEach((role) => {
+          const found = (p.requirements?.[role] || []).find(
+            (r) => r.id === pin.id,
+          );
+          if (found && (found.item || found.detail)) {
+            pinReqs.push({
+              tabType: role,
+              itemName: found.item,
+              content: found.detail,
+              isRequired: found.isRequired || false,
+            });
+          }
+        });
+        return {
+          pinNumber: pin.number,
+          tabType: "공통",
+          xCoordinate: pin.x,
+          yCoordinate: pin.y,
+          requirements: pinReqs,
+        };
+      }),
+    })),
+  });
+
+  // 3. 임시 저장 (API)
+  const handleTempSave = async () => {
+    try {
+      await autoSaveDocument(
+        docId,
+        currentVersion,
+        buildSavePayload("임시저장"),
+      );
+      alert("임시저장되었습니다.");
+    } catch (e) {
+      alert(e.message || "임시저장 실패");
+    }
+  };
+
+  // 4. 최종 저장 & 번역 완료 (API)
+  const handleFinalSaveWithTranslate = async (selectedMembers) => {
+    try {
+      await saveDocument(
+        docId,
+        currentVersion,
+        buildSavePayload(newVersionInfo.description),
+      );
+      const translations = (selectedMembers || [])
+        .filter((m) => m.checked)
+        .map((m) => ({ userId: m.id, targetLanguage: m.language }));
+
+      if (translations.length > 0) {
+        await requestTranslation(docId, currentVersion, translations);
+      }
+      setModalState({ isOpen: false, step: "exit" });
+      alert(
+        `스토리보드 Version.${currentVersion} 저장 및 번역 요청이 완료되었습니다.`,
+      );
+      navigate(-1);
+    } catch (e) {
+      alert(e.message || "저장 실패");
+    }
+  };
 
   const currentPage = pages[activePageIndex] || {};
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
-      prev.map((p, idx) =>
-        idx === activePageIndex ? { ...p, ...updatedField } : p,
+      prev.map((p, i) =>
+        i === activePageIndex ? { ...p, ...updatedField } : p,
       ),
     );
   };
 
-  // 1. 핀 추가
   const handleAddPin = ({ x, y }) => {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
     const newPinNumber = currentPins.length + 1;
-
     const newPin = { id: newPinId, number: newPinNumber, x, y };
-    const newReqItem = {
-      id: newPinId,
-      number: newPinNumber,
-      item: "",
-      detail: "",
-      isModified: false,
-    };
-
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
+    const updatedReqs = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = [
-        ...(updatedRequirements[role] || []),
-        { ...newReqItem },
+      updatedReqs[role] = [
+        ...(updatedReqs[role] || []),
+        {
+          id: newPinId,
+          number: newPinNumber,
+          item: "",
+          detail: "",
+          isRequired: false,
+        },
       ];
     });
-
     handleUpdatePage({
       pins: [...currentPins, newPin],
-      requirements: updatedRequirements,
+      requirements: updatedReqs,
     });
     setFocusedPinId(newPin.id);
   };
 
-  // 2. 핀 이동
-  const handleUpdatePinPos = (pinId, { x, y }) => {
-    const updatedPins = (currentPage.pins || []).map((p) =>
-      p.id === pinId ? { ...p, x, y } : p,
-    );
-    handleUpdatePage({ pins: updatedPins });
-  };
-
-  // 3. 핀 삭제
   const handleDeletePin = (pinId) => {
     const filteredPins = (currentPage.pins || [])
       .filter((p) => p.id !== pinId)
-      .map((p, idx) => ({ ...p, number: idx + 1 }));
-
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
+      .map((p, i) => ({ ...p, number: i + 1 }));
+    const updatedReqs = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = (updatedRequirements[role] || [])
+      updatedReqs[role] = (updatedReqs[role] || [])
         .filter((r) => r.id !== pinId)
-        .map((r, idx) => ({ ...r, number: idx + 1 }));
+        .map((r, i) => ({ ...r, number: i + 1 }));
     });
-
-    handleUpdatePage({
-      pins: filteredPins,
-      requirements: updatedRequirements,
-    });
-
-    // 요약 테이블에서도 삭제된 핀 내역 제거
+    handleUpdatePage({ pins: filteredPins, requirements: updatedReqs });
     setSummaryList((prev) => prev.filter((s) => s.pinId !== pinId));
     setFocusedPinId(null);
   };
 
-  // 4. 요구사항 수정 및 상단 요약 섹션 실시간 자동 등록
   const handleUpdateRequirement = (
     role,
     reqId,
@@ -239,116 +229,54 @@ export default function DocEditPage() {
     value,
     syncAll = false,
   ) => {
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
+    const updatedReqs = { ...(currentPage.requirements || {}) };
     const targetRoles = syncAll ? INITIAL_ROLES : [role];
-
     targetRoles.forEach((r) => {
-      const list = updatedRequirements[r] || [];
-      const exists = list.some((item) => item.id === reqId);
-
-      if (exists) {
-        updatedRequirements[r] = list.map((item) => {
-          if (item.id !== reqId) return item;
-          if (field === "all") return { ...item, ...value };
-          return { ...item, [field]: value };
-        });
-      } else {
-        const targetPin = (currentPage.pins || []).find((p) => p.id === reqId);
-        const newNumber = targetPin ? targetPin.number : list.length + 1;
-        const newItem =
-          field === "all"
-            ? { id: reqId, number: newNumber, ...value }
-            : {
-                id: reqId,
-                number: newNumber,
-                item: "",
-                detail: "",
-                [field]: value,
-              };
-        updatedRequirements[r] = [...list, newItem];
-      }
-    });
-
-    handleUpdatePage({ requirements: updatedRequirements });
-
-    // 수정완료 시 요약 리스트 추가/업데이트
-    if (field === "all" && value.isModified) {
-      const targetReq = (updatedRequirements[role] || []).find(
-        (r) => r.id === reqId,
-      );
-      const pageName =
-        currentPage.screenName || `페이지 ${activePageIndex + 1}`;
-
-      setSummaryList((prev) => {
-        const filtered = prev.filter(
-          (s) => !(s.pageIndex === activePageIndex && s.pinId === reqId),
-        );
-        return [
-          ...filtered,
-          {
-            id: `sum-${activePageIndex}-${reqId}`,
-            pageIndex: activePageIndex,
-            pinId: reqId,
-            pageName: pageName,
-            number: targetReq?.number || 1,
-            itemName: value.item || "-",
-            previewContent: value.detail || "-",
-            author: "김서연",
-            date: getTodayFormatted(),
-          },
-        ];
+      updatedReqs[r] = (updatedReqs[r] || []).map((item) => {
+        if (item.id !== reqId) return item;
+        return field === "all"
+          ? { ...item, ...value }
+          : { ...item, [field]: value };
       });
-    }
-  };
-
-  // 5. 상단 요약 항목 클릭 시 포커스 이동
-  const handleSelectSummary = (item) => {
-    setSelectedSummaryId(item.id);
-    if (item.pageIndex !== undefined && item.pageIndex !== activePageIndex) {
-      setActivePageIndex(item.pageIndex);
-    }
-    if (item.pinId) {
-      setFocusedPinId(item.pinId);
-    }
+    });
+    handleUpdatePage({ requirements: updatedReqs });
   };
 
   return (
-    <PageLayout>
-      <ContentContainer>
-        {/* 상단 네비바 (수정 모드: updatedAt 및 버전 표기) */}
-        <HeaderWrapper>
+    <S.PageLayout>
+      <S.ContentContainer>
+        <S.HeaderWrapper>
           <DocHeader
-            docName="스토리보드"
-            version={currentVersion}
+            docName={documentInfo.name}
+            currVersion={currentVersion}
             mode="edit"
-            updatedAt="2026.06.30. 20:30:37"
+            updatedAt={documentInfo.updatedAt}
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
-            onTempSave={() => alert("임시저장되었습니다.")}
-            onSave={() =>
-              setModalState({ isOpen: true, step: "complete_confirm" })
-            }
+            onTempSave={handleTempSave}
+            onSave={() => setIsEditSummaryOpen(true)}
           />
-        </HeaderWrapper>
+        </S.HeaderWrapper>
 
-        {/* 상단 수정사항 요약 박스 (1200px) */}
         <SummarySection
           summaryList={summaryList}
           selectedSummaryId={selectedSummaryId}
-          onSelectSummary={handleSelectSummary}
+          onSelectSummary={(item) => {
+            setSelectedSummaryId(item.id);
+            if (item.pageIndex !== undefined)
+              setActivePageIndex(item.pageIndex);
+            if (item.pinId) setFocusedPinId(item.pinId);
+          }}
         />
 
-        {/* 본문 2단 영역 */}
-        <MainSection>
-          {/* 좌측 (712px × 854px) */}
-          <LeftColumn>
-            <PageNavWrapper>
+        <S.MainSection>
+          <S.LeftColumn>
+            <S.PageNavWrapper>
               <PageNavigator
                 pages={pages}
                 activePageIndex={activePageIndex}
-                onSelectPage={(index) => {
-                  setActivePageIndex(index);
+                onSelectPage={(i) => {
+                  setActivePageIndex(i);
                   setFocusedPinId(null);
-                  setSelectedSummaryId(null);
                 }}
                 onAddPage={() => {
                   setPages([
@@ -372,18 +300,18 @@ export default function DocEditPage() {
                   setActivePageIndex(pages.length);
                 }}
               />
-            </PageNavWrapper>
+            </S.PageNavWrapper>
 
-            <LeftBox>
+            <S.LeftBox>
               <ScreenInfoForm
                 screenName={currentPage.screenName}
                 screenId={currentPage.screenId}
-                onChangeScreenName={(name) =>
-                  handleUpdatePage({ screenName: name })
+                onChangeScreenName={(screenName) =>
+                  handleUpdatePage({ screenName })
                 }
-                onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
+                onChangeScreenId={(screenId) => handleUpdatePage({ screenId })}
               />
-              <Divider />
+              <S.Divider />
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
@@ -392,139 +320,56 @@ export default function DocEditPage() {
                 onChangeDevice={(device) => handleUpdatePage({ device })}
                 onUploadImage={(imageUrl) => handleUpdatePage({ imageUrl })}
                 onAddPin={handleAddPin}
-                onUpdatePinPos={handleUpdatePinPos}
-                onFocusPin={(id) => {
-                  setFocusedPinId(id);
-                  setSelectedSummaryId(null);
+                onUpdatePinPos={(pinId, pos) => {
+                  const updatedPins = (currentPage.pins || []).map((p) =>
+                    p.id === pinId ? { ...p, ...pos } : p,
+                  );
+                  handleUpdatePage({ pins: updatedPins });
                 }}
+                onFocusPin={(id) => setFocusedPinId(id)}
                 onDeletePin={handleDeletePin}
               />
-            </LeftBox>
-          </LeftColumn>
+            </S.LeftBox>
+          </S.LeftColumn>
 
-          {/* 우측 (468px × 854px, mode="edit") */}
-          <RightColumn>
-            <RightBox>
+          <S.RightColumn>
+            <S.RightBox>
               <RequirementSection
                 mode="edit"
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
                 onUpdateRequirement={handleUpdateRequirement}
-                onFocusPin={(id) => {
-                  setFocusedPinId(id);
-                  setSelectedSummaryId(null);
-                }}
+                onFocusPin={(id) => setFocusedPinId(id)}
               />
-            </RightBox>
-          </RightColumn>
-        </MainSection>
-      </ContentContainer>
+            </S.RightBox>
+          </S.RightColumn>
+        </S.MainSection>
+      </S.ContentContainer>
 
-      {/* 저장 및 이탈 모달 일체 (다음 버전으로 저장 안내) */}
+      <EditSummaryModal
+        isOpen={isEditSummaryOpen}
+        currentVersion={currentVersion}
+        summaryList={summaryList}
+        onClose={() => setIsEditSummaryOpen(false)}
+        onSubmit={({ version, description }) => {
+          setNewVersionInfo({ version, description });
+          setIsEditSummaryOpen(false);
+          setModalState({ isOpen: true, step: "language_select" });
+        }}
+      />
+
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
-        docName={`스토리보드_Version${currentVersion + 1}`}
+        docName={`${documentInfo.name}_Version${currentVersion}`}
         onClose={() => setModalState({ isOpen: false, step: "exit" })}
         onConfirmExit={() => {
           setModalState({ isOpen: false, step: "exit" });
           navigate(-1);
         }}
-        onNextStep={(nextStep) =>
-          setModalState({ isOpen: true, step: nextStep })
-        }
-        onFinalSave={() => {
-          setModalState({ isOpen: false, step: "exit" });
-          alert(
-            `스토리보드 Version.${currentVersion + 1} 저장이 완료되었습니다!`,
-          );
-        }}
+        onNextStep={(step) => setModalState({ isOpen: true, step })}
+        onFinalSave={handleFinalSaveWithTranslate}
       />
-    </PageLayout>
+    </S.PageLayout>
   );
 }
-
-const PageLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff !important;
-  padding: 40px 0 80px 0;
-  box-sizing: border-box;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-  width: 1200px;
-`;
-
-const HeaderWrapper = styled.div`
-  width: 1200px;
-  height: 61px;
-  display: flex;
-  align-items: center;
-`;
-
-const MainSection = styled.div`
-  display: flex;
-  width: 1200px;
-  justify-content: space-between;
-  align-items: flex-end;
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 712px;
-`;
-
-const PageNavWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-`;
-
-const LeftBox = styled.div`
-  width: 712px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const Divider = styled.hr`
-  width: 100%;
-  height: 1px;
-  border: none;
-  background-color: #eaeaea;
-  margin: 0;
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 468px;
-`;
-
-const RightBox = styled.div`
-  width: 468px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-`;

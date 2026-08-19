@@ -1,261 +1,236 @@
-// src/components/Modal/CreateProjectModal.jsx
-import { useState } from "react";
-import styled from "styled-components";
+import React, { useState } from "react";
+import BaseModal from "./BaseModal";
+import LanguageSelect from "../LanguageSelect";
+import { createDocument } from "../../services/documentApi";
+import DocIcon from "../../assets/image/DocIcon.svg";
+import * as S from "./CreateProjectModal.styles";
 
-function CreateProjectModal({ isOpen, onClose }) {
-  const [step, setStep] = useState(1); // 1: 생성 폼, 2: 초대코드 노출
-  const [projectName, setProjectName] = useState("");
-  const [language, setLanguage] = useState("한국어");
-  const [showError, setShowError] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
+function CreateProjectModal({ isOpen, onClose, teamId = 1, onSuccess }) {
+  const [step, setStep] = useState(1);
+  const [selectedType, setSelectedType] = useState("STORYBOARD");
+  const [docName, setDocName] = useState("");
+  const [language, setLanguage] = useState("ko");
+  const [version, setVersion] = useState("1");
+  const [versionError, setVersionError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (!isOpen) return null;
-
-  // 프로젝트 생성 버튼 클릭 핸들러
-  const handleCreateProject = () => {
-    if (!projectName.trim()) {
-      setShowError(true);
-      return;
-    }
-
-    // [백엔드 연동 전 임시 로직] 6자리 영문 대문자/숫자 조합 생성
-    const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setInviteCode(mockCode);
-
-    // 2단계(초대코드 노출)로 이동
+  const handleSelectType = (typeName) => {
+    const typeMapping = {
+      스토리보드: "STORYBOARD",
+      "기능 명세서": "SPEC",
+    };
+    setSelectedType(typeMapping[typeName] || "STORYBOARD");
     setStep(2);
   };
 
-  // 클립보드 복사 기능
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteCode);
-      alert("초대 코드가 클립보드에 복사되었습니다!");
-    } catch (err) {
-      console.error("복사 실패:", err);
+  const handleVersionChange = (e) => {
+    const val = e.target.value;
+    setVersion(val);
+    if (!val.trim()) {
+      setVersionError("");
+      return;
+    }
+    if (!/^\d+$/.test(val)) {
+      setVersionError("숫자로 입력해주세요.");
+    } else {
+      setVersionError("");
     }
   };
 
-  // 모달 닫기 및 상태 초기화
-  const handleCloseAll = () => {
-    setStep(1);
-    setProjectName("");
-    setLanguage("한국어");
-    setShowError(false);
-    setInviteCode("");
-    onClose();
+  // 6-3. 백엔드 문서 생성 API 연동
+  const handleCreateSubmit = async () => {
+    if (!docName.trim() || versionError || !version.trim() || isLoading) return;
+
+    try {
+      setIsLoading(true);
+      const res = await createDocument(teamId, {
+        name: docName.trim(),
+        language,
+        version: parseInt(version, 10),
+        documentType: selectedType,
+      });
+
+      setStep(3);
+      onSuccess?.(res.data);
+    } catch (error) {
+      alert(error.message || "문서 생성에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  return (
-    <Overlay onClick={handleCloseAll}>
-      <ModalContainer onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={handleCloseAll}>✕</CloseButton>
+  const handleCloseAll = () => {
+    setStep(1);
+    setSelectedType("STORYBOARD");
+    setDocName("");
+    setLanguage("ko");
+    setVersion("1");
+    setVersionError("");
+    onClose?.();
+  };
 
-        {/* --- STEP 1: 새 프로젝트 생성 --- */}
+  const isFormValid =
+    docName.trim().length > 0 &&
+    version.trim().length > 0 &&
+    !versionError &&
+    !isLoading;
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={handleCloseAll} width="440px">
+      <S.ContentWrapper>
+        <S.CloseButton onClick={handleCloseAll}>✕</S.CloseButton>
+
+        {/* 1단계: 문서 유형 선택 */}
         {step === 1 && (
           <div>
-            <Title>새 프로젝트 생성</Title>
+            <S.Title>문서 유형 선택</S.Title>
+            <S.SubTitle>생성할 문서의 유형을 선택하세요.</S.SubTitle>
 
-            <FormGroup>
-              <Label>프로젝트 이름</Label>
-              <Input
-                type="text"
-                placeholder="프로젝트 이름을 입력하세요."
-                value={projectName}
-                onChange={(e) => {
-                  setProjectName(e.target.value);
-                  if (e.target.value.trim()) setShowError(false);
-                }}
-              />
-              {showError && (
-                <ErrorText>프로젝트 이름을 입력해주세요.</ErrorText>
-              )}
-            </FormGroup>
-
-            <FormGroup>
-              <Label>기본언어</Label>
-              <Select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+            <S.OptionList>
+              <S.OptionCard
+                active
+                onClick={() => handleSelectType("스토리보드")}
               >
-                <option value="한국어">한국어</option>
-                <option value="English">English</option>
-                <option value="日本語">日本語</option>
-              </Select>
-            </FormGroup>
+                <S.CardIconBox />
+                <S.CardContent>
+                  <S.CardTitle active>스토리보드</S.CardTitle>
+                  <S.CardDesc>
+                    서비스의 화면 흐름과 인터렉션을 시각적으로 설계합니다.
+                  </S.CardDesc>
+                </S.CardContent>
+                <S.ArrowIcon>❯</S.ArrowIcon>
+              </S.OptionCard>
 
-            <ButtonGroup>
-              <CancelButton onClick={handleCloseAll}>취소</CancelButton>
-              <SubmitButton
-                onClick={handleCreateProject}
-                disabled={!projectName.trim()}
+              <S.OptionCard
+                active
+                onClick={() => handleSelectType("기능 명세서")}
               >
-                프로젝트 생성
-              </SubmitButton>
-            </ButtonGroup>
+                <S.CardIconBox />
+                <S.CardContent>
+                  <S.CardTitle active>기능 명세서</S.CardTitle>
+                  <S.CardDesc>
+                    서비스의 기능과 요구사항을 정리합니다.
+                  </S.CardDesc>
+                </S.CardContent>
+                <S.ArrowIcon>❯</S.ArrowIcon>
+              </S.OptionCard>
+
+              <S.OptionCard>
+                <S.CardIconBox />
+                <S.CardContent>
+                  <S.CardTitle>화면 설계서</S.CardTitle>
+                  <S.CardDesc>화면 구성과 흐름을 설계합니다.</S.CardDesc>
+                </S.CardContent>
+                <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
+              </S.OptionCard>
+
+              <S.OptionCard>
+                <S.CardIconBox />
+                <S.CardContent>
+                  <S.CardTitle>API 명세서</S.CardTitle>
+                  <S.CardDesc>API 명세 및 데이터 구조를 정의합니다.</S.CardDesc>
+                </S.CardContent>
+                <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
+              </S.OptionCard>
+
+              <S.OptionCard>
+                <S.CardIconBox />
+                <S.CardContent>
+                  <S.CardTitle>서비스 소개서</S.CardTitle>
+                  <S.CardDesc>
+                    서비스에 대한 데이터 구조를 정의합니다.
+                  </S.CardDesc>
+                </S.CardContent>
+                <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
+              </S.OptionCard>
+            </S.OptionList>
           </div>
         )}
 
-        {/* --- STEP 2: 초대 코드 노출 --- */}
+        {/* 2단계: 기본 정보 입력 */}
         {step === 2 && (
           <div>
-            <Title style={{ textAlign: "center" }}>팀 초대 코드</Title>
-            <SubDescription>
-              팀원들에게 아래 코드를 공유하여 프로젝트에 초대하세요.
-            </SubDescription>
+            <S.Title>기본 정보 입력</S.Title>
+            <S.SubTitle>문서의 기본 정보를 입력하세요.</S.SubTitle>
 
-            <InviteCodeBox>{inviteCode}</InviteCodeBox>
+            <S.FormGroup>
+              <S.Label>문서 이름</S.Label>
+              <S.Input
+                type="text"
+                maxLength={10}
+                placeholder="예) 회원 관리 기능 명세서"
+                value={docName}
+                onChange={(e) => setDocName(e.target.value)}
+              />
+            </S.FormGroup>
 
-            <ExpireInfo>ⓘ 이 코드는 7일 후 만료됩니다.</ExpireInfo>
+            <S.FormGroup>
+              <S.Label>언어</S.Label>
+              <LanguageSelect
+                value={language}
+                onChange={(val) => setLanguage(val)}
+                height="42px"
+              />
+            </S.FormGroup>
 
-            <ButtonGroup>
-              <CancelButton onClick={handleCloseAll}>닫기</CancelButton>
-              <SubmitButton onClick={handleCopyCode}>복사하기</SubmitButton>
-            </ButtonGroup>
+            <S.FormGroup>
+              <S.Label>버전</S.Label>
+              <S.Input
+                type="text"
+                placeholder="숫자로 입력해주세요."
+                value={version}
+                onChange={handleVersionChange}
+                className={versionError ? "error" : ""}
+              />
+              {versionError && <S.ErrorText>{versionError}</S.ErrorText>}
+            </S.FormGroup>
+
+            <S.ButtonGroup>
+              <S.CancelButton onClick={handleCloseAll}>취소</S.CancelButton>
+              <S.SubmitButton
+                onClick={handleCreateSubmit}
+                disabled={!isFormValid}
+              >
+                {isLoading ? "생성 중..." : "생성"}
+              </S.SubmitButton>
+            </S.ButtonGroup>
           </div>
         )}
-      </ModalContainer>
-    </Overlay>
+
+        {/* 3단계: 완료 화면 */}
+        {step === 3 && (
+          <S.CenterContainer>
+            <S.Title style={{ textAlign: "left", width: "100%" }}>
+              문서 생성 완료
+            </S.Title>
+
+            <S.IconWrapper>
+              <img src={DocIcon} alt="문서 생성 완료" />
+            </S.IconWrapper>
+
+            <S.SuccessMessage>문서가 생성되었습니다!</S.SuccessMessage>
+
+            <S.SummaryBox>
+              <S.SummaryRow>
+                <span className="key">문서 이름</span>
+                <span className="value">{docName}</span>
+              </S.SummaryRow>
+              <S.SummaryRow>
+                <span className="key">언어</span>
+                <span className="value">{language}</span>
+              </S.SummaryRow>
+              <S.SummaryRow>
+                <span className="key">버전</span>
+                <span className="value">ver.{version}</span>
+              </S.SummaryRow>
+            </S.SummaryBox>
+
+            <S.CompleteButton onClick={handleCloseAll}>완료</S.CompleteButton>
+          </S.CenterContainer>
+        )}
+      </S.ContentWrapper>
+    </BaseModal>
   );
 }
 
 export default CreateProjectModal;
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContainer = styled.div`
-  position: relative;
-  background-color: #fdf5f5; /* 와이어프레임 연분홍 톤 */
-  border-radius: 16px;
-  padding: 32px 24px 24px 24px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #333;
-`;
-
-const Title = styled.h2`
-  margin: 0 0 20px 0;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #111;
-`;
-
-const SubDescription = styled.p`
-  font-size: 0.85rem;
-  color: #666;
-  text-align: center;
-  margin: 0;
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #333;
-`;
-
-const Input = styled.input`
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  outline: none;
-  background-color: #fff;
-
-  &:focus {
-    border-color: #4f22e2;
-  }
-`;
-
-const Select = styled.select`
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  outline: none;
-  background-color: #fff;
-`;
-
-const ErrorText = styled.span`
-  color: #e53e3e;
-  font-size: 0.75rem;
-  margin-top: 2px;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-top: 24px;
-`;
-
-const CancelButton = styled.button`
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #4f22e2;
-  background-color: transparent;
-  color: #4f22e2;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-`;
-
-const SubmitButton = styled.button`
-  flex: 1;
-  padding: 10px;
-  border: none;
-  background-color: #4f22e2;
-  color: #fff;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-
-  &:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-`;
-
-const InviteCodeBox = styled.div`
-  background-color: #efe8f4;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  font-size: 1.8rem;
-  font-weight: bold;
-  letter-spacing: 6px;
-  color: #111;
-  margin: 16px 0;
-`;
-
-const ExpireInfo = styled.p`
-  font-size: 0.8rem;
-  color: #555;
-  text-align: center;
-  margin-bottom: 20px;
-`;
