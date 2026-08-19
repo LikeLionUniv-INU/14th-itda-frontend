@@ -52,8 +52,6 @@ function CreateDocumentModal({ isOpen, onClose }) {
   return (
     <BaseModal isOpen={isOpen} onClose={handleCloseAll} width="440px">
       <S.ContentWrapper>
-        <S.CloseButton onClick={handleCloseAll}>✕</S.CloseButton>
-
         {step === 1 && (
           <div>
             <S.Title>문서 유형 선택</S.Title>

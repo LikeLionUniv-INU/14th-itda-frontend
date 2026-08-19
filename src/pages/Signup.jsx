@@ -1,8 +1,23 @@
 import React, { useState } from "react";
-import { Mail, Lock, Globe, Languages, User } from "lucide-react";
+import { Mail, Lock, Globe, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { signupApi } from "../api/auth";
+import LanguageSelect from "../components/LanguageSelect";
 import * as S from "./Signup.styles";
+
+// 국가 옵션 리스트 (ISO-2 국가 코드)
+const COUNTRY_OPTIONS = [
+  { code: "KR", label: "대한민국" },
+  { code: "US", label: "미국" },
+  { code: "JP", label: "일본" },
+  { code: "CN", label: "중국" },
+  { code: "VN", label: "베트남" },
+  { code: "ID", label: "인도네시아" },
+  { code: "GB", label: "영국" },
+  { code: "FR", label: "프랑스" },
+  { code: "DE", label: "독일" },
+  { code: "ES", label: "스페인" },
+];
 
 const Signup = ({ onNavigateToLogin }) => {
   const navigate = useNavigate();
@@ -12,8 +27,8 @@ const Signup = ({ onNavigateToLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [country, setCountry] = useState("");
-  const [language, setLanguage] = useState("");
+  const [country, setCountry] = useState("KR");
+  const [language, setLanguage] = useState("ko");
 
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
@@ -111,12 +126,12 @@ const Signup = ({ onNavigateToLogin }) => {
       if (onNavigateToLogin) {
         onNavigateToLogin();
       } else {
-        navigate("/");
+        navigate("/login");
       }
     } catch (error) {
-      // 409 이메일 중복, 400 validation 에러 처리
       const errorMessage =
         error.response?.data?.message ||
+        error.message ||
         "회원가입 처리 중 오류가 발생했습니다.";
       alert(errorMessage);
     }
@@ -290,35 +305,22 @@ const Signup = ({ onNavigateToLogin }) => {
                       onChange={(e) => setCountry(e.target.value)}
                       $hasIcon
                     >
-                      <option value="" disabled hidden>
-                        국적을 선택해 주세요
-                      </option>
-                      <option value="KR">대한민국</option>
-                      <option value="US">미국</option>
-                      <option value="JP">일본</option>
-                      <option value="CN">중국</option>
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
                     </S.Select>
                   </S.InputWrapper>
                 </S.InputGroup>
 
                 <S.InputGroup>
                   <label>사용 언어</label>
-                  <S.InputWrapper>
-                    <Languages size={18} />
-                    <S.Select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      $hasIcon
-                    >
-                      <option value="" disabled hidden>
-                        사용 언어를 선택해 주세요
-                      </option>
-                      <option value="ko">한국어</option>
-                      <option value="en">English</option>
-                      <option value="ja">日本語</option>
-                      <option value="zh">中文</option>
-                    </S.Select>
-                  </S.InputWrapper>
+                  <LanguageSelect
+                    value={language}
+                    onChange={(val) => setLanguage(val)}
+                    height="46px"
+                  />
                 </S.InputGroup>
               </S.RowGroup>
 

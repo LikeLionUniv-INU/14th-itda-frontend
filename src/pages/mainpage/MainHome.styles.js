@@ -4,15 +4,24 @@ import projecticon from "../../assets/image/project icon.svg";
 import docicon from "../../assets/image/doc icon.svg";
 
 export const PageWrapper = styled.div`
-  background-color: #f8f9fa;
+  width: 100%;
   min-height: 100vh;
-  font-family: sans-serif;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
 `;
 
-export const Content = styled.main`
-  max-width: 1000px;
-  margin: 32px auto;
-  padding: 0 10px;
+export const Content = styled.div`
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 80px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 `;
 
 export const Banner = styled.div`

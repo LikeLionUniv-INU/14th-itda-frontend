@@ -12,12 +12,12 @@ export const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif;
 `;
 
 export const CenterContainer = styled.div`
   width: 100%;
-  max-width: 960px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -26,115 +26,99 @@ export const CenterContainer = styled.div`
 `;
 
 export const SparkleIconWrapper = styled.div`
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  background-color: #c3c3f9;
+  background-color: #edeaff;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-`;
-
-export const SparkleIcon = styled.div`
-  width: 32px;
-  height: 32px;
-  background-color: #2942f1;
-  clip-path: polygon(
-    50% 0%,
-    63% 37%,
-    100% 50%,
-    63% 63%,
-    50% 100%,
-    37% 63%,
-    0% 50%,
-    37% 37%
-  );
+  margin-bottom: 20px;
 `;
 
 export const Title = styled.h2`
-  font-size: 22px;
-  font-weight: 800;
-  color: #000000;
-  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111111;
+  margin: 0 0 8px 0;
 `;
 
 export const SubTitle = styled.p`
-  font-size: 14px;
-  color: #828282;
-  margin-bottom: 32px;
+  font-size: 13px;
+  color: #777777;
+  margin: 0 0 28px 0;
 `;
 
 export const ProgressSection = styled.div`
   width: 100%;
-  max-width: 640px;
+  max-width: 600px;
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
 `;
 
 export const ProgressBarTrack = styled.div`
   flex: 1;
-  height: 14px;
-  background-color: #d9d9d9;
-  border-radius: 10px;
+  height: 12px;
+  background-color: #e5e7eb;
+  border-radius: 20px;
   overflow: hidden;
 `;
 
 export const ProgressBarFill = styled.div`
   height: 100%;
   width: ${(props) => props.$percentage}%;
-  background-color: #2942f1;
-  border-radius: 10px;
-  transition: width 0.4s ease-in-out;
+  background-color: #5243e9;
+  border-radius: 20px;
+  transition: width 0.5s ease-in-out;
 `;
 
 export const ProgressText = styled.span`
-  font-size: 18px;
-  font-weight: 800;
-  color: #000000;
-  width: 52px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111111;
+  width: 48px;
   text-align: right;
 `;
 
 export const CardsWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
   justify-content: center;
 `;
 
 export const CardGrid = styled.div`
   display: flex;
-  gap: 20px;
+  gap: 16px;
 `;
 
 export const LangCard = styled.div`
-  width: 220px;
-  height: 270px;
+  width: 200px;
+  height: 260px;
   background-color: #ffffff;
-  border: 1px solid #d9d9d9;
+  border: 1.5px solid #eef0f3;
   border-radius: 16px;
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 `;
 
-// 국기 사진 세팅용 연보라색 동그라미
 export const FlagCircle = styled.div`
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background-color: #c3c3f9;
+  border: 1px solid #edf0f5;
+  background-color: #fafbfc;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   overflow: hidden;
 
   img {
@@ -145,91 +129,101 @@ export const FlagCircle = styled.div`
 `;
 
 export const LangName = styled.h3`
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: #000000;
-  margin-bottom: 12px;
+  color: #111111;
+  margin: 0 0 12px 0;
 `;
 
 export const StatusBadge = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 16px;
+  gap: 5px;
+  padding: 5px 14px;
   border-radius: 20px;
   font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
 
-  /* 완료 상태 */
+  /* 완료 상태: 연두색 */
   ${(props) =>
     props.$status === "COMPLETED" &&
     `
-    background-color: #DCFAE0;
-    color: #267D23;
+    background-color: #EBF8EE;
+    color: #1CA74B;
   `}
 
-  /* 번역 중 상태 */
+  /* 번역 중 상태: 연보라색 */
   ${(props) =>
     props.$status === "IN_PROGRESS" &&
     `
-    background-color: #D8DCF8;
-    color: #2942F1;
+    background-color: #EAE8FC;
+    color: #5243E9;
   `}
 
-  /* 대기 중 상태 */
+  /* 대기 중 상태: 연분홍색 */
   ${(props) =>
     props.$status === "WAITING" &&
     `
-    background-color: #FFE4E4;
-    color: #FF0000;
+    background-color: #FEEEEE;
+    color: #EB4747;
   `}
 
   .spinner {
-    display: inline-block;
     animation: ${spin} 2s linear infinite;
   }
 `;
 
 export const DescriptionText = styled.p`
   font-size: 11px;
-  color: #828282;
+  color: #777777;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: keep-all;
   margin: 0;
 `;
 
-export const NavButton = styled.button`
+/* 피그마의 깔끔한 삼각형 네비게이션 화살표 */
+export const TriangleButton = styled.button`
   background: none;
   border: none;
-  font-size: 20px;
-  color: ${(props) => (props.disabled ? "#D9D9D9" : "#828282")};
   cursor: ${(props) => (props.disabled ? "default" : "pointer")};
+  color: ${(props) => (props.disabled ? "#DCDFE4" : "#5243E9")};
   padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
 
   &:hover {
-    color: ${(props) => (props.disabled ? "#D9D9D9" : "#000000")};
+    color: ${(props) => (props.disabled ? "#DCDFE4" : "#3D2ED4")};
   }
 `;
 
+/* 하단 완료 토스트 알림바 (피그마 완벽 일치) */
 export const ToastMessage = styled.div`
   position: absolute;
-  bottom: -20px;
-  background-color: #ecffee;
-  color: #000000;
-  padding: 12px 24px;
+  bottom: -40px;
+  width: 100%;
+  max-width: 660px;
+  background-color: #f2fbf4;
+  border: 1px solid #d4f2dc;
+  color: #111111;
+  padding: 10px 18px;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
