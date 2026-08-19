@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
@@ -19,9 +19,16 @@ const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"
 
 export default function DocEditorPage() {
   const navigate = useNavigate();
-  const { teamId, docId } = useParams();
+  const location = useLocation();
+  const { teamId: paramTeamId, docId: paramDocId } = useParams();
 
-  const [docName, setDocName] = useState("스토리보드");
+  // 1. TeamProject에서 전달받은 문서 정보 (state 우선 처리)
+  const passedState = location.state || {};
+  const teamId = paramTeamId || passedState.teamId;
+  const docId = paramDocId || passedState.docId;
+  const docName = passedState.name || "스토리보드";
+  const docVersion = passedState.version || 1;
+
   const [pages, setPages] = useState([
     {
       pageId: 1,
@@ -44,7 +51,7 @@ export default function DocEditorPage() {
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
 
-  const currentPage = pages[activePageIndex] || {};
+  const currentPage = pages[activePageIndex] || pages[0] || {};
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
@@ -54,7 +61,7 @@ export default function DocEditorPage() {
     );
   };
 
-  // 이미지 업로드 처리 (파일 객체 전달 시 백엔드 파이프라인 연동)
+  // 이미지 업로드 처리
   const handleUploadImage = async (fileOrUrl) => {
     if (typeof fileOrUrl === "string") {
       handleUpdatePage({ imageUrl: fileOrUrl });
@@ -64,7 +71,7 @@ export default function DocEditorPage() {
       if (docId) {
         const uploadedUrl = await uploadWireframePipeline(
           docId,
-          1,
+          docVersion,
           currentPage.pageId,
           fileOrUrl,
         );
@@ -80,7 +87,7 @@ export default function DocEditorPage() {
     }
   };
 
-  // API 전송용 Payload 빌더
+  // Payload 빌더 (5개 직무 탭 각각 분리하여 생성)
   const buildSavePayload = (summaryText = "최초 생성") => ({
     name: docName,
     teamId: teamId || null,
@@ -101,7 +108,7 @@ export default function DocEditorPage() {
               tabType: role,
               itemName: found.item,
               content: found.detail,
-              isRequired: found.isRequired || false,
+              isRequired: false,
             });
           }
         });
@@ -116,26 +123,24 @@ export default function DocEditorPage() {
     })),
   });
 
-  // 임시저장 API 연동
+  // 임시저장
   const handleTempSave = async () => {
     try {
       if (docId) {
-        await autoSaveDocument(docId, 1, buildSavePayload("임시저장"));
-        alert("임시저장되었습니다.");
-      } else {
-        alert("임시저장되었습니다.");
+        await autoSaveDocument(docId, docVersion, buildSavePayload("임시저장"));
       }
+      alert("임시저장되었습니다.");
     } catch (e) {
       console.error("임시저장 실패:", e);
       alert(e.message || "임시저장 실패");
     }
   };
 
-  // 최종 저장 및 번역 요청 API 연동
+  // 최종 저장 및 번역 요청
   const handleFinalSave = async (selectedMembers = []) => {
     try {
       let currentDocId = docId;
-      if (!currentDocId) {
+      if (!currentDocId && teamId) {
         const res = await createDocument(teamId, buildSavePayload("최초 생성"));
         const data = res?.data || res;
         currentDocId = data?.documentId || data?.id;
@@ -146,35 +151,35 @@ export default function DocEditorPage() {
         .map((m) => ({ userId: m.id, targetLanguage: m.language }));
 
       if (currentDocId && translations.length > 0) {
-        await requestTranslation(currentDocId, 1, translations);
+        await requestTranslation(currentDocId, docVersion, translations);
       }
 
       setModalState({ isOpen: false, step: "exit" });
-      alert("스토리보드가 성공적으로 저장되었습니다!");
-      navigate(-1);
+      alert("문서가 성공적으로 저장되었습니다!");
+      navigate(teamId ? `/teamp/${teamId}` : -1);
     } catch (e) {
       console.error("저장 실패:", e);
       alert(e.message || "저장에 실패했습니다.");
     }
   };
 
+  // 핀 추가 시 각 직무 탭에 슬롯 생성 (초기값 빈 문자열)
   const handleAddPin = ({ x, y }) => {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
     const newPinNumber = currentPins.length + 1;
     const newPin = { id: newPinId, number: newPinNumber, x, y };
-    const newReqItem = {
-      id: newPinId,
-      number: newPinNumber,
-      item: "",
-      detail: "",
-    };
 
     const updatedRequirements = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
       updatedRequirements[role] = [
         ...(updatedRequirements[role] || []),
-        { ...newReqItem },
+        {
+          id: newPinId,
+          number: newPinNumber,
+          item: "",
+          detail: "",
+        },
       ];
     });
 
@@ -192,6 +197,7 @@ export default function DocEditorPage() {
     handleUpdatePage({ pins: updatedPins });
   };
 
+  // 핀 삭제
   const handleDeletePin = (pinId) => {
     const filteredPins = (currentPage.pins || [])
       .filter((p) => p.id !== pinId)
@@ -208,41 +214,15 @@ export default function DocEditorPage() {
     setFocusedPinId(null);
   };
 
-  const handleUpdateRequirement = (
-    role,
-    reqId,
-    field,
-    value,
-    syncAll = false,
-  ) => {
+  // 요구사항 직무별 독립 수정 (선택된 role만 개별 수정)
+  const handleUpdateRequirement = (role, reqId, field, value) => {
     const updatedRequirements = { ...(currentPage.requirements || {}) };
-    const targetRoles = syncAll ? INITIAL_ROLES : [role];
+    const list = updatedRequirements[role] || [];
 
-    targetRoles.forEach((r) => {
-      const list = updatedRequirements[r] || [];
-      const exists = list.some((item) => item.id === reqId);
-
-      if (exists) {
-        updatedRequirements[r] = list.map((item) => {
-          if (item.id !== reqId) return item;
-          if (field === "all") return { ...item, ...value };
-          return { ...item, [field]: value };
-        });
-      } else {
-        const targetPin = (currentPage.pins || []).find((p) => p.id === reqId);
-        const newNumber = targetPin ? targetPin.number : list.length + 1;
-        const newItem =
-          field === "all"
-            ? { id: reqId, number: newNumber, ...value }
-            : {
-                id: reqId,
-                number: newNumber,
-                item: "",
-                detail: "",
-                [field]: value,
-              };
-        updatedRequirements[r] = [...list, newItem];
-      }
+    updatedRequirements[role] = list.map((item) => {
+      if (item.id !== reqId) return item;
+      if (field === "all") return { ...item, ...value };
+      return { ...item, [field]: value };
     });
 
     handleUpdatePage({ requirements: updatedRequirements });
@@ -251,10 +231,11 @@ export default function DocEditorPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
+        {/* 상단 헤더: 제목 및 임시저장/저장 버튼 노출 */}
         <S.HeaderWrapper>
           <DocHeader
             docName={docName}
-            currVersion={1}
+            currVersion={docVersion}
             mode="create"
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
             onTempSave={handleTempSave}
@@ -265,6 +246,7 @@ export default function DocEditorPage() {
         </S.HeaderWrapper>
 
         <S.MainSection>
+          {/* 좌측 영역 */}
           <S.LeftColumn>
             <S.PageNavWrapper>
               <PageNavigator
@@ -323,6 +305,7 @@ export default function DocEditorPage() {
             </S.LeftBox>
           </S.LeftColumn>
 
+          {/* 우측 요구사항 작성 영역 */}
           <S.RightColumn>
             <S.RightBox>
               <RequirementSection
@@ -337,10 +320,11 @@ export default function DocEditorPage() {
         </S.MainSection>
       </S.ContentContainer>
 
+      {/* 저장 및 나가기 모달 플로우 */}
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
-        docName={`${docName}_Version1`}
+        docName={`${docName}_Version.${docVersion}`}
         onClose={() => setModalState({ isOpen: false, step: "exit" })}
         onConfirmExit={() => {
           setModalState({ isOpen: false, step: "exit" });
