@@ -130,7 +130,7 @@ const Signup = ({ onNavigateToLogin }) => {
       if (onNavigateToLogin) {
         onNavigateToLogin();
       } else {
-        navigate("/login");
+        navigate("/");
       }
     } catch (error) {
       const errorMessage =

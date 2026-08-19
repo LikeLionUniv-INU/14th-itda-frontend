@@ -81,6 +81,7 @@ export const ProjectCard = styled.div`
   cursor: pointer;
   transition: transform 0.1s ease;
   margin-right: 15px;
+  margin-bottom: 15px;
 
   h4 {
     font-size: 15px;

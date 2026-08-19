@@ -88,6 +88,7 @@ export const CardsWrapper = styled.div`
   gap: 20px;
   width: 100%;
   justify-content: center;
+  margin-bottom: 24px;
 `;
 
 export const CardGrid = styled.div`
@@ -184,7 +185,6 @@ export const DescriptionText = styled.p`
   margin: 0;
 `;
 
-/* 피그마의 깔끔한 삼각형 네비게이션 화살표 */
 export const TriangleButton = styled.button`
   background: none;
   border: none;
@@ -201,29 +201,28 @@ export const TriangleButton = styled.button`
   }
 `;
 
-/* 하단 완료 토스트 알림바 (피그마 완벽 일치) */
+/* 하단 완료 토스트 알림바 (너비 및 레이아웃 피그마 완벽 일치) */
 export const ToastMessage = styled.div`
-  position: absolute;
-  bottom: -40px;
   width: 100%;
-  max-width: 660px;
+  max-width: 692px; /* 언어 카드 3개 + 좌우 화살표 패딩 폭과 맞춤 */
+  box-sizing: border-box;
   background-color: #f2fbf4;
   border: 1px solid #d4f2dc;
   color: #111111;
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
