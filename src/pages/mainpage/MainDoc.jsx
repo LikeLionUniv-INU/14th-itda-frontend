@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { getDashboardDocumentsApi } from "../../api/dashboard"; // dashboard API 모듈에서 import
+import { getDashboardDocumentsApi } from "../../api/dashboard";
 import * as S from "./MainDoc.styles";
 
 export default function MainDoc({
@@ -17,7 +17,7 @@ export default function MainDoc({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 부모에서 주입받은 documents가 없으면 direct API 호출
+    // 최초 마운트 시 initialDocuments가 없으면 1회만 호출
     if (initialDocuments.length === 0) {
       const fetchDocuments = async () => {
         try {
@@ -36,7 +36,8 @@ export default function MainDoc({
 
       fetchDocuments();
     }
-  }, [initialDocuments]);
+  // eslint-disable-next-deps
+  }, []); // <-- 의존성 배열을 []로 수정하여 무한 루프 방지
 
   if (loading) {
     return <S.PageWrapper>로딩 중...</S.PageWrapper>;

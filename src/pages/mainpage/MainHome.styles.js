@@ -21,7 +21,7 @@ export const Content = styled.div`
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 `;
 
 export const Banner = styled.div`
@@ -94,9 +94,9 @@ export const ProjectCard = styled.div`
   border: 1px solid #eee;
   border-radius: 8px;
   padding: 20px;
-
   cursor: pointer;
   transition: transform 0.1s ease;
+  margin-right: 15px;
 
   h4 {
     font-size: 15px;

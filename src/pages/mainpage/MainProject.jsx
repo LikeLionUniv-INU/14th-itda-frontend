@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { getDashboardProjectsApi } from "../../api/dashboard"; // dashboard API 모듈에서 import
+import { getDashboardProjectsApi } from "../../api/dashboard";
 import * as S from "./MainProject.styles";
 
 export default function MainProject({
@@ -17,6 +17,7 @@ export default function MainProject({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // 최초 마운트 시 initialProjects가 없으면 1회만 호출
     if (initialProjects.length === 0) {
       const fetchProjects = async () => {
         try {
@@ -35,7 +36,8 @@ export default function MainProject({
 
       fetchProjects();
     }
-  }, [initialProjects]);
+  // eslint-disable-next-deps
+  }, []); // <-- 의존성 배열을 []로 수정하여 무한 루프 방지!
 
   if (loading) {
     return <S.PageWrapper>로딩 중...</S.PageWrapper>;
