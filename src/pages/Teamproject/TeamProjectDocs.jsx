@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react";
+import { useNavigate, useParams } from "react-router-dom"; // react -> react-router-dom 수정
 import Header from "../../components/Header";
-import DocIcon from "../../assets/image/doc icon.svg";
+import DocIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProjectDocs.styles";
 import { getTeamDetail } from "../../api/teamApi";
 
 const getRelativeTime = (dateString) => {
-  if (!dateString) return "";
+  if (!dateString) return "방금 전";
   const now = new Date();
   const past = new Date(dateString);
-  const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+  if (isNaN(past.getTime())) return "방금 전";
 
+  const diffInMinutes = Math.floor((now - past) / (1000 * 60));
   if (diffInMinutes < 1) return "방금 전";
   if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
 
@@ -23,7 +24,7 @@ const getRelativeTime = (dateString) => {
 
 const getInitial = (name) => {
   if (!name) return "";
-  return name.trim().charAt(0).toUpperCase();
+  return String(name).trim().charAt(0).toUpperCase();
 };
 
 export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
@@ -57,7 +58,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
 
   if (loading) return <div>로딩 중...</div>;
 
-  // 데이터 바인딩 및 예외 처리
   const projectInfo = projectData || {
     name: "AI 서비스 플랫폼",
     defaultLanguage: "한국어",
@@ -65,6 +65,11 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     members: [],
     documents: [],
   };
+
+  const isLeader =
+    projectInfo.myRole === "LEADER" ||
+    projectInfo.isLeader === true ||
+    projectInfo.role === "LEADER";
 
   const docs = projectInfo.documents || projectInfo.docs || [];
   const members = projectInfo.members || [];
@@ -78,9 +83,9 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     <S.PageWrapper>
       <Header
         type="project"
-        isLeader={false}
+        isLeader={isLeader}
         onCreateDoc={null}
-        onExit={() => (onNavigate ? onNavigate("home") : navigate("/"))}
+        onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
       />
 
       <S.Content>
@@ -147,7 +152,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                       } else if (onNavigate) {
                         onNavigate("docDetail", doc.id);
                       } else {
-                        navigate(`/documents/${doc.id}`);
+                        navigate(`/doc-edit/${doc.id}`);
                       }
                     }}
                   >
@@ -156,10 +161,11 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                     <td>
                       {doc.language ||
                         doc.selectedLang ||
-                        (doc.languages && doc.languages[0])}
+                        (doc.languages && doc.languages[0]) ||
+                        "한국어"}
                     </td>
                     <td>
-                      v
+                      ver.
                       {doc.latestVersion ||
                         doc.currentVersion ||
                         doc.version ||
