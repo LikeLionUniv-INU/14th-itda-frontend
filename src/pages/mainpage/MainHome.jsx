@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
+import CreateProjectModal from "../../components/Modal/CreateProjectModal";
+import JoinProjectModal from "../../components/Modal/JoinProjectModal";
 import { getDashboardApi } from "../../api/dashboard";
 import * as S from "./MainHome.styles";
 
@@ -19,29 +21,57 @@ export default function MainHome({
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // GET /api/dashboard 데이터 불러오기
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await getDashboardApi();
+  // 모달 제어 상태
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-        // 백엔드 응답 구조 ({ data: { user, projects, recentDocuments } }) 적용
-        const resData = response.data?.data || response.data || response;
-        if (resData) {
-          if (resData.user) setUserInfo(resData.user);
-          if (resData.projects) setProjects(resData.projects);
-          if (resData.recentDocuments) setDocuments(resData.recentDocuments);
-        }
-      } catch (error) {
-        console.error("대시보드 데이터를 가져오는데 실패했습니다.", error);
-      } finally {
-        setLoading(false);
+  // GET /api/dashboard 데이터 불러오기 함수
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getDashboardApi();
+
+      // 백엔드 응답 구조 ({ data: { user, projects, recentDocuments } }) 적용
+      const resData = response.data?.data || response.data || response;
+      if (resData) {
+        if (resData.user) setUserInfo(resData.user);
+        if (resData.projects) setProjects(resData.projects);
+        if (resData.recentDocuments) setDocuments(resData.recentDocuments);
       }
-    };
-
-    fetchDashboardData();
+    } catch (error) {
+      console.error("대시보드 데이터를 가져오는데 실패했습니다.", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // 모달 열기 핸들러 (props로 넘어온 핸들러가 있으면 그것을 우선 실행, 없으면 자체 모달 open)
+  const handleOpenCreateModal = () => {
+    if (onCreateProject) onCreateProject();
+    else setIsCreateOpen(true);
+  };
+
+  const handleOpenJoinModal = () => {
+    if (onJoinProject) onJoinProject();
+    else setIsJoinOpen(true);
+  };
+
+  // 프로젝트 생성/참여 완료 시 처리
+  const handleModalSuccess = (result) => {
+    setIsCreateOpen(false);
+    setIsJoinOpen(false);
+
+    const targetId = result?.teamId || result?.projectId || result?.id;
+    if (targetId) {
+      navigate(`/teamp-leader/${targetId}`);
+    } else {
+      fetchDashboardData();
+    }
+  };
 
   // 표시할 유저 이름 (firstName + lastName)
   const displayUserName = userInfo
@@ -60,7 +90,9 @@ export default function MainHome({
         userName={displayUserName}
         userInitial={userInfo?.initial}
         onNavigate={onNavigate}
-        onRefresh={() => window.location.reload()}
+        onCreateProject={handleOpenCreateModal}
+        onJoinProject={handleOpenJoinModal}
+        onRefresh={fetchDashboardData}
       />
 
       <S.Content>
@@ -85,7 +117,7 @@ export default function MainHome({
             <S.ProjectIcon />
             <h4>아직 생성된 프로젝트가 없어요.</h4>
             <p>프로젝트를 생성하고 팀과 함께 문서를 관리해보세요.</p>
-            <S.ActionButton onClick={onCreateProject}>
+            <S.ActionButton type="button" onClick={handleOpenCreateModal}>
               프로젝트 생성하기
             </S.ActionButton>
           </S.EmptyContainer>
@@ -95,8 +127,22 @@ export default function MainHome({
               <S.ProjectCard
                 key={p.id}
                 onClick={() => {
-                  if (onSelectProject) onSelectProject(p.id);
-                  else navigate(`/teams/${p.id}`); // 팀 상세 화면 경로 적용
+                  if (onSelectProject) {
+                    onSelectProject(p.id, p);
+                    return;
+                  }
+
+                  // 리더 여부 확인 (isLeader 불리언 또는 role 문자열 검사)
+                  const isLeader =
+                    p.isLeader === true ||
+                    p.role === "LEADER" ||
+                    (userInfo?.id && p.leaderId === userInfo.id);
+
+                  if (isLeader) {
+                    navigate(`/teamp-leader/${p.id}`);
+                  } else {
+                    navigate(`/teamp-member/${p.id}`);
+                  }
                 }}
               >
                 <h4>{p.name}</h4>
@@ -149,12 +195,11 @@ export default function MainHome({
                 <tr
                   key={doc.id}
                   onClick={() => {
-                    if (onSelectDocument)
+                    if (onSelectDocument) {
                       onSelectDocument(doc.id, doc.latestVersion);
-                    else
-                      navigate(
-                        `/documents/${doc.id}/versions/${doc.latestVersion || 1}`,
-                      ); // 문서 편집 화면 경로 적용
+                    } else {
+                      navigate(`/doc-edit/${doc.id}`);
+                    }
                   }}
                 >
                   <td className="doc-name">{doc.name}</td>
@@ -172,6 +217,20 @@ export default function MainHome({
           </S.Table>
         )}
       </S.Content>
+
+      {/* 프로젝트 생성 모달 */}
+      <CreateProjectModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* 프로젝트 참여 모달 */}
+      <JoinProjectModal
+        isOpen={isJoinOpen}
+        onClose={() => setIsJoinOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
     </S.PageWrapper>
   );
 }
