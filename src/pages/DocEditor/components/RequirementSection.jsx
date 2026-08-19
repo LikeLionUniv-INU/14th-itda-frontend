@@ -25,8 +25,9 @@ const RequirementSection = ({
     setEditingId(null);
   };
 
+  // 독립 탭별 수정: activeRole 전달
   const handleInputChange = (id, field, value) => {
-    onUpdateRequirement?.(activeRole, id, field, value, activeRole === "공통");
+    onUpdateRequirement?.(activeRole, id, field, value);
   };
 
   const handleStartEdit = (req) => {
@@ -43,17 +44,11 @@ const RequirementSection = ({
   };
 
   const handleCompleteEdit = (req) => {
-    onUpdateRequirement?.(
-      activeRole,
-      req.id,
-      "all",
-      {
-        item: editForm.item,
-        detail: editForm.detail,
-        isModified: true,
-      },
-      activeRole === "공통",
-    );
+    onUpdateRequirement?.(activeRole, req.id, "all", {
+      item: editForm.item,
+      detail: editForm.detail,
+      isModified: true,
+    });
     setEditingId(null);
   };
 

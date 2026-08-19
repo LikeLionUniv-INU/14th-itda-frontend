@@ -108,7 +108,7 @@ export const SubmitButton = styled.button`
 `;
 
 export const InviteCodeBox = styled.div`
-  background-color: #efe8f4;
+  background-color: #f0effd;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
