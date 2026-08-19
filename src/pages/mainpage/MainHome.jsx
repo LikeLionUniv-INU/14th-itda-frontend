@@ -5,6 +5,7 @@ import CreateProjectModal from "../../components/Modal/CreateProjectModal";
 import JoinProjectModal from "../../components/Modal/JoinProjectModal";
 import { getDashboardApi } from "../../api/dashboard";
 import * as S from "./MainHome.styles";
+import { getTeamDetail } from "../../api/teamApi";
 
 export default function MainHome({
   onNavigate,
@@ -21,11 +22,11 @@ export default function MainHome({
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 모달 제어 상태
+  // 자체 모달 제어 상태
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-  // GET /api/dashboard 데이터 불러오기 함수
+  // GET /api/dashboard 데이터 불러오기
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,7 +61,7 @@ export default function MainHome({
     else setIsJoinOpen(true);
   };
 
-  // 프로젝트 생성/참여 완료 시 처리
+  // 모달 생성/참여 성공 시 처리 콜백
   const handleModalSuccess = (result) => {
     setIsCreateOpen(false);
     setIsJoinOpen(false);
@@ -139,21 +140,30 @@ export default function MainHome({
             {projects.slice(0, 4).map((p) => (
               <S.ProjectCard
                 key={p.id}
-                onClick={() => {
+                onClick={async () => {
                   if (onSelectProject) {
                     onSelectProject(p.id, p);
                     return;
                   }
 
-                  // 리더 여부 확인
-                  const isLeader =
-                    p.isLeader === true ||
-                    p.role === "LEADER" ||
-                    (userInfo?.id && p.leaderId === userInfo.id);
+                  try {
+                    // 해당 팀의 상세 정보를 조회하여 나의 실제 권한(myRole) 확인
+                    const res = await getTeamDetail(p.id);
+                    const teamData = res.data?.data || res.data;
 
-                  if (isLeader) {
-                    navigate(`/teamp-leader/${p.id}`);
-                  } else {
+                    const isLeader =
+                      teamData?.myRole === "LEADER" ||
+                      teamData?.isLeader === true ||
+                      teamData?.role === "LEADER";
+
+                    if (isLeader) {
+                      navigate(`/teamp-leader/${p.id}`);
+                    } else {
+                      navigate(`/teamp-member/${p.id}`);
+                    }
+                  } catch (error) {
+                    console.error("팀 권한 확인 실패:", error);
+                    // 조회 실패 시 기본 멤버 경로로 이동
                     navigate(`/teamp-member/${p.id}`);
                   }
                 }}
@@ -211,6 +221,7 @@ export default function MainHome({
                     if (onSelectDocument) {
                       onSelectDocument(doc.id, doc.latestVersion);
                     } else {
+                      // App.jsx에 등록된 /doc-edit/:docId 경로로 이동
                       navigate(`/doc-edit/${doc.id}`);
                     }
                   }}
