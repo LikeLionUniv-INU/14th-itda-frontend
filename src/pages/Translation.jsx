@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check,
@@ -8,11 +8,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import * as S from "./Translation.styles";
+import { getTranslationStatus } from "../api/translationApi";
 
 export default function Translation({ isLeader = true, projectId = 1 }) {
   const navigate = useNavigate();
 
-  const initialLanguages = [
+  const [languages, setLanguages] = useState([
     {
       id: 1,
       name: "한국어",
@@ -34,61 +35,62 @@ export default function Translation({ isLeader = true, projectId = 1 }) {
       flagImg: null,
       status: "WAITING",
     },
-  ];
+  ]);
 
-  const [languages, setLanguages] = useState(initialLanguages);
   const [showToast, setShowToast] = useState(false);
+  const pollingRef = useRef(null);
+
+  // 번역 상태 폴링 함수
+  const fetchStatus = async () => {
+    try {
+      const response = await getTranslationStatus(projectId);
+      const data = response.data; // Axios 응답 데이터 구조에 맞게 접근
+
+      if (data?.languages) {
+        setLanguages(data.languages);
+      }
+
+      const allCompleted =
+        data?.isAllCompleted ||
+        data?.languages?.every((lang) => lang.status === "COMPLETED");
+
+      if (allCompleted) {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setShowToast(true);
+
+        setTimeout(() => {
+          if (isLeader) {
+            navigate(`/project/leader/${projectId}`);
+          } else {
+            navigate(`/project/member/${projectId}`);
+          }
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("번역 진행 상태 조회 실패:", error);
+    }
+  };
 
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setLanguages((prev) =>
-        prev.map((lang) =>
-          lang.id === 2 ? { ...lang, status: "IN_PROGRESS" } : lang,
-        ),
-      );
+    fetchStatus();
+
+    // 3초 간격으로 진행 상황 체크
+    pollingRef.current = setInterval(() => {
+      fetchStatus();
     }, 3000);
 
-    const timer2 = setTimeout(() => {
-      setLanguages((prev) =>
-        prev.map((lang) => {
-          if (lang.id === 2) return { ...lang, status: "COMPLETED" };
-          if (lang.id === 3) return { ...lang, status: "IN_PROGRESS" };
-          return lang;
-        }),
-      );
-    }, 6000);
-
-    const timer3 = setTimeout(() => {
-      setLanguages((prev) =>
-        prev.map((lang) =>
-          lang.id === 3 ? { ...lang, status: "COMPLETED" } : lang,
-        ),
-      );
-      setShowToast(true);
-    }, 9000);
-
-    const timer4 = setTimeout(() => {
-      if (isLeader) {
-        navigate(`/project/leader/${projectId}`);
-      } else {
-        navigate(`/project/member/${projectId}`);
-      }
-    }, 12000);
-
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [isLeader, projectId, navigate]);
+  }, [projectId, isLeader, navigate]);
 
   const completedCount = languages.filter(
     (l) => l.status === "COMPLETED",
   ).length;
-  const progressPercentage = Math.round(
-    (completedCount / languages.length) * 100,
-  );
+  const progressPercentage =
+    languages.length > 0
+      ? Math.round((completedCount / languages.length) * 100)
+      : 0;
 
   return (
     <S.PageWrapper>

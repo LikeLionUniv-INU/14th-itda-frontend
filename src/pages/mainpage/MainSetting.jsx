@@ -1,36 +1,72 @@
-import React, { useState } from "react";
-import {
-  Home,
-  Folder,
-  FileText,
-  Settings,
-  Camera,
-  Lock,
-  Mail,
-  Trash2,
-  ChevronRight,
-} from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Camera, Lock, Mail, Trash2, ChevronRight } from "lucide-react";
 import Header from "../../components/Header";
+import {
+  getMyInfoApi,
+  updateProfileApi,
+  getPresignedUrlApi,
+  updateProfileImageApi,
+  changePasswordApi,
+  changeEmailApi,
+  deleteAccountApi,
+} from "../../api/user"; // 해당 user API 함수들을 import
 import * as S from "./MainSetting.styles";
 
-// 더미 데이터
-const DUMMY_USER_DATA = {
-  name: "김서연",
-  email: "sedd@gmail.com",
-  country: "대한민국",
-  language: "한국어",
-  bio: "언어의 경계를 넘어 더 나은 협업을 만듭니다.",
-  profileInitial: "S",
-};
-
 export default function MainSetting({
-  userData = DUMMY_USER_DATA,
   onNavigate,
   onCreateProject,
   onJoinProject,
 }) {
-  // 백엔드 연동 전 폼 상태 관리
-  const [formData, setFormData] = useState(userData);
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    name: "",
+    email: "",
+    country: "대한민국",
+    language: "Korean",
+    bio: "",
+    initial: "",
+    profileImageUrl: "",
+  });
+
+  // 내 정보 조회
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const response = await getMyInfoApi();
+      const userData = response.data?.data || response.data || response;
+
+      if (userData) {
+        const fullName =
+          `${userData.lastName || ""}${userData.firstName || ""}`.trim() ||
+          "사용자";
+        setFormData({
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+          name: fullName,
+          email: userData.email || "",
+          country: userData.country || "대한민국",
+          language: userData.language || "Korean",
+          bio: userData.bio || "",
+          initial: userData.initial || userData.lastName?.charAt(0) || "U",
+          profileImageUrl: userData.profileImageUrl || "",
+        });
+      }
+    } catch (error) {
+      console.error("내 정보를 불러오는 데 실패했습니다.", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({
@@ -39,42 +75,145 @@ export default function MainSetting({
     }));
   };
 
+  // 10-1. 프로필 정보 수정
+  const handleUpdateProfile = async () => {
+    const nameRegex = /^[a-zA-Z]+$/;
+    if (
+      !nameRegex.test(formData.firstName) ||
+      !nameRegex.test(formData.lastName)
+    ) {
+      alert("이름은 영문자만 입력 가능합니다.");
+      return;
+    }
+    if (formData.bio && formData.bio.length > 500) {
+      alert("자기소개는 500자 이내로 입력해주세요.");
+      return;
+    }
+
+    try {
+      await updateProfileApi({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        country: formData.country,
+        language: formData.language,
+        bio: formData.bio || null,
+      });
+      alert("프로필 정보가 수정되었습니다.");
+      fetchUserData();
+    } catch (error) {
+      alert(error.response?.data?.message || "프로필 수정 실패");
+    }
+  };
+
+  // 10-2. 프로필 이미지 변경 (S3 Presigned URL 방식)
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      // Step 1. Presigned URL 발급
+      const res = await getPresignedUrlApi({
+        fileName: file.name,
+        contentType: file.type,
+      });
+      const { presignedUrl, fileUrl } = res.data?.data || res.data;
+
+      // Step 2. S3에 직접 업로드
+      await fetch(presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      // Step 3. 이미지 URL 저장 API 호출
+      await updateProfileImageApi({ profileImageUrl: fileUrl });
+      alert("프로필 이미지가 변경되었습니다.");
+      fetchUserData();
+    } catch (error) {
+      console.error(error);
+      alert("이미지 업로드 실패");
+    }
+  };
+
+  // 10-3. 비밀번호 변경 모달/프롬프트 예시
+  const handleChangePassword = async () => {
+    const currentPassword = prompt("현재 비밀번호를 입력해주세요.");
+    if (!currentPassword) return;
+
+    const newPassword = prompt(
+      "새 비밀번호를 입력해주세요 (8~16자 영문+숫자).",
+    );
+    if (!newPassword) return;
+
+    const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
+    if (!passRegex.test(newPassword)) {
+      alert("8~16자의 영문, 숫자 조합으로 입력해주세요.");
+      return;
+    }
+
+    try {
+      await changePasswordApi({ currentPassword, newPassword });
+      alert("비밀번호가 정상적으로 변경되었습니다.");
+    } catch (error) {
+      alert(error.response?.data?.message || "비밀번호 변경 실패");
+    }
+  };
+
+  // 10-4. 이메일 변경 모달/프롬프트 예시
+  const handleChangeEmail = async () => {
+    const password = prompt("비밀번호를 입력해주세요.");
+    if (!password) return;
+
+    const newEmail = prompt("새로운 이메일을 입력해주세요.");
+    if (!newEmail) return;
+
+    try {
+      await changeEmailApi({ password, newEmail });
+      alert("이메일이 변경되었습니다. 다시 로그인해 주세요.");
+      // 리프레시 토큰 삭제 및 재로그인 처리
+      localStorage.clear();
+      navigate("/login");
+    } catch (error) {
+      alert(error.response?.data?.message || "이메일 변경 실패");
+    }
+  };
+
+  // 10-5. 회원 탈퇴 모달/프롬프트 예시
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("정말로 탈퇴하시겠습니까? 데이터는 영구 삭제됩니다.")) {
+      return;
+    }
+
+    const password = prompt("확인을 위해 비밀번호를 입력해주세요.");
+    if (!password) return;
+
+    try {
+      await deleteAccountApi({ password });
+      alert("회원 탈퇴가 완료되었습니다.");
+      localStorage.clear();
+      navigate("/login");
+    } catch (error) {
+      alert(error.response?.data?.message || "회원 탈퇴 실패");
+    }
+  };
+
+  if (loading) {
+    return <S.PageWrapper>로딩 중...</S.PageWrapper>;
+  }
+
   return (
     <S.PageWrapper>
       <Header
         activeTab="setting"
         showNav={true}
         userName={formData.name}
+        userInitial={formData.initial}
         onNavigate={onNavigate}
         onCreateProject={onCreateProject}
         onJoinProject={onJoinProject}
       />
 
       <S.Container>
-        {/* 왼쪽 사이드바 카테고리 */}
-        <S.Sidebar>
-          <S.SidebarTitle>설정</S.SidebarTitle>
-          <S.NavList>
-            <S.NavItem onClick={() => onNavigate && onNavigate("home")}>
-              <Home size={18} color="#828282" />
-              <span>홈</span>
-            </S.NavItem>
-            <S.NavItem onClick={() => onNavigate && onNavigate("project")}>
-              <Folder size={18} color="#828282" />
-              <span>프로젝트</span>
-            </S.NavItem>
-            <S.NavItem onClick={() => onNavigate && onNavigate("doc")}>
-              <FileText size={18} color="#828282" />
-              <span>문서</span>
-            </S.NavItem>
-            <S.NavItem $active={true}>
-              <Settings size={18} color="#3138E7" />
-              <span>설정</span>
-            </S.NavItem>
-          </S.NavList>
-        </S.Sidebar>
-
-        {/* 오른쪽 메인 콘텐츠 카드 */}
         <S.MainContent>
           {/* 내 정보 영역 */}
           <S.SectionCard>
@@ -84,9 +223,33 @@ export default function MainSetting({
               {/* 프로필 이미지 박스 */}
               <S.AvatarCard>
                 <S.AvatarCircle>
-                  {formData.profileInitial || "S"}
+                  {formData.profileImageUrl ? (
+                    <img
+                      src={formData.profileImageUrl}
+                      alt="Profile"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    formData.initial || "U"
+                  )}
                 </S.AvatarCircle>
-                <S.ChangePhotoButton>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+
+                <S.ChangePhotoButton
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Camera size={14} color="#4253E2" />
                   <span>사진 변경</span>
                 </S.ChangePhotoButton>
@@ -96,20 +259,29 @@ export default function MainSetting({
               <S.FormGrid>
                 <S.Row>
                   <S.InputGroup>
-                    <label>이름</label>
+                    <label>이름 (영문)</label>
                     <S.Input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
+                      value={formData.firstName}
+                      onChange={(e) =>
+                        handleChange("firstName", e.target.value)
+                      }
                     />
                   </S.InputGroup>
                   <S.InputGroup>
-                    <label>이메일</label>
+                    <label>성 (영문)</label>
                     <S.Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => handleChange("lastName", e.target.value)}
                     />
+                  </S.InputGroup>
+                </S.Row>
+
+                <S.Row>
+                  <S.InputGroup>
+                    <label>이메일</label>
+                    <S.Input type="email" value={formData.email} disabled />
                   </S.InputGroup>
                 </S.Row>
 
@@ -123,6 +295,7 @@ export default function MainSetting({
                       <option value="대한민국">대한민국</option>
                       <option value="미국">미국</option>
                       <option value="일본">일본</option>
+                      <option value="중국">중국</option>
                     </S.Select>
                   </S.InputGroup>
                   <S.InputGroup>
@@ -131,9 +304,10 @@ export default function MainSetting({
                       value={formData.language}
                       onChange={(e) => handleChange("language", e.target.value)}
                     >
-                      <option value="한국어">한국어</option>
-                      <option value="영어">English</option>
-                      <option value="일본어">日本語</option>
+                      <option value="Korean">Korean</option>
+                      <option value="English">English</option>
+                      <option value="Japanese">Japanese</option>
+                      <option value="Chinese">Chinese</option>
                     </S.Select>
                   </S.InputGroup>
                 </S.Row>
@@ -146,6 +320,29 @@ export default function MainSetting({
                     onChange={(e) => handleChange("bio", e.target.value)}
                   />
                 </S.InputGroup>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "12px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={handleUpdateProfile}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#4253E2",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    프로필 저장
+                  </button>
+                </div>
               </S.FormGrid>
             </S.ProfileFlex>
           </S.SectionCard>
@@ -155,7 +352,10 @@ export default function MainSetting({
             <S.SectionTitle>계정 관리</S.SectionTitle>
 
             <S.AccountBox>
-              <S.AccountRow>
+              <S.AccountRow
+                onClick={handleChangePassword}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Lock size={18} color="#828282" />
                   <S.AccountText>
@@ -168,7 +368,10 @@ export default function MainSetting({
                 <ChevronRight size={18} color="#B6B6B6" />
               </S.AccountRow>
 
-              <S.AccountRow>
+              <S.AccountRow
+                onClick={handleChangeEmail}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Mail size={18} color="#828282" />
                   <S.AccountText>
@@ -181,7 +384,11 @@ export default function MainSetting({
                 <ChevronRight size={18} color="#B6B6B6" />
               </S.AccountRow>
 
-              <S.AccountRow $isDanger={true}>
+              <S.AccountRow
+                $isDanger={true}
+                onClick={handleDeleteAccount}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Trash2 size={18} color="#F52727" />
                   <S.AccountText $isDanger={true}>

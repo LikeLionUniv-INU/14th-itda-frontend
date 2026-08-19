@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
+import { loginApi } from "../api/auth"; // 작성한 API 모듈 import
 import * as S from "./Login.styles";
 
-const Login = ({ onNavigateToSignup }) => {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,7 +37,7 @@ const Login = ({ onNavigateToSignup }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     let valid = true;
@@ -53,18 +57,42 @@ const Login = ({ onNavigateToSignup }) => {
 
     if (!valid) return;
 
-    const isPasswordCorrect = true;
-    if (!isPasswordCorrect) {
-      setPasswordError("알맞은 비밀번호를 입력해주세요.");
-      return;
-    }
+    // 에러 상태 초기화
+    setPasswordError("");
+    setEmailError("");
+    setIsLoading(true);
 
-    alert("로그인 성공!");
+    try {
+      // 1. 로그인 API 호출
+      const response = await loginApi(email, password);
+
+      if (response.success) {
+        // 2. 토큰 저장
+        const { accessToken, refreshToken } = response.data;
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+
+        alert(response.message || "로그인 성공!");
+        navigate("/"); // 메인 페이지 이동
+      }
+    } catch (error) {
+      // 3. 백엔드 에러 응답 처리
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+
+      if (status === 401) {
+        setPasswordError(message || "알맞은 비밀번호를 입력해주세요.");
+      } else if (message) {
+        alert(message);
+      } else {
+        alert("로그인 처리 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isFormValid = email.trim() !== "" && password.trim() !== "";
-
-  const navigate = useNavigate();
 
   return (
     <S.Container>
@@ -169,8 +197,11 @@ const Login = ({ onNavigateToSignup }) => {
                 </button>
               </S.FooterLink>
 
-              <S.SubmitButton type="submit" disabled={!isFormValid}>
-                로그인
+              <S.SubmitButton
+                type="submit"
+                disabled={!isFormValid || isLoading}
+              >
+                {isLoading ? "로그인 중..." : "로그인"}
               </S.SubmitButton>
             </S.Form>
           </S.Card>

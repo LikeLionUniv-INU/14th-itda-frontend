@@ -16,47 +16,6 @@ export const Container = styled.div`
   align-items: flex-start;
 `;
 
-// 왼쪽 사이드바
-export const Sidebar = styled.aside`
-  width: 200px;
-  background-color: #ffffff;
-  border: 1px solid #dcdcdc;
-  border-radius: 12px;
-  padding: 24px 16px;
-`;
-
-export const SidebarTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 700;
-  color: #000000;
-  margin-bottom: 20px;
-  padding-left: 4px;
-`;
-
-export const NavList = styled.nav`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`;
-
-export const NavItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: ${(props) => (props.$active ? "600" : "400")};
-  color: ${(props) => (props.$active ? "#3138E7" : "#828282")};
-  background-color: ${(props) => (props.$active ? "#F0F1FD" : "transparent")};
-  cursor: pointer;
-
-  &:hover {
-    background-color: #f0f1fd;
-    color: #3138e7;
-  }
-`;
-
 // 메인 콘텐츠
 export const MainContent = styled.main`
   flex: 1;

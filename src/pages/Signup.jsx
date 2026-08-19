@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { Mail, Lock, Globe, Languages, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { signupApi } from "../api/auth";
 import * as S from "./Signup.styles";
 
 const Signup = ({ onNavigateToLogin }) => {
+  const navigate = useNavigate();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -83,17 +86,41 @@ const Signup = ({ onNavigateToLogin }) => {
     validatePassword(password) &&
     password === passwordConfirm;
 
-  const handleSubmit = (e) => {
+  // 회원가입 제출 함수 (API 연동)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
 
-    alert("회원가입이 완료되었습니다!");
-    if (onNavigateToLogin) {
-      onNavigateToLogin();
+    try {
+      const response = await signupApi({
+        firstName,
+        lastName,
+        email,
+        password,
+        country,
+        language,
+      });
+
+      alert(
+        response.data?.message ||
+          response.message ||
+          "회원가입이 완료되었습니다!",
+      );
+
+      // 성공 시 로그인 페이지로 이동
+      if (onNavigateToLogin) {
+        onNavigateToLogin();
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      // 409 이메일 중복, 400 validation 에러 처리
+      const errorMessage =
+        error.response?.data?.message ||
+        "회원가입 처리 중 오류가 발생했습니다.";
+      alert(errorMessage);
     }
   };
-
-  const navigate = useNavigate();
 
   return (
     <S.Container>
@@ -174,8 +201,8 @@ const Signup = ({ onNavigateToLogin }) => {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         onBlur={handleFirstNameBlur}
-                        hasError={!!firstNameError}
-                        hasIcon
+                        $hasError={!!firstNameError}
+                        $hasIcon
                       />
                     </S.InputWrapper>
                     {firstNameError && (
@@ -191,8 +218,8 @@ const Signup = ({ onNavigateToLogin }) => {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         onBlur={handleLastNameBlur}
-                        hasError={!!lastNameError}
-                        hasIcon
+                        $hasError={!!lastNameError}
+                        $hasIcon
                       />
                     </S.InputWrapper>
                     {lastNameError && (
@@ -212,8 +239,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={handleEmailBlur}
-                    hasError={!!emailError}
-                    hasIcon
+                    $hasError={!!emailError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {emailError && <S.ErrorText>{emailError}</S.ErrorText>}
@@ -229,8 +256,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onBlur={handlePasswordBlur}
-                    hasError={!!passwordError}
-                    hasIcon
+                    $hasError={!!passwordError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {passwordError && <S.ErrorText>{passwordError}</S.ErrorText>}
@@ -246,8 +273,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     onBlur={handleConfirmBlur}
-                    hasError={!!confirmError}
-                    hasIcon
+                    $hasError={!!confirmError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {confirmError && <S.ErrorText>{confirmError}</S.ErrorText>}
@@ -261,7 +288,7 @@ const Signup = ({ onNavigateToLogin }) => {
                     <S.Select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      hasIcon
+                      $hasIcon
                     >
                       <option value="" disabled hidden>
                         국적을 선택해 주세요
@@ -281,7 +308,7 @@ const Signup = ({ onNavigateToLogin }) => {
                     <S.Select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
-                      hasIcon
+                      $hasIcon
                     >
                       <option value="" disabled hidden>
                         사용 언어를 선택해 주세요
