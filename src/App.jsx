@@ -1,6 +1,10 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import "./index.css";
+import Test from "./pages/Test";
+import DocEditor from "./pages/DocEditor/DocEditor";
+import DocEdit from "./pages/DocEditor/DocEdit";
+import DocCompare from "./pages/DocEditor/DocCompare";
 import MainHome from "./pages/mainpage/MainHome";
 import MainProject from "./pages/mainpage/MainProject";
 import MainDoc from "./pages/mainpage/MainDoc";
@@ -21,6 +25,10 @@ function App() {
         <Route path="/home" element={<MainHome />} />
         <Route path="/project" element={<MainProject />} />
         <Route path="/doc" element={<MainDoc />} />
+        <Route path="/test" element={<Test />} />
+        <Route path="/doc-create" element={<DocEditor />} />
+        <Route path="/doc-edit" element={<DocEdit />} />
+        <Route path="/doc-compare" element={<DocCompare />} />
         <Route path="/set" element={<MainSetting />} />
         <Route path="/teamp-leader" element={<TeamProjectLeader />} />
         <Route path="/teamp-member" element={<TeamProjectMember />} />
