@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
-import { loginApi } from "../api/auth"; // 작성한 API 모듈 import
+import { loginApi } from "../api/auth";
 import * as S from "./Login.styles";
 
 const Login = () => {
@@ -65,20 +65,31 @@ const Login = () => {
     try {
       // 1. 로그인 API 호출
       const response = await loginApi(email, password);
+      const resData = response?.data || response;
 
-      if (response.success) {
-        // 2. 토큰 저장
-        const { accessToken, refreshToken } = response.data;
+      // 2. 토큰 추출 (다양한 백엔드 응답 구조 방어)
+      const accessToken =
+        resData?.accessToken ||
+        resData?.token ||
+        resData?.data?.accessToken ||
+        resData?.data?.token;
+
+      const refreshToken = resData?.refreshToken || resData?.data?.refreshToken;
+
+      if (accessToken) {
         localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-
-        alert(response.message || "로그인 성공!");
-        navigate("/"); // 메인 페이지 이동
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        }
       }
+
+      // 3. 메인 홈 화면으로 이동
+      navigate("/home");
     } catch (error) {
-      // 3. 백엔드 에러 응답 처리
+      console.error("로그인 에러:", error);
+      // 4. 백엔드 에러 응답 처리
       const status = error.response?.status;
-      const message = error.response?.data?.message;
+      const message = error.response?.data?.message || error.message;
 
       if (status === 401) {
         setPasswordError(message || "알맞은 비밀번호를 입력해주세요.");

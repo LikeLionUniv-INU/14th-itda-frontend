@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
@@ -7,13 +7,21 @@ import ScreenInfoForm from "./components/ScreenInfoForm";
 import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
 import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import {
+  createDocument,
+  autoSaveDocument,
+  requestTranslation,
+  uploadWireframePipeline,
+} from "../../api/documentApi";
 import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
 export default function DocEditorPage() {
   const navigate = useNavigate();
+  const { teamId, docId } = useParams();
 
+  const [docName, setDocName] = useState("스토리보드");
   const [pages, setPages] = useState([
     {
       pageId: 1,
@@ -44,6 +52,110 @@ export default function DocEditorPage() {
         idx === activePageIndex ? { ...p, ...updatedField } : p,
       ),
     );
+  };
+
+  // 이미지 업로드 처리 (파일 객체 전달 시 백엔드 파이프라인 연동)
+  const handleUploadImage = async (fileOrUrl) => {
+    if (typeof fileOrUrl === "string") {
+      handleUpdatePage({ imageUrl: fileOrUrl });
+      return;
+    }
+    try {
+      if (docId) {
+        const uploadedUrl = await uploadWireframePipeline(
+          docId,
+          1,
+          currentPage.pageId,
+          fileOrUrl,
+        );
+        handleUpdatePage({ imageUrl: uploadedUrl });
+      } else {
+        const localUrl = URL.createObjectURL(fileOrUrl);
+        handleUpdatePage({ imageUrl: localUrl });
+      }
+    } catch (err) {
+      console.error("이미지 업로드 실패:", err);
+      const localUrl = URL.createObjectURL(fileOrUrl);
+      handleUpdatePage({ imageUrl: localUrl });
+    }
+  };
+
+  // API 전송용 Payload 빌더
+  const buildSavePayload = (summaryText = "최초 생성") => ({
+    name: docName,
+    teamId: teamId || null,
+    status: "IN_PROGRESS",
+    changeSummary: summaryText,
+    pages: pages.map((p, idx) => ({
+      pageNumber: idx + 1,
+      screenName: p.screenName,
+      screenId: p.screenId,
+      pins: (p.pins || []).map((pin) => {
+        const pinReqs = [];
+        INITIAL_ROLES.forEach((role) => {
+          const found = (p.requirements?.[role] || []).find(
+            (r) => r.id === pin.id,
+          );
+          if (found && (found.item || found.detail)) {
+            pinReqs.push({
+              tabType: role,
+              itemName: found.item,
+              content: found.detail,
+              isRequired: found.isRequired || false,
+            });
+          }
+        });
+        return {
+          pinNumber: pin.number,
+          tabType: "공통",
+          xCoordinate: pin.x,
+          yCoordinate: pin.y,
+          requirements: pinReqs,
+        };
+      }),
+    })),
+  });
+
+  // 임시저장 API 연동
+  const handleTempSave = async () => {
+    try {
+      if (docId) {
+        await autoSaveDocument(docId, 1, buildSavePayload("임시저장"));
+        alert("임시저장되었습니다.");
+      } else {
+        alert("임시저장되었습니다.");
+      }
+    } catch (e) {
+      console.error("임시저장 실패:", e);
+      alert(e.message || "임시저장 실패");
+    }
+  };
+
+  // 최종 저장 및 번역 요청 API 연동
+  const handleFinalSave = async (selectedMembers = []) => {
+    try {
+      let currentDocId = docId;
+      if (!currentDocId) {
+        const res = await createDocument(teamId, buildSavePayload("최초 생성"));
+        const data = res?.data || res;
+        currentDocId = data?.documentId || data?.id;
+      }
+
+      const translations = (selectedMembers || [])
+        .filter((m) => m.checked)
+        .map((m) => ({ userId: m.id, targetLanguage: m.language }));
+
+      if (currentDocId && translations.length > 0) {
+        await requestTranslation(currentDocId, 1, translations);
+      }
+
+      setModalState({ isOpen: false, step: "exit" });
+      alert("스토리보드가 성공적으로 저장되었습니다!");
+      navigate(-1);
+    } catch (e) {
+      console.error("저장 실패:", e);
+      alert(e.message || "저장에 실패했습니다.");
+    }
   };
 
   const handleAddPin = ({ x, y }) => {
@@ -141,11 +253,11 @@ export default function DocEditorPage() {
       <S.ContentContainer>
         <S.HeaderWrapper>
           <DocHeader
-            docName="스토리보드"
+            docName={docName}
             currVersion={1}
             mode="create"
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
-            onTempSave={() => alert("임시저장되었습니다.")}
+            onTempSave={handleTempSave}
             onSave={() =>
               setModalState({ isOpen: true, step: "complete_confirm" })
             }
@@ -202,7 +314,7 @@ export default function DocEditorPage() {
                 pins={currentPage.pins}
                 focusedPinId={focusedPinId}
                 onChangeDevice={(device) => handleUpdatePage({ device })}
-                onUploadImage={(imageUrl) => handleUpdatePage({ imageUrl })}
+                onUploadImage={handleUploadImage}
                 onAddPin={handleAddPin}
                 onUpdatePinPos={handleUpdatePinPos}
                 onFocusPin={(id) => setFocusedPinId(id)}
@@ -228,7 +340,7 @@ export default function DocEditorPage() {
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
-        docName="스토리보드_Version1"
+        docName={`${docName}_Version1`}
         onClose={() => setModalState({ isOpen: false, step: "exit" })}
         onConfirmExit={() => {
           setModalState({ isOpen: false, step: "exit" });
@@ -237,10 +349,7 @@ export default function DocEditorPage() {
         onNextStep={(nextStep) =>
           setModalState({ isOpen: true, step: nextStep })
         }
-        onFinalSave={() => {
-          setModalState({ isOpen: false, step: "exit" });
-          alert("스토리보드가 성공적으로 저장되었습니다!");
-        }}
+        onFinalSave={handleFinalSave}
       />
     </S.PageLayout>
   );

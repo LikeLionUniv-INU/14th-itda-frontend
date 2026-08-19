@@ -15,8 +15,6 @@ import {
 } from "../../api/documentApi";
 import * as S from "./DocCompare.styles";
 
-const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
-
 // 백엔드 changes의 JSON 문자열 파싱 헬퍼
 const safeJsonParse = (str) => {
   if (!str) return null;
@@ -27,21 +25,46 @@ const safeJsonParse = (str) => {
   }
 };
 
+// 기본 빈 페이지 템플릿
+const createEmptyComparePage = (pageNumber = 1) => ({
+  pageId: Date.now() + Math.random(),
+  pageNumber,
+  prevScreenName: "",
+  prevScreenId: "",
+  currScreenName: "",
+  currScreenId: "",
+  isScreenInfoModified: false,
+  device: "desktop",
+  isImageModified: false,
+  prevImageUrl: "",
+  currImageUrl: "",
+  prevPins: [],
+  currPins: [],
+  requirements: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+});
+
 export default function DocComparePage() {
-  const { docId } = useParams();
+  const { docId: paramDocId, documentId } = useParams();
+  const docId = paramDocId || documentId;
   const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState({
     docName: "스토리보드",
     prevVersion: 1,
-    currVersion: 2,
+    currVersion: 1,
     updatedAt: "",
   });
 
   const [summaryList, setSummaryList] = useState([]);
   const [checkedIds, setCheckedIds] = useState([]);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
-  const [pages, setPages] = useState([]);
+  const [pages, setPages] = useState([createEmptyComparePage(1)]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,11 +76,11 @@ export default function DocComparePage() {
     try {
       setIsLoading(true);
 
-      // 1. 현재 문서 상세 조회
-      const docRes = await getDocumentDetail(docId, docInfo.currVersion);
+      // 1. 현재 문서 상세 조회 (기본 최신 버전)
+      const docRes = await getDocumentDetail(docId);
       const docData = docRes?.data || docRes;
 
-      const currentVer = docData?.version || docInfo.currVersion;
+      const currentVer = docData?.version || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
       setDocInfo({
@@ -68,49 +91,54 @@ export default function DocComparePage() {
       });
 
       // 2. 수정사항 목록 조회
-      const changesRes = await getDocumentChanges(docId, currentVer);
-      const changesData = changesRes?.data || changesRes;
+      let formattedSummary = [];
+      try {
+        const changesRes = await getDocumentChanges(docId, currentVer);
+        const changesData = changesRes?.data || changesRes;
 
-      const formattedSummary = (changesData?.changes || []).map((ch) => {
-        const afterParsed = safeJsonParse(ch.afterValue);
-        const beforeParsed = safeJsonParse(ch.beforeValue);
+        formattedSummary = (changesData?.changes || []).map((ch) => {
+          const afterParsed = safeJsonParse(ch.afterValue);
+          const beforeParsed = safeJsonParse(ch.beforeValue);
 
-        return {
-          id: ch.id,
-          pageIndex: ch.pageNumber ? ch.pageNumber - 1 : 0,
-          pinId: ch.pinNumber,
-          pageName: ch.screenName || `페이지 ${ch.pageNumber}`,
-          number: ch.pinNumber || 1,
-          changeType: ch.changeType,
-          itemName:
-            ch.itemDescription ||
-            afterParsed?.itemName ||
-            beforeParsed?.itemName ||
-            "-",
-          previewContent:
-            afterParsed?.content ||
-            beforeParsed?.content ||
-            afterParsed?.imageUrl ||
-            "-",
-          author:
-            `${ch.modifiedByLastName || ""} ${ch.modifiedByFirstName || ""}`.trim() ||
-            "수정자",
-          date: ch.createdAt
-            ? ch.createdAt.substring(0, 10).replace(/-/g, ".") + "."
-            : "",
-          confirmedByMe: ch.confirmedByMe,
-          before: beforeParsed,
-          after: afterParsed,
-        };
-      });
+          return {
+            id: ch.id,
+            pageIndex: ch.pageNumber ? ch.pageNumber - 1 : 0,
+            pinId: ch.pinNumber,
+            pageName: ch.screenName || `페이지 ${ch.pageNumber || 1}`,
+            number: ch.pinNumber || 1,
+            changeType: ch.changeType,
+            itemName:
+              ch.itemDescription ||
+              afterParsed?.itemName ||
+              beforeParsed?.itemName ||
+              "-",
+            previewContent:
+              afterParsed?.content ||
+              beforeParsed?.content ||
+              afterParsed?.imageUrl ||
+              "-",
+            author:
+              `${ch.modifiedByLastName || ""} ${ch.modifiedByFirstName || ""}`.trim() ||
+              "수정자",
+            date: ch.createdAt
+              ? ch.createdAt.substring(0, 10).replace(/-/g, ".") + "."
+              : "",
+            confirmedByMe: ch.confirmedByMe || false,
+            before: beforeParsed,
+            after: afterParsed,
+          };
+        });
 
-      setSummaryList(formattedSummary);
+        setSummaryList(formattedSummary);
 
-      // 내가 이미 확인(confirm)한 수정사항 ID 목록 세팅
-      const initialChecked = formattedSummary
-        .filter((item) => item.confirmedByMe)
-        .map((item) => item.id);
-      setCheckedIds(initialChecked);
+        // 내가 이미 확인(confirm)한 수정사항 ID 목록 세팅
+        const initialChecked = formattedSummary
+          .filter((item) => item.confirmedByMe)
+          .map((item) => item.id);
+        setCheckedIds(initialChecked);
+      } catch (err) {
+        console.warn("변경사항 내역 조회 실패 또는 1버전 문서:", err);
+      }
 
       // 3. 페이지 상세 정보 및 요구사항 전/후 diff 3색 분기 구조 생성
       if (docData?.pages && docData.pages.length > 0) {
@@ -130,8 +158,8 @@ export default function DocComparePage() {
           const prevScreenId = isScreenInfoModified
             ? screenChange.before?.screenId || p.screenId
             : p.screenId;
-          const currScreenName = p.screenName;
-          const currScreenId = p.screenId;
+          const currScreenName = p.screenName || "";
+          const currScreenId = p.screenId || "";
 
           // 와이어프레임 이미지 변경 여부
           const imgChange = pageChanges.find((ch) =>
@@ -190,7 +218,7 @@ export default function DocComparePage() {
               const reqChange = pageChanges.find(
                 (ch) =>
                   ch.pinId === pin.pinNumber &&
-                  ch.after?.itemName === req.itemName,
+                  (ch.after?.itemName === req.itemName || !ch.after?.itemName),
               );
 
               let type = "normal";
@@ -221,7 +249,8 @@ export default function DocComparePage() {
           });
 
           return {
-            pageId: p.id,
+            pageId: p.id || Date.now() + pIdx,
+            pageNumber: p.pageNumber || pIdx + 1,
             prevScreenName,
             prevScreenId,
             currScreenName,
@@ -238,19 +267,21 @@ export default function DocComparePage() {
         });
 
         setPages(mappedPages);
+      } else {
+        setPages([createEmptyComparePage(1)]);
       }
     } catch (error) {
       console.error("비교 데이터 로드 실패:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [docId, docInfo.currVersion]);
+  }, [docId]);
 
   useEffect(() => {
     fetchCompareData();
   }, [fetchCompareData]);
 
-  const currentPage = pages[activePageIndex] || {};
+  const currentPage = pages[activePageIndex] || pages[0] || {};
 
   // 상단 수정사항 항목 클릭 시
   const handleSelectSummary = async (item) => {
@@ -281,7 +312,9 @@ export default function DocComparePage() {
           docName={docInfo.docName}
           currVersion={docInfo.currVersion}
           prevVersion={docInfo.prevVersion}
+          mode="compare"
           updatedAt={docInfo.updatedAt}
+          onBack={() => navigate(-1)}
         />
 
         {/* 상단 수정사항 요약 */}

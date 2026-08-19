@@ -62,5 +62,4 @@ export const LANGUAGES = [
   { code: "az", name: "아제르바이잔어", label: "아제르바이잔어 (Azerbaijani)" },
   { code: "kk", name: "카자흐어", label: "카자흐어 (Kazakh)" },
   { code: "uz", name: "우즈베크어", label: "우즈베크어 (Uzbek)" },
-  // 필요 시 나머지 희귀 ISO 언어도 여기에 계속 추가 가능
 ];
