@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import BaseModal from "./BaseModal";
 import LanguageSelect from "../LanguageSelect";
-import { createDocument } from "../../services/documentApi";
+import { createDocument } from "../../api/documentApi";
 import DocIcon from "../../assets/image/DocIcon.svg";
 import * as S from "./CreateProjectModal.styles";
 
@@ -51,7 +51,7 @@ function CreateProjectModal({ isOpen, onClose, teamId = 1, onSuccess }) {
       });
 
       setStep(3);
-      onSuccess?.(res.data);
+      onSuccess?.(res?.data || res);
     } catch (error) {
       alert(error.message || "문서 생성에 실패했습니다.");
     } finally {
