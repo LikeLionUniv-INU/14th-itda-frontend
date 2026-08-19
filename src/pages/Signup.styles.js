@@ -130,12 +130,11 @@ export const MapGraphic = styled.div`
   flex-shrink: 0;
 `;
 
-/* RightSection: 왼쪽(중앙)으로 밀착되도록 조정 */
 export const RightSection = styled.div`
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* 카드를 왼쪽(중앙)으로 정렬 */
+  justify-content: flex-start;
 `;
 
 export const Card = styled.div`
@@ -220,15 +219,15 @@ export const InputWrapper = styled.div`
     width: 18px;
     height: 18px;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
   }
 `;
 
 export const Input = styled.input`
   width: 100%;
   height: 44px;
-  padding: ${(props) => (props.hasIcon ? "0 14px 0 42px" : "0 14px")};
-  border: 1px solid ${(props) => (props.hasError ? "#F52727" : "#E2E8F0")};
+  padding: ${(props) => (props.$hasIcon ? "0 14px 0 48px" : "0 14px")};
+  border: 1px solid ${(props) => (props.$hasError ? "#F52727" : "#E2E8F0")};
   border-radius: 8px;
   font-size: 13px;
   color: #000000;
@@ -237,9 +236,9 @@ export const Input = styled.input`
   transition: border-color 0.2s;
 
   &:focus {
-    border-color: ${(props) => (props.hasError ? "#F52727" : "#2942F1")};
+    border-color: ${(props) => (props.$hasError ? "#F52727" : "#2942F1")};
     box-shadow: 0 0 0 3px
-      ${(props) => (props.hasError ? "rgba(245, 39, 39, 0.1)" : "rgba(41, 66, 241, 0.08)")};
+      ${(props) => (props.$hasError ? "rgba(245, 39, 39, 0.1)" : "rgba(41, 66, 241, 0.08)")};
   }
 
   &::placeholder {
@@ -250,8 +249,8 @@ export const Input = styled.input`
 export const Select = styled.select`
   width: 100%;
   height: 44px;
-  padding: ${(props) => (props.hasIcon ? "0 30px 0 42px" : "0 30px 0 14px")};
-  border: 1px solid ${(props) => (props.hasError ? "#F52727" : "#E2E8F0")};
+  padding: ${(props) => (props.$hasIcon ? "0 30px 0 48px" : "0 30px 0 14px")};
+  border: 1px solid ${(props) => (props.$hasError ? "#F52727" : "#E2E8F0")};
   border-radius: 8px;
   font-size: 13px;
   color: ${(props) => (props.value ? "#000000" : "#B6B6B6")};
@@ -267,9 +266,9 @@ export const Select = styled.select`
   background-size: 16px;
 
   &:focus {
-    border-color: ${(props) => (props.hasError ? "#F52727" : "#2942F1")};
+    border-color: ${(props) => (props.$hasError ? "#F52727" : "#2942F1")};
     box-shadow: 0 0 0 3px
-      ${(props) => (props.hasError ? "rgba(245, 39, 39, 0.1)" : "rgba(41, 66, 241, 0.08)")};
+      ${(props) => (props.$hasError ? "rgba(245, 39, 39, 0.1)" : "rgba(41, 66, 241, 0.08)")};
   }
 `;
 

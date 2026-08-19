@@ -25,7 +25,7 @@ export default function MainHome({
       try {
         setLoading(true);
         const response = await getDashboardApi();
-        
+
         // 백엔드 응답 구조 ({ data: { user, projects, recentDocuments } }) 적용
         const resData = response.data?.data || response.data || response;
         if (resData) {
@@ -109,12 +109,16 @@ export default function MainHome({
                 <S.AvatarGroup>
                   {p.members?.map((m, idx) => (
                     <S.MiniAvatar key={idx}>
-                      {typeof m === "string" ? m.charAt(0) : m.initial || m.firstName?.charAt(0)}
+                      {typeof m === "string"
+                        ? m.charAt(0)
+                        : m.initial || m.firstName?.charAt(0)}
                     </S.MiniAvatar>
                   ))}
                 </S.AvatarGroup>
                 <p className="time">
-                  {p.lastDocumentUpdatedAt ? `최종 업데이트 • ${p.lastDocumentUpdatedAt}` : `팀원 ${p.memberCount || 0}명`}
+                  {p.lastDocumentUpdatedAt
+                    ? `최종 업데이트 • ${p.lastDocumentUpdatedAt}`
+                    : `팀원 ${p.memberCount || 0}명`}
                 </p>
               </S.ProjectCard>
             ))}
@@ -146,15 +150,23 @@ export default function MainHome({
                 <tr
                   key={doc.id}
                   onClick={() => {
-                    if (onSelectDocument) onSelectDocument(doc.id, doc.latestVersion);
-                    else navigate(`/documents/${doc.id}/versions/${doc.latestVersion || 1}`); // 문서 편집 화면 경로 적용
+                    if (onSelectDocument)
+                      onSelectDocument(doc.id, doc.latestVersion);
+                    else
+                      navigate(
+                        `/documents/${doc.id}/versions/${doc.latestVersion || 1}`,
+                      ); // 문서 편집 화면 경로 적용
                   }}
                 >
                   <td className="doc-name">{doc.name}</td>
                   <td>{doc.teamProjectName || "-"}</td>
                   <td>{doc.language}</td>
                   <td>v{doc.latestVersion}</td>
-                  <td>{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : "-"}</td>
+                  <td>
+                    {doc.updatedAt
+                      ? new Date(doc.updatedAt).toLocaleDateString()
+                      : "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

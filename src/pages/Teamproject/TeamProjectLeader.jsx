@@ -1,8 +1,14 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 1. useNavigate import 추가
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import DocIcon from "../../assets/image/doc icon.svg";
 import * as S from "./TeamProject.styles";
+import {
+  getTeamDetail,
+  createTeamDocument,
+  getTeamNotifications,
+  markNotificationAsRead,
+} from "../../api/teamApi";
 
 const getRelativeTime = (dateString) => {
   if (!dateString) return "";
@@ -25,37 +31,121 @@ const getInitial = (name) => {
   return name.trim().charAt(0).toUpperCase();
 };
 
-const EMPTY_PROJECT = {
-  id: "p1",
-  title: "AI 서비스 플랫폼",
-  defaultLanguage: "한국어",
-  createdAt: "2026.06.30",
-  members: [{ id: "m1", name: "김서연", role: "팀장", isLeader: true }],
-  docs: [],
-  activities: [],
-};
+export default function TeamProjectLeader({ onNavigate }) {
+  const navigate = useNavigate();
+  const { teamId } = useParams();
 
-export default function TeamProjectLeader({
-  isLeader = true,
-  project = EMPTY_PROJECT,
-  inviteCode = "DOC-BRIDGE-2026-X9Y8",
-  onNavigate,
-}) {
-  const navigate = useNavigate(); // 2. navigate 함수 선언
+  // API 데이터 및 로딩 상태
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // 모달 상태
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  const [selectedVersions, setSelectedVersions] = useState(() => {
-    const initialMap = {};
-    if (project.docs) {
-      project.docs.forEach((doc) => {
-        initialMap[doc.id] =
-          doc.currentVersion || doc.versions[doc.versions.length - 1];
-      });
+  // 문서 생성 폼 상태
+  const [docTitle, setDocTitle] = useState("");
+  const [docType, setDocType] = useState("기능 명세서");
+
+  // 선택된 버전 상태
+  const [selectedVersions, setSelectedVersions] = useState({});
+
+  // 알림 관련 상태
+  const [notification, setNotification] = useState(null);
+
+  // 1. 팀 상세 데이터 받아오기
+  const fetchTeamData = async () => {
+    if (!teamId) {
+      setLoading(false);
+      return;
     }
-    return initialMap;
-  });
+    try {
+      const res = await getTeamDetail(teamId);
+      const resData = res.data;
+      if (resData.success || resData.data) {
+        const data = resData.data || resData;
+        setProject(data);
+
+        // 문서 버전 초기화
+        const initialMap = {};
+        if (data.documents) {
+          data.documents.forEach((doc) => {
+            initialMap[doc.id] =
+              doc.latestVersion ||
+              (doc.versions && doc.versions[doc.versions.length - 1]) ||
+              1;
+          });
+        }
+        setSelectedVersions(initialMap);
+      }
+    } catch (error) {
+      console.error("팀 정보 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. 알림 불러오기 함수 (명세서 데이터 필드 매칭)
+  const fetchNotification = async () => {
+    if (!teamId) return;
+    try {
+      const res = await getTeamNotifications(teamId);
+      const notifications = res.data?.data || res.data || [];
+
+      if (Array.isArray(notifications) && notifications.length > 0) {
+        // 안 읽은 알림 중 가장 최신 1개 선택 (백엔드에서 읽은 알림을 제외하고 보낸다면 첫 항목 사용)
+        setNotification(notifications[0]);
+      } else {
+        setNotification(null);
+      }
+    } catch (error) {
+      console.error("알림 조회 실패:", error);
+    }
+  };
+
+  // 3. 알림 확인(읽음) 처리 함수
+  const handleReadNotification = async () => {
+    if (!notification) return;
+    try {
+      await markNotificationAsRead(teamId, notification.id);
+      setNotification(null);
+    } catch (error) {
+      console.error("알림 읽음 처리 실패:", error);
+      setNotification(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeamData();
+    fetchNotification();
+  }, [teamId]);
+
+  // 문서 생성 버튼 클릭 시 백엔드 호출
+  const handleCreateDocument = async () => {
+    if (!docTitle.trim()) {
+      alert("문서 제목을 입력해 주세요.");
+      return;
+    }
+
+    try {
+      const res = await createTeamDocument(teamId, {
+        name: docTitle,
+        language: "ko",
+        version: 1,
+        documentType: docType,
+      });
+
+      if (res.data?.success || res.status === 200) {
+        alert("문서가 생성되었습니다.");
+        setIsCreateDocModalOpen(false);
+        setDocTitle("");
+        fetchTeamData();
+      }
+    } catch (error) {
+      console.error("문서 생성 실패:", error);
+      alert(error.response?.data?.message || "문서 생성에 실패했습니다.");
+    }
+  };
 
   const handleVersionChange = (docId, newVersion) => {
     setSelectedVersions((prev) => ({
@@ -64,30 +154,105 @@ export default function TeamProjectLeader({
     }));
   };
 
-  const memberInitials = (project.members || [])
-    .slice(0, 3)
-    .map((m) => getInitial(m.name));
-  const extraMemberCount = (project.members || []).length - 3;
+  if (loading) return <div>로딩 중...</div>;
 
-  const hasDocs = project.docs && project.docs.length > 0;
-  const hasActivities = project.activities && project.activities.length > 0;
+  // 기본값 설정
+  const currentProject = project || {
+    name: "AI 서비스 플랫폼",
+    defaultLanguage: "한국어",
+    createdAt: "2026.06.30",
+    members: [{ id: "m1", name: "김서연", role: "팀장", isLeader: true }],
+    documents: [],
+    activityLogs: [],
+    inviteCode: "DOC-BRIDGE-2026-X9Y8",
+  };
+
+  const isLeader = currentProject.myRole
+    ? currentProject.myRole === "LEADER"
+    : true;
+  const docs = currentProject.documents || currentProject.docs || [];
+  const activities =
+    currentProject.activityLogs || currentProject.activities || [];
+  const members = currentProject.members || [];
+  const inviteCode = currentProject.inviteCode || "DOC-BRIDGE-2026-X9Y8";
+
+  const memberInitials = members
+    .slice(0, 3)
+    .map((m) => getInitial(m.name || m.firstName));
+  const extraMemberCount = members.length - 3;
+
+  const hasDocs = docs.length > 0;
+  const hasActivities = activities.length > 0;
+
+  // 알림 문구 파싱 헬퍼 함수
+  const renderNotificationTitle = (noti) => {
+    if (!noti) return "";
+    const { documentName, beforeVersion, afterVersion } = noti;
+
+    if (beforeVersion !== undefined && beforeVersion !== afterVersion) {
+      return `${documentName}_Version.${beforeVersion}이 수정되어 Version.${afterVersion}가 업로드 되었습니다.`;
+    }
+    return `${documentName}_Version.${afterVersion || 1}이 수정되었습니다.`;
+  };
+
+  const renderNotificationSub = (noti) => {
+    if (!noti) return "";
+    const author = `${noti.performedByLastName || ""}${
+      noti.performedByFirstName || ""
+    }`.trim();
+    const time = noti.createdAt
+      ? noti.createdAt.replace("T", " ").slice(0, 16)
+      : "";
+
+    return `${author ? `${author} 님께서 업로드 하셨어요. ` : ""}${time}`;
+  };
 
   return (
     <S.PageWrapper>
       <Header
         type="project"
         onCreateDoc={isLeader ? () => setIsCreateDocModalOpen(true) : undefined}
-        onExit={() => onNavigate && onNavigate("home")}
+        onExit={() => (onNavigate ? onNavigate("home") : navigate("/"))}
       />
 
       <S.Container>
         <S.MainSection>
+          {/* ===== 알림 바 영역 ===== */}
+          {notification && (
+            <S.NotificationBar>
+              <S.NotificationLeft>
+                <S.NotificationIconBox>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </S.NotificationIconBox>
+                <S.NotificationTextContainer>
+                  <h4>{renderNotificationTitle(notification)}</h4>
+                  <p>{renderNotificationSub(notification)}</p>
+                </S.NotificationTextContainer>
+              </S.NotificationLeft>
+              <S.NotificationButton onClick={handleReadNotification}>
+                확인하기
+              </S.NotificationButton>
+            </S.NotificationBar>
+          )}
+
           <S.BannerCard>
-            <S.BannerTitle>{project.title}</S.BannerTitle>
+            <S.BannerTitle>
+              {currentProject.name || currentProject.title}
+            </S.BannerTitle>
             <S.BannerMeta>
               <S.MetaItem>
                 <span className="label">기본 언어</span>
-                <span className="value">{project.defaultLanguage}</span>
+                <span className="value">{currentProject.defaultLanguage}</span>
               </S.MetaItem>
               <S.MetaItem>
                 <span className="label">멤버</span>
@@ -102,7 +267,10 @@ export default function TeamProjectLeader({
               </S.MetaItem>
               <S.MetaItem>
                 <span className="label">생성일</span>
-                <span className="value">{project.createdAt}</span>
+                <span className="value">
+                  {currentProject.createdAt?.split("T")[0] ||
+                    currentProject.createdAt}
+                </span>
               </S.MetaItem>
             </S.BannerMeta>
           </S.BannerCard>
@@ -110,7 +278,6 @@ export default function TeamProjectLeader({
           <S.Card>
             <S.CardHeader>
               <h3>최근 문서</h3>
-              {/* 3. onClick 이벤트 핸들러 변경 */}
               <S.MoreButton onClick={() => navigate("/teamp-doc")}>
                 <span>{"전체보기 >"} </span>
               </S.MoreButton>
@@ -126,21 +293,32 @@ export default function TeamProjectLeader({
                   </tr>
                 </thead>
                 <tbody>
-                  {project.docs.map((doc) => (
+                  {docs.map((doc) => (
                     <tr
                       key={doc.id}
                       onClick={() =>
-                        onNavigate && onNavigate("docDetail", doc.id)
+                        onNavigate
+                          ? onNavigate("docDetail", doc.id)
+                          : navigate(`/documents/${doc.id}`)
                       }
                     >
                       <td className="font-bold">
                         <S.TitleWithIcon>
                           <S.DocIconImg src={DocIcon} alt="문서 아이콘" />
-                          <span>{doc.title}</span>
+                          <span>{doc.name || doc.title}</span>
                         </S.TitleWithIcon>
                       </td>
-                      <td>{doc.selectedLang || doc.languages[0]}</td>
-                      <td>{selectedVersions[doc.id] || doc.currentVersion}</td>
+                      <td>
+                        {doc.language ||
+                          doc.selectedLang ||
+                          (doc.languages && doc.languages[0])}
+                      </td>
+                      <td>
+                        v
+                        {selectedVersions[doc.id] ||
+                          doc.latestVersion ||
+                          doc.currentVersion}
+                      </td>
                       <td>{getRelativeTime(doc.updatedAt)}</td>
                     </tr>
                   ))}
@@ -167,16 +345,19 @@ export default function TeamProjectLeader({
               </S.CardHeader>
               {hasActivities ? (
                 <S.ActivityList>
-                  {project.activities.map((act) => (
+                  {activities.map((act) => (
                     <S.ActivityItem key={act.id}>
                       <S.ActivityAvatar>
-                        {getInitial(act.userName)}
+                        {getInitial(act.userName || act.performedByFirstName)}
                       </S.ActivityAvatar>
                       <S.ActivityContent>
                         <p>
-                          {act.docTitle}_{act.version}이 업로드 되었습니다.
+                          {act.docTitle || act.documentName}_{act.version}이
+                          업로드 되었습니다.
                         </p>
-                        <span>{getRelativeTime(act.updatedAt)}</span>
+                        <span>
+                          {getRelativeTime(act.updatedAt || act.createdAt)}
+                        </span>
                       </S.ActivityContent>
                     </S.ActivityItem>
                   ))}
@@ -194,14 +375,27 @@ export default function TeamProjectLeader({
                 <h3>프로젝트 멤버</h3>
               </S.CardHeader>
               <S.MemberList>
-                {(project.members || []).map((member) => (
+                {members.map((member) => (
                   <S.MemberItem key={member.id}>
                     <S.MemberLeft>
-                      <S.MemberAvatar>{getInitial(member.name)}</S.MemberAvatar>
-                      <S.MemberName>{member.name}</S.MemberName>
+                      <S.MemberAvatar>
+                        {getInitial(member.name || member.firstName)}
+                      </S.MemberAvatar>
+                      <S.MemberName>
+                        {member.name ||
+                          `${member.lastName || ""} ${member.firstName || ""}`}
+                      </S.MemberName>
                     </S.MemberLeft>
-                    <S.RoleBadge $isLeader={member.isLeader}>
-                      {member.role}
+                    <S.RoleBadge
+                      $isLeader={
+                        member.isLeader ||
+                        member.role === "LEADER" ||
+                        member.role === "팀장"
+                      }
+                    >
+                      {member.role === "LEADER"
+                        ? "팀장"
+                        : member.role || "팀원"}
                     </S.RoleBadge>
                   </S.MemberItem>
                 ))}
@@ -222,17 +416,22 @@ export default function TeamProjectLeader({
 
             {hasDocs ? (
               <S.GatheredList>
-                {project.docs.map((doc) => (
+                {docs.map((doc) => (
                   <S.DocItemCard key={doc.id}>
                     <S.DocItemLeft
                       onClick={() =>
-                        onNavigate && onNavigate("docDetail", doc.id)
+                        onNavigate
+                          ? onNavigate("docDetail", doc.id)
+                          : navigate(`/documents/${doc.id}`)
                       }
                     >
                       <S.SidebarDocIconImg src={DocIcon} alt="문서 아이콘" />
                       <S.DocInfo>
-                        <h4>{doc.title}</h4>
-                        <p className="langs">{doc.languages.join(", ")}</p>
+                        <h4>{doc.name || doc.title}</h4>
+                        <p className="langs">
+                          {doc.language ||
+                            (doc.languages && doc.languages.join(", "))}
+                        </p>
                         <p className="time">
                           최종 업데이트 {getRelativeTime(doc.updatedAt)}
                         </p>
@@ -240,14 +439,22 @@ export default function TeamProjectLeader({
                     </S.DocItemLeft>
 
                     <S.VersionSelect
-                      value={selectedVersions[doc.id] || doc.currentVersion}
+                      value={
+                        selectedVersions[doc.id] ||
+                        doc.latestVersion ||
+                        doc.currentVersion
+                      }
                       onChange={(e) =>
                         handleVersionChange(doc.id, e.target.value)
                       }
                     >
-                      {doc.versions.map((ver) => (
+                      {(
+                        doc.versions || [
+                          doc.latestVersion || doc.currentVersion || 1,
+                        ]
+                      ).map((ver) => (
                         <option key={ver} value={ver}>
-                          {ver}
+                          v{ver}
                         </option>
                       ))}
                     </S.VersionSelect>
@@ -270,6 +477,7 @@ export default function TeamProjectLeader({
         </S.SidebarSection>
       </S.Container>
 
+      {/* 문서 생성 모달 */}
       {isCreateDocModalOpen && (
         <S.ModalOverlay onClick={() => setIsCreateDocModalOpen(false)}>
           <S.ModalContent onClick={(e) => e.stopPropagation()}>
@@ -280,11 +488,19 @@ export default function TeamProjectLeader({
             <S.ModalBody>
               <S.InputGroup>
                 <label>문서 제목</label>
-                <input type="text" placeholder="문서 제목을 입력해 주세요." />
+                <input
+                  type="text"
+                  placeholder="문서 제목을 입력해 주세요."
+                  value={docTitle}
+                  onChange={(e) => setDocTitle(e.target.value)}
+                />
               </S.InputGroup>
               <S.InputGroup>
                 <label>문서 종류</label>
-                <select>
+                <select
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                >
                   <option value="기능 명세서">기능 명세서</option>
                   <option value="화면 설계서">화면 설계서</option>
                   <option value="스토리보드">스토리보드</option>
@@ -299,12 +515,7 @@ export default function TeamProjectLeader({
               >
                 취소
               </S.ModalCancelButton>
-              <S.ModalSubmitButton
-                onClick={() => {
-                  setIsCreateDocModalOpen(false);
-                  onNavigate && onNavigate("docCreate");
-                }}
-              >
+              <S.ModalSubmitButton onClick={handleCreateDocument}>
                 생성하기
               </S.ModalSubmitButton>
             </S.ModalFooter>
@@ -312,6 +523,7 @@ export default function TeamProjectLeader({
         </S.ModalOverlay>
       )}
 
+      {/* 초대 코드 모달 */}
       {isInviteModalOpen && (
         <S.ModalOverlay onClick={() => setIsInviteModalOpen(false)}>
           <S.ModalContent onClick={(e) => e.stopPropagation()}>
@@ -326,7 +538,10 @@ export default function TeamProjectLeader({
               <S.CodeBox>
                 <span>{inviteCode}</span>
                 <button
-                  onClick={() => navigator.clipboard.writeText(inviteCode)}
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteCode);
+                    alert("초대 코드가 복사되었습니다!");
+                  }}
                 >
                   복사
                 </button>

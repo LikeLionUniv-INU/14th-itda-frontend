@@ -217,7 +217,7 @@ export const NavButton = styled.button`
 export const ToastMessage = styled.div`
   position: absolute;
   bottom: -20px;
-  background-color: #ECFFEE;
+  background-color: #ecffee;
   color: #000000;
   padding: 12px 24px;
   border-radius: 8px;

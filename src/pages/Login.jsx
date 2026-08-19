@@ -197,7 +197,10 @@ const Login = () => {
                 </button>
               </S.FooterLink>
 
-              <S.SubmitButton type="submit" disabled={!isFormValid || isLoading}>
+              <S.SubmitButton
+                type="submit"
+                disabled={!isFormValid || isLoading}
+              >
                 {isLoading ? "로그인 중..." : "로그인"}
               </S.SubmitButton>
             </S.Form>

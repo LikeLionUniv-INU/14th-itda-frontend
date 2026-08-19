@@ -17,7 +17,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // 토큰 만료(401 에러) 시 자동으로 토큰 재발급 요청받기
@@ -34,7 +34,7 @@ api.interceptors.response.use(
 
         const res = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
-          { refreshToken }
+          { refreshToken },
         );
 
         if (res.data.success) {
@@ -52,7 +52,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

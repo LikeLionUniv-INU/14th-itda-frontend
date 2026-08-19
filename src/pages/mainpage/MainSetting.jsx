@@ -57,8 +57,7 @@ export default function MainSetting({
           country: userData.country || "대한민국",
           language: userData.language || "Korean",
           bio: userData.bio || "",
-          initial:
-            userData.initial || userData.lastName?.charAt(0) || "U",
+          initial: userData.initial || userData.lastName?.charAt(0) || "U",
           profileImageUrl: userData.profileImageUrl || "",
         });
       }
@@ -79,7 +78,10 @@ export default function MainSetting({
   // 10-1. 프로필 정보 수정
   const handleUpdateProfile = async () => {
     const nameRegex = /^[a-zA-Z]+$/;
-    if (!nameRegex.test(formData.firstName) || !nameRegex.test(formData.lastName)) {
+    if (
+      !nameRegex.test(formData.firstName) ||
+      !nameRegex.test(formData.lastName)
+    ) {
       alert("이름은 영문자만 입력 가능합니다.");
       return;
     }
@@ -138,7 +140,9 @@ export default function MainSetting({
     const currentPassword = prompt("현재 비밀번호를 입력해주세요.");
     if (!currentPassword) return;
 
-    const newPassword = prompt("새 비밀번호를 입력해주세요 (8~16자 영문+숫자).");
+    const newPassword = prompt(
+      "새 비밀번호를 입력해주세요 (8~16자 영문+숫자).",
+    );
     if (!newPassword) return;
 
     const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
@@ -243,7 +247,9 @@ export default function MainSetting({
                   onChange={handleImageChange}
                 />
 
-                <S.ChangePhotoButton onClick={() => fileInputRef.current?.click()}>
+                <S.ChangePhotoButton
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Camera size={14} color="#4253E2" />
                   <span>사진 변경</span>
                 </S.ChangePhotoButton>
@@ -257,7 +263,9 @@ export default function MainSetting({
                     <S.Input
                       type="text"
                       value={formData.firstName}
-                      onChange={(e) => handleChange("firstName", e.target.value)}
+                      onChange={(e) =>
+                        handleChange("firstName", e.target.value)
+                      }
                     />
                   </S.InputGroup>
                   <S.InputGroup>
@@ -273,11 +281,7 @@ export default function MainSetting({
                 <S.Row>
                   <S.InputGroup>
                     <label>이메일</label>
-                    <S.Input
-                      type="email"
-                      value={formData.email}
-                      disabled
-                    />
+                    <S.Input type="email" value={formData.email} disabled />
                   </S.InputGroup>
                 </S.Row>
 
@@ -317,7 +321,13 @@ export default function MainSetting({
                   />
                 </S.InputGroup>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "12px",
+                  }}
+                >
                   <button
                     type="button"
                     onClick={handleUpdateProfile}
@@ -342,7 +352,10 @@ export default function MainSetting({
             <S.SectionTitle>계정 관리</S.SectionTitle>
 
             <S.AccountBox>
-              <S.AccountRow onClick={handleChangePassword} style={{ cursor: "pointer" }}>
+              <S.AccountRow
+                onClick={handleChangePassword}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Lock size={18} color="#828282" />
                   <S.AccountText>
@@ -355,7 +368,10 @@ export default function MainSetting({
                 <ChevronRight size={18} color="#B6B6B6" />
               </S.AccountRow>
 
-              <S.AccountRow onClick={handleChangeEmail} style={{ cursor: "pointer" }}>
+              <S.AccountRow
+                onClick={handleChangeEmail}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Mail size={18} color="#828282" />
                   <S.AccountText>
@@ -368,7 +384,11 @@ export default function MainSetting({
                 <ChevronRight size={18} color="#B6B6B6" />
               </S.AccountRow>
 
-              <S.AccountRow $isDanger={true} onClick={handleDeleteAccount} style={{ cursor: "pointer" }}>
+              <S.AccountRow
+                $isDanger={true}
+                onClick={handleDeleteAccount}
+                style={{ cursor: "pointer" }}
+              >
                 <S.AccountLeft>
                   <Trash2 size={18} color="#F52727" />
                   <S.AccountText $isDanger={true}>

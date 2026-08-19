@@ -598,3 +598,68 @@ export const CodeBox = styled.div`
     }
   }
 `;
+
+// 알림 팝업
+export const NotificationBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ebf2ff;
+  border: 1px solid #bed8ff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+`;
+
+export const NotificationLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+export const NotificationIconBox = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #dce8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f65f6;
+  flex-shrink: 0;
+`;
+
+export const NotificationTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    color: #666666;
+  }
+`;
+
+export const NotificationButton = styled.button`
+  background-color: #2f65f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #1d4ed8;
+  }
+`;

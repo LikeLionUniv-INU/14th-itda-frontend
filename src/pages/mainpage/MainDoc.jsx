@@ -95,7 +95,9 @@ export default function MainDoc({
                     if (onSelectDocument) {
                       onSelectDocument(doc.id, doc.latestVersion);
                     } else {
-                      navigate(`/documents/${doc.id}/versions/${doc.latestVersion || 1}`);
+                      navigate(
+                        `/documents/${doc.id}/versions/${doc.latestVersion || 1}`,
+                      );
                     }
                   }}
                 >
