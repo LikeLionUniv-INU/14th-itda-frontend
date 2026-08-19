@@ -109,9 +109,11 @@ export default function TeamProject({ onNavigate }) {
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
+        // 최신 버전으로 기본값 세팅
         initialMap[doc.id] =
           doc.latestVersion ||
           (doc.versions && doc.versions[doc.versions.length - 1]) ||
+          doc.version ||
           1;
       });
       setSelectedVersions(initialMap);
@@ -178,14 +180,13 @@ export default function TeamProject({ onNavigate }) {
         },
       });
     } catch (error) {
-      console.error("문서 생성 실패:", error);
+      console.error("문서 생성 실패, 클라이언트 전환 진행:", error);
       navigate("/doc-create", {
         state: { ...docData, teamId },
       });
     }
   };
 
-  // "전체보기 >" 클릭 핸들러 (TeamProjectDocs로 이동)
   const handleGoToAllDocs = () => {
     if (onNavigate) {
       onNavigate("teamDocs", teamId);
@@ -197,7 +198,7 @@ export default function TeamProject({ onNavigate }) {
   const handleVersionChange = (docId, newVersion) => {
     setSelectedVersions((prev) => ({
       ...prev,
-      [docId]: newVersion,
+      [docId]: Number(newVersion),
     }));
   };
 
@@ -218,6 +219,30 @@ export default function TeamProject({ onNavigate }) {
     project.myRole === "LEADER" ||
     project.isLeader === true ||
     project.role === "LEADER";
+
+  // [핵심] 최신 버전을 가지고 이동하는 핸들러
+  const handleDocClick = (docId, targetVersion) => {
+    const versionToUse = targetVersion || selectedVersions[docId] || 1;
+    if (isLeader) {
+      // 리더: 최신 버전 정보를 넘겨주며 수정 페이지로 이동
+      navigate(`/doc-edit/${docId}`, {
+        state: {
+          docId,
+          teamId,
+          version: versionToUse,
+        },
+      });
+    } else {
+      // 멤버: 최신 버전 정보를 넘겨주며 비교/확인 페이지로 이동
+      navigate(`/doc-compare/${docId}`, {
+        state: {
+          docId,
+          teamId,
+          version: versionToUse,
+        },
+      });
+    }
+  };
 
   const docs = project.documents || project.docs || [];
   const activities = (project.activityLogs || project.activities || []).slice(
@@ -331,7 +356,6 @@ export default function TeamProject({ onNavigate }) {
           <S.RecentDocsCard>
             <S.CardHeader>
               <h3>최근 문서</h3>
-              {/* "전체보기 >" 클릭 시 TeamProjectDocs로 이동 */}
               <S.MoreButton onClick={handleGoToAllDocs}>
                 <span>{"전체보기 >"} </span>
               </S.MoreButton>
@@ -348,38 +372,39 @@ export default function TeamProject({ onNavigate }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {docs.slice(0, 5).map((doc, idx) => (
-                      <tr
-                        key={doc.id}
-                        onClick={() => navigate(`/doc-edit/${doc.id}`)}
-                      >
-                        {/* 피그마 시안대로 첫 2개 항목 밑줄 적용 */}
-                        <td className={idx < 2 ? "doc-title" : "plain-title"}>
-                          <span>{doc.name || doc.title}</span>
-                        </td>
-                        <td>
-                          {getLanguagesDisplay(
-                            doc.languages,
-                            doc.language || doc.selectedLang,
-                          )}
-                        </td>
-                        <td>
-                          ver.
-                          {selectedVersions[doc.id] ||
-                            doc.latestVersion ||
-                            doc.currentVersion ||
-                            1}
-                        </td>
-                        <td>
-                          {getRelativeTime(
-                            doc.updatedAt ||
-                              doc.lastUpdatedAt ||
-                              doc.modifiedAt ||
-                              doc.createdAt,
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {docs.slice(0, 5).map((doc, idx) => {
+                      const latestVer =
+                        doc.latestVersion ||
+                        (doc.versions &&
+                          doc.versions[doc.versions.length - 1]) ||
+                        doc.version ||
+                        1;
+                      return (
+                        <tr
+                          key={doc.id}
+                          onClick={() => handleDocClick(doc.id, latestVer)}
+                        >
+                          <td className={idx < 2 ? "doc-title" : "plain-title"}>
+                            <span>{doc.name || doc.title}</span>
+                          </td>
+                          <td>
+                            {getLanguagesDisplay(
+                              doc.languages,
+                              doc.language || doc.selectedLang,
+                            )}
+                          </td>
+                          <td>ver.{latestVer}</td>
+                          <td>
+                            {getRelativeTime(
+                              doc.updatedAt ||
+                                doc.lastUpdatedAt ||
+                                doc.modifiedAt ||
+                                doc.createdAt,
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </S.Table>
               </S.TableContainer>
@@ -482,52 +507,58 @@ export default function TeamProject({ onNavigate }) {
 
             {hasDocs ? (
               <S.GatheredListScrollWrapper>
-                {docs.map((doc) => (
-                  <S.DocItemCard key={doc.id}>
-                    <S.DocItemLeft
-                      onClick={() => navigate(`/doc-edit/${doc.id}`)}
-                    >
-                      <S.SidebarDocIconImg src={FileIcon} alt="문서 아이콘" />
-                      <S.DocInfo>
-                        <h4>{doc.name || doc.title}</h4>
-                        <p className="langs">
-                          {getLanguagesDisplay(
-                            doc.languages,
-                            doc.language || doc.selectedLang,
-                          )}
-                        </p>
-                        <p className="time">
-                          최종 업데이트{" "}
-                          {getRelativeTime(
-                            doc.updatedAt || doc.lastUpdatedAt || doc.createdAt,
-                          )}
-                        </p>
-                      </S.DocInfo>
-                    </S.DocItemLeft>
+                {docs.map((doc) => {
+                  const targetVer =
+                    selectedVersions[doc.id] ||
+                    doc.latestVersion ||
+                    (doc.versions && doc.versions[doc.versions.length - 1]) ||
+                    1;
 
-                    <S.VersionSelect
-                      value={
-                        selectedVersions[doc.id] ||
-                        doc.latestVersion ||
-                        doc.currentVersion ||
-                        1
-                      }
-                      onChange={(e) =>
-                        handleVersionChange(doc.id, e.target.value)
-                      }
-                    >
-                      {(
-                        doc.versions || [
-                          doc.latestVersion || doc.currentVersion || 1,
-                        ]
-                      ).map((ver) => (
-                        <option key={ver} value={ver}>
-                          ver. {ver}
-                        </option>
-                      ))}
-                    </S.VersionSelect>
-                  </S.DocItemCard>
-                ))}
+                  return (
+                    <S.DocItemCard key={doc.id}>
+                      {/* [핵심] 블록 클릭 시 선택된/최신 버전을 가지고 이동 */}
+                      <S.DocItemLeft
+                        onClick={() => handleDocClick(doc.id, targetVer)}
+                      >
+                        <S.SidebarDocIconImg src={FileIcon} alt="문서 아이콘" />
+                        <S.DocInfo>
+                          <h4>{doc.name || doc.title}</h4>
+                          <p className="langs">
+                            {getLanguagesDisplay(
+                              doc.languages,
+                              doc.language || doc.selectedLang,
+                            )}
+                          </p>
+                          <p className="time">
+                            최종 업데이트{" "}
+                            {getRelativeTime(
+                              doc.updatedAt ||
+                                doc.lastUpdatedAt ||
+                                doc.createdAt,
+                            )}
+                          </p>
+                        </S.DocInfo>
+                      </S.DocItemLeft>
+
+                      <S.VersionSelect
+                        value={targetVer}
+                        onChange={(e) =>
+                          handleVersionChange(doc.id, e.target.value)
+                        }
+                      >
+                        {(
+                          doc.versions || [
+                            doc.latestVersion || doc.currentVersion || 1,
+                          ]
+                        ).map((ver) => (
+                          <option key={ver} value={ver}>
+                            ver. {ver}
+                          </option>
+                        ))}
+                      </S.VersionSelect>
+                    </S.DocItemCard>
+                  );
+                })}
               </S.GatheredListScrollWrapper>
             ) : (
               <S.SidebarEmptyBox>

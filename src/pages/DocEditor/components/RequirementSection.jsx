@@ -25,7 +25,7 @@ const RequirementSection = ({
     setEditingId(null);
   };
 
-  // 독립 탭별 수정: activeRole 전달
+  // 공통 포함 5개 탭 모두 독립적 수정 (activeRole만 개별 업데이트)
   const handleInputChange = (id, field, value) => {
     onUpdateRequirement?.(activeRole, id, field, value);
   };

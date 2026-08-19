@@ -4,8 +4,8 @@ import * as S from "./DocHeader.styles";
 
 export default function DocHeader({
   docName = "스토리보드",
+  prevVersion = 1,
   currVersion = 1,
-  prevVersion,
   mode = "create", // 'create' | 'edit' | 'compare'
   updatedAt,
   onBack,
@@ -24,7 +24,7 @@ export default function DocHeader({
 
   return (
     <S.HeaderContainer>
-      {/* 1. 좌측: 뒤로가기 버튼 + 타이틀 표기 */}
+      {/* 1. 좌측: 뒤로가기 버튼 + 문서 타이틀 */}
       <S.LeftArea onClick={handleBack} style={{ cursor: "pointer" }}>
         <S.BackArrow viewBox="0 0 24 24" fill="none">
           <path
@@ -36,11 +36,11 @@ export default function DocHeader({
           />
         </S.BackArrow>
         <S.DocTitle>
-          {docName}_Version.{currVersion} {mode === "edit" ? "수정" : ""}
+          {docName}_Version.{currVersion}
         </S.DocTitle>
       </S.LeftArea>
 
-      {/* 2. 우측: 작성/수정 모드에 따른 버튼 분기 */}
+      {/* 2. 우측: 작성/수정/비교 모드별 분기 */}
       <S.RightArea>
         {mode === "compare" && (
           <>
@@ -72,12 +72,40 @@ export default function DocHeader({
                 업데이트 : {updatedAt}
               </S.UpdateText>
             )}
-            <S.TempSaveButton type="button" onClick={onTempSave}>
+            <button
+              type="button"
+              onClick={onTempSave}
+              style={{
+                height: "38px",
+                padding: "0 18px",
+                backgroundColor: "#f3f4f6",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#4b5563",
+                cursor: "pointer",
+              }}
+            >
               임시저장
-            </S.TempSaveButton>
-            <S.SaveButton type="button" onClick={onSave}>
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              style={{
+                height: "38px",
+                padding: "0 22px",
+                backgroundColor: "#462fea",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#ffffff",
+                cursor: "pointer",
+              }}
+            >
               저장
-            </S.SaveButton>
+            </button>
           </div>
         )}
       </S.RightArea>
