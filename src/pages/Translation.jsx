@@ -8,7 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import * as S from "./Translation.styles";
-import { getTranslationStatus } from "../api/translationApi";
+import { getTranslationStatus } from "../services/documentApi";
 
 export default function Translation({ isLeader = true, projectId = 1 }) {
   const navigate = useNavigate();

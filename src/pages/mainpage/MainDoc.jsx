@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { getDashboardDocumentsApi } from "../../api/dashboard"; // dashboard API 모듈에서 import
+import { getDashboardDocuments as getDashboardDocumentsApi } from "../../services/auth";
 import * as S from "./MainDoc.styles";
 
 export default function MainDoc({

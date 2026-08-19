@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react";
 import Header from "../../components/Header";
 import DocIcon from "../../assets/image/doc icon.svg";
 import * as S from "./TeamProjectDocs.styles";
-import { getTeamDetail } from "../../api/teamApi";
+import { getTeamDetail } from "../../services/teamApi";
 
 const getRelativeTime = (dateString) => {
   if (!dateString) return "";

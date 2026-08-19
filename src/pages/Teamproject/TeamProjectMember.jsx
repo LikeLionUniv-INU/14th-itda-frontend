@@ -3,11 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import DocIcon from "../../assets/image/doc icon.svg";
 import * as S from "./TeamProject.styles";
-import {
-  getTeamDetail,
-  getTeamNotifications,
-  markNotificationAsRead,
-} from "../../api/teamApi";
+import { getTeamDetail, getTeamNotifications, readTeamNotification as markNotificationAsRead } from "../../services/teamApi";
 
 const getRelativeTime = (dateString) => {
   if (!dateString) return "";

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { getDashboardApi } from "../../api/dashboard";
+import { getDashboardHome as getDashboardApi } from "../../services/auth";
 import * as S from "./MainHome.styles";
 
 export default function MainHome({

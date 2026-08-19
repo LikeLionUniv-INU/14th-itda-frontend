@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { getDashboardProjectsApi } from "../../api/dashboard"; // dashboard API 모듈에서 import
+import { getDashboardProjects as getDashboardProjectsApi } from "../../services/auth";
 import * as S from "./MainProject.styles";
 
 export default function MainProject({

@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Camera, Lock, Mail, Trash2, ChevronRight } from "lucide-react";
 import Header from "../../components/Header";
 import {
-  getMyInfoApi,
-  updateProfileApi,
-  getPresignedUrlApi,
-  updateProfileImageApi,
-  changePasswordApi,
-  changeEmailApi,
-  deleteAccountApi,
-} from "../../api/user"; // 해당 user API 함수들을 import
+  getMyInfo,
+  updateProfile,
+  uploadProfileImagePipeline,
+  deleteProfileImage,
+  updatePassword as changePasswordApi,
+  updateEmail as changeEmailApi,
+  deleteAccount as deleteAccountApi,
+} from "../../services/auth";
 import * as S from "./MainSetting.styles";
 
 export default function MainSetting({
