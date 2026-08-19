@@ -12,8 +12,7 @@ import MainDoc from "./pages/mainpage/MainDoc";
 import MainSetting from "./pages/mainpage/MainSetting";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import TeamProjectLeader from "./pages/Teamproject/TeamProjectLeader";
-import TeamProjectMember from "./pages/Teamproject/TeamProjectMember";
+import TeamProject from "./pages/Teamproject/TeamProject";
 import TeamProjectDocs from "./pages/Teamproject/TeamProjectDocs";
 import Translation from "./pages/Translation";
 
@@ -41,10 +40,9 @@ function App() {
         <Route path="/doc-compare/:docId" element={<DocCompare />} />
 
         {/* 팀 프로젝트 (파라미터 연동 지원) */}
-        <Route path="/teamp-leader" element={<TeamProjectLeader />} />
-        <Route path="/teamp-leader/:teamId" element={<TeamProjectLeader />} />
-        <Route path="/teamp-member" element={<TeamProjectMember />} />
-        <Route path="/teamp-member/:teamId" element={<TeamProjectMember />} />
+        <Route path="/teamp/:teamId" element={<TeamProject />} />
+        <Route path="/teamp-leader/:teamId" element={<TeamProject />} />
+        <Route path="/teamp-member/:teamId" element={<TeamProject />} />
         <Route path="/teamp-doc" element={<TeamProjectDocs />} />
         <Route path="/teamp-doc/:teamId" element={<TeamProjectDocs />} />
       </Routes>

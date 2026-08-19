@@ -1,10 +1,12 @@
+// src/components/Modal/CreateDocumentModal.jsx
+
 import React, { useState } from "react";
 import BaseModal from "./BaseModal";
 import LanguageSelect from "../LanguageSelect";
 import DocIcon from "../../assets/image/DocIcon.svg";
 import * as S from "./CreateDocumentModal.styles";
 
-function CreateDocumentModal({ isOpen, onClose }) {
+function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState("");
   const [docName, setDocName] = useState("");
@@ -34,6 +36,30 @@ function CreateDocumentModal({ isOpen, onClose }) {
   const handleCreateSubmit = () => {
     if (!docName.trim() || versionError || !version.trim()) return;
     setStep(3);
+  };
+
+  // 3단계 완료 버튼 클릭 시 실행
+  const handleComplete = () => {
+    const documentData = {
+      name: docName,
+      documentType: selectedType,
+      language: language,
+      version: version,
+    };
+
+    // 상태 초기화
+    setStep(1);
+    setSelectedType("");
+    setDocName("");
+    setLanguage("ko");
+    setVersion("1");
+    setVersionError("");
+
+    if (onSuccess) {
+      onSuccess(documentData);
+    } else {
+      onClose?.();
+    }
   };
 
   const handleCloseAll = () => {
@@ -194,7 +220,8 @@ function CreateDocumentModal({ isOpen, onClose }) {
               </S.SummaryRow>
             </S.SummaryBox>
 
-            <S.CompleteButton onClick={handleCloseAll}>완료</S.CompleteButton>
+            {/* 완료 클릭 시 handleComplete 호출 */}
+            <S.CompleteButton onClick={handleComplete}>완료</S.CompleteButton>
           </S.CenterContainer>
         )}
       </S.ContentWrapper>
