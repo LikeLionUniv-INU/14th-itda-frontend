@@ -1,13 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
-import DocIcon from "../../assets/image/doc icon.svg";
+import FileIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProject.styles";
 import {
   getTeamDetail,
   getTeamNotifications,
   markNotificationAsRead,
 } from "../../api/teamApi";
+
+const getLanguageFullName = (langCode) => {
+  if (!langCode) return "-";
+  const code = langCode.toLowerCase().trim();
+  const langMap = {
+    ko: "한국어",
+    korean: "한국어",
+    en: "English",
+    english: "English",
+    ja: "日本語",
+    japanese: "日本語",
+    zh: "中文",
+    chinese: "中文",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    vi: "Tiếng Việt",
+  };
+  return langMap[code] || langCode;
+};
+
+const getLanguagesDisplay = (languages, fallback) => {
+  if (Array.isArray(languages) && languages.length > 0) {
+    return languages.map(getLanguageFullName).join(", ");
+  }
+  return getLanguageFullName(fallback);
+};
 
 const getRelativeTime = (dateString) => {
   if (!dateString) return "";
@@ -36,11 +63,9 @@ export default function TeamProjectMember({ onNavigate }) {
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [selectedVersions, setSelectedVersions] = useState({});
   const [notification, setNotification] = useState(null);
 
-  // 1. 팀 상세 데이터 받아오기
   const fetchTeamData = async () => {
     if (!teamId) {
       setLoading(false);
@@ -50,7 +75,6 @@ export default function TeamProjectMember({ onNavigate }) {
       setLoading(true);
       const res = await getTeamDetail(teamId);
       const data = res.data?.data || res.data || {};
-      console.log("팀 멤버 상세 데이터 응답:", data);
       setProject(data);
 
       const docs = data.documents || data.docs || [];
@@ -69,7 +93,6 @@ export default function TeamProjectMember({ onNavigate }) {
     }
   };
 
-  // 2. 알림 데이터 받아오기
   const fetchNotification = async () => {
     if (!teamId) return;
     try {
@@ -85,7 +108,6 @@ export default function TeamProjectMember({ onNavigate }) {
     }
   };
 
-  // 3. 알림 읽음 처리
   const handleReadNotification = async () => {
     if (!notification) return;
     try {
@@ -113,9 +135,12 @@ export default function TeamProjectMember({ onNavigate }) {
   if (!project) return <div>프로젝트 정보를 불러올 수 없습니다.</div>;
 
   const docs = project.documents || project.docs || [];
-  const activities = project.activityLogs || project.activities || [];
+  // 활동 요약: 최신 4개만 노출
+  const activities = (project.activityLogs || project.activities || []).slice(
+    0,
+    4,
+  );
   const members = project.members || [];
-  const inviteCode = project.inviteCode || "";
 
   const memberInitials = members
     .slice(0, 3)
@@ -129,9 +154,9 @@ export default function TeamProjectMember({ onNavigate }) {
     if (!noti) return "";
     const { documentName, beforeVersion, afterVersion } = noti;
     if (beforeVersion !== undefined && beforeVersion !== afterVersion) {
-      return `${documentName}_Version.${beforeVersion}이 수정되어 Version.${afterVersion}가 업로드 되었습니다.`;
+      return `${documentName}_version${beforeVersion}이 수정되어 version${afterVersion}가 업로드 되었습니다.`;
     }
-    return `${documentName}_Version.${afterVersion || 1}이 수정되었습니다.`;
+    return `${documentName}_version${afterVersion || 1}이 수정되었습니다.`;
   };
 
   const renderNotificationSub = (noti) => {
@@ -191,7 +216,9 @@ export default function TeamProjectMember({ onNavigate }) {
               <S.MetaItem>
                 <span className="label">기본 언어</span>
                 <span className="value">
-                  {project.defaultLanguage || project.language || "-"}
+                  {getLanguageFullName(
+                    project.defaultLanguage || project.language,
+                  )}
                 </span>
               </S.MetaItem>
               <S.MetaItem>
@@ -215,7 +242,7 @@ export default function TeamProjectMember({ onNavigate }) {
           </S.BannerCard>
 
           {/* 최근 문서 카드 */}
-          <S.Card>
+          <S.RecentDocsCard>
             <S.CardHeader>
               <h3>최근 문서</h3>
               <S.MoreButton onClick={() => navigate(`/teamp-doc/${teamId}`)}>
@@ -240,18 +267,18 @@ export default function TeamProjectMember({ onNavigate }) {
                     >
                       <td className="font-bold">
                         <S.TitleWithIcon>
-                          <S.DocIconImg src={DocIcon} alt="문서 아이콘" />
+                          <S.DocIconImg src={FileIcon} alt="문서 아이콘" />
                           <span>{doc.name || doc.title}</span>
                         </S.TitleWithIcon>
                       </td>
                       <td>
-                        {doc.language ||
-                          doc.selectedLang ||
-                          (doc.languages && doc.languages[0]) ||
-                          "-"}
+                        {getLanguagesDisplay(
+                          doc.languages,
+                          doc.language || doc.selectedLang,
+                        )}
                       </td>
                       <td>
-                        v
+                        ver.
                         {selectedVersions[doc.id] ||
                           doc.latestVersion ||
                           doc.currentVersion ||
@@ -264,15 +291,15 @@ export default function TeamProjectMember({ onNavigate }) {
               </S.Table>
             ) : (
               <S.EmptyBox>
-                <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
+                <S.EmptyDocIconImg src={FileIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
               </S.EmptyBox>
             )}
-          </S.Card>
+          </S.RecentDocsCard>
 
           <S.BottomRow>
-            {/* 활동 요약 */}
+            {/* 활동 요약 (최신 4개 노출) */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>활동 요약</h3>
@@ -286,8 +313,8 @@ export default function TeamProjectMember({ onNavigate }) {
                       </S.ActivityAvatar>
                       <S.ActivityContent>
                         <p>
-                          {act.docTitle || act.documentName}_{act.version}이
-                          업로드 되었습니다.
+                          {act.docTitle || act.documentName}_version
+                          {act.version}이 업로드 되었습니다.
                         </p>
                         <span>
                           {getRelativeTime(act.updatedAt || act.createdAt)}
@@ -304,12 +331,12 @@ export default function TeamProjectMember({ onNavigate }) {
               )}
             </S.HalfCard>
 
-            {/* 프로젝트 멤버 */}
+            {/* 프로젝트 멤버 (넘치면 내부 스크롤) */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>프로젝트 멤버</h3>
               </S.CardHeader>
-              <S.MemberList>
+              <S.MemberListScrollWrapper>
                 {members.map((member) => (
                   <S.MemberItem key={member.id}>
                     <S.MemberLeft>
@@ -328,21 +355,21 @@ export default function TeamProjectMember({ onNavigate }) {
                         member.role === "팀장"
                       }
                     >
-                      {member.role === "LEADER"
+                      {member.isLeader ||
+                      member.role === "LEADER" ||
+                      member.role === "팀장"
                         ? "팀장"
-                        : member.role || "팀원"}
+                        : "팀원"}
                     </S.RoleBadge>
                   </S.MemberItem>
                 ))}
-              </S.MemberList>
-              <S.InviteButton onClick={() => setIsInviteModalOpen(true)}>
-                <span>+</span> 멤버 초대하기
-              </S.InviteButton>
+              </S.MemberListScrollWrapper>
+              {/* 멤버 화면에서는 멤버 초대하기 버튼 숨김 */}
             </S.HalfCard>
           </S.BottomRow>
         </S.MainSection>
 
-        {/* 사이드바 문서 모아보기 */}
+        {/* 사이드바 - 문서 모아보기 (넘치면 내부 스크롤) */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -351,19 +378,20 @@ export default function TeamProjectMember({ onNavigate }) {
             </S.SidebarHeader>
 
             {hasDocs ? (
-              <S.GatheredList>
+              <S.GatheredListScrollWrapper>
                 {docs.map((doc) => (
                   <S.DocItemCard key={doc.id}>
                     <S.DocItemLeft
                       onClick={() => navigate(`/doc-edit/${doc.id}`)}
                     >
-                      <S.SidebarDocIconImg src={DocIcon} alt="문서 아이콘" />
+                      <S.SidebarDocIconImg src={FileIcon} alt="문서 아이콘" />
                       <S.DocInfo>
                         <h4>{doc.name || doc.title}</h4>
                         <p className="langs">
-                          {doc.language ||
-                            (doc.languages && doc.languages.join(", ")) ||
-                            "-"}
+                          {getLanguagesDisplay(
+                            doc.languages,
+                            doc.language || doc.selectedLang,
+                          )}
                         </p>
                         <p className="time">
                           최종 업데이트 {getRelativeTime(doc.updatedAt)}
@@ -388,16 +416,16 @@ export default function TeamProjectMember({ onNavigate }) {
                         ]
                       ).map((ver) => (
                         <option key={ver} value={ver}>
-                          v{ver}
+                          ver.{ver}
                         </option>
                       ))}
                     </S.VersionSelect>
                   </S.DocItemCard>
                 ))}
-              </S.GatheredList>
+              </S.GatheredListScrollWrapper>
             ) : (
               <S.SidebarEmptyBox>
-                <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
+                <S.EmptyDocIconImg src={FileIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
               </S.SidebarEmptyBox>
@@ -405,41 +433,6 @@ export default function TeamProjectMember({ onNavigate }) {
           </S.SidebarCard>
         </S.SidebarSection>
       </S.Container>
-
-      {/* 초대 코드 모달 */}
-      {isInviteModalOpen && (
-        <S.ModalOverlay onClick={() => setIsInviteModalOpen(false)}>
-          <S.ModalContent onClick={(e) => e.stopPropagation()}>
-            <S.ModalHeader>
-              <h3>초대 코드</h3>
-              <button onClick={() => setIsInviteModalOpen(false)}>✕</button>
-            </S.ModalHeader>
-            <S.ModalBody>
-              <p style={{ fontSize: "12px", color: "#828282" }}>
-                팀원에게 아래 초대 코드를 공유해 보세요.
-              </p>
-              <S.CodeBox>
-                <span>{inviteCode || "초대 코드를 불러올 수 없습니다."}</span>
-                {inviteCode && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(inviteCode);
-                      alert("초대 코드가 복사되었습니다!");
-                    }}
-                  >
-                    복사
-                  </button>
-                )}
-              </S.CodeBox>
-            </S.ModalBody>
-            <S.ModalFooter>
-              <S.ModalSubmitButton onClick={() => setIsInviteModalOpen(false)}>
-                확인
-              </S.ModalSubmitButton>
-            </S.ModalFooter>
-          </S.ModalContent>
-        </S.ModalOverlay>
-      )}
     </S.PageWrapper>
   );
 }

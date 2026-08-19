@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import FileIcon from "../../assets/image/file.svg";
+import BannerSvg from "../../assets/image/banner.svg";
 import * as S from "./TeamProject.styles";
+
+// 단독 모달 컴포넌트 import
+import CreateDocumentModal from "../../components/Modal/CreateDocumentModal";
+import InviteModal from "../../components/Modal/InviteModal";
+
 import {
   getTeamDetail,
   createTeamDocument,
@@ -58,23 +64,20 @@ const getInitial = (name) => {
   return name.trim().charAt(0).toUpperCase();
 };
 
-export default function TeamProjectLeader({ onNavigate }) {
+export default function TeamProject({ onNavigate }) {
   const navigate = useNavigate();
   const { teamId } = useParams();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 모달 상태
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-
-  const [docTitle, setDocTitle] = useState("");
-  const [docType, setDocType] = useState("기능 명세서");
 
   const [selectedVersions, setSelectedVersions] = useState({});
   const [notification, setNotification] = useState(null);
 
-  // 팀 상세 데이터 받아오기
   const fetchTeamData = async () => {
     if (!teamId) {
       setLoading(false);
@@ -102,7 +105,6 @@ export default function TeamProjectLeader({ onNavigate }) {
     }
   };
 
-  // 알림 불러오기
   const fetchNotification = async () => {
     if (!teamId) return;
     try {
@@ -118,7 +120,6 @@ export default function TeamProjectLeader({ onNavigate }) {
     }
   };
 
-  // 알림 확인 처리
   const handleReadNotification = async () => {
     if (!notification) return;
     try {
@@ -135,30 +136,36 @@ export default function TeamProjectLeader({ onNavigate }) {
     fetchNotification();
   }, [teamId]);
 
-  // 문서 생성
-  const handleCreateDocument = async () => {
-    if (!docTitle.trim()) {
-      alert("문서 제목을 입력해 주세요.");
-      return;
-    }
-
+  // 문서 생성 완료 시 신규 작성 페이지(/doc-create)로 이동
+  const handleDocumentSuccess = async (docData) => {
+    setIsCreateDocModalOpen(false);
     try {
       const res = await createTeamDocument(teamId, {
-        name: docTitle,
-        language: project?.defaultLanguage || "ko",
-        version: 1,
-        documentType: docType,
+        name: docData.name,
+        documentType: docData.documentType,
+        language: docData.language,
+        version: Number(docData.version) || 1,
       });
 
-      if (res.data?.success || res.status === 200 || res.status === 201) {
-        alert("문서가 생성되었습니다.");
-        setIsCreateDocModalOpen(false);
-        setDocTitle("");
-        fetchTeamData();
-      }
+      const resData = res.data?.data || res.data || {};
+      const newDocId = resData.id || resData.documentId || resData.docId;
+
+      // 생성된 docId 및 설정 정보(이름, 언어, 버전 등)를 가지고 신규 작성 페이지(/doc-create)로 이동
+      navigate("/doc-create", {
+        state: {
+          docId: newDocId,
+          teamId,
+          name: docData.name,
+          documentType: docData.documentType,
+          language: docData.language,
+          version: docData.version,
+        },
+      });
     } catch (error) {
       console.error("문서 생성 실패:", error);
-      alert(error.response?.data?.message || "문서 생성에 실패했습니다.");
+      navigate("/doc-create", {
+        state: { ...docData, teamId },
+      });
     }
   };
 
@@ -172,8 +179,12 @@ export default function TeamProjectLeader({ onNavigate }) {
   if (loading) return <div>로딩 중...</div>;
   if (!project) return <div>프로젝트 정보를 불러올 수 없습니다.</div>;
 
+  const isLeader =
+    project.myRole === "LEADER" ||
+    project.isLeader === true ||
+    project.role === "LEADER";
+
   const docs = project.documents || project.docs || [];
-  // 활동 요약: 최신 4개만 노출
   const activities = (project.activityLogs || project.activities || []).slice(
     0,
     4,
@@ -213,8 +224,8 @@ export default function TeamProjectLeader({ onNavigate }) {
     <S.PageWrapper>
       <Header
         type="project"
-        isLeader={true}
-        onCreateDoc={() => setIsCreateDocModalOpen(true)}
+        isLeader={isLeader}
+        onCreateDoc={isLeader ? () => setIsCreateDocModalOpen(true) : null}
         onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
       />
 
@@ -250,34 +261,39 @@ export default function TeamProjectLeader({ onNavigate }) {
 
           {/* 프로젝트 배너 */}
           <S.BannerCard>
-            <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
-            <S.BannerMeta>
-              <S.MetaItem>
-                <span className="label">기본 언어</span>
-                <span className="value">
-                  {getLanguageFullName(
-                    project.defaultLanguage || project.language,
-                  )}
-                </span>
-              </S.MetaItem>
-              <S.MetaItem>
-                <span className="label">멤버</span>
-                <S.AvatarGroup>
-                  {memberInitials.map((initial, idx) => (
-                    <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
-                  ))}
-                  {extraMemberCount > 0 && (
-                    <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
-                  )}
-                </S.AvatarGroup>
-              </S.MetaItem>
-              <S.MetaItem>
-                <span className="label">생성일</span>
-                <span className="value">
-                  {project.createdAt?.split("T")[0] || project.createdAt || "-"}
-                </span>
-              </S.MetaItem>
-            </S.BannerMeta>
+            <S.BannerBgImg src={BannerSvg} alt="배너 배경" />
+            <S.BannerContent>
+              <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
+              <S.BannerMeta>
+                <S.MetaItem>
+                  <span className="label">기본 언어</span>
+                  <span className="value">
+                    {getLanguageFullName(
+                      project.defaultLanguage || project.language,
+                    )}
+                  </span>
+                </S.MetaItem>
+                <S.MetaItem>
+                  <span className="label">멤버</span>
+                  <S.AvatarGroup>
+                    {memberInitials.map((initial, idx) => (
+                      <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
+                    ))}
+                    {extraMemberCount > 0 && (
+                      <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
+                    )}
+                  </S.AvatarGroup>
+                </S.MetaItem>
+                <S.MetaItem>
+                  <span className="label">생성일</span>
+                  <span className="value">
+                    {project.createdAt?.split("T")[0] ||
+                      project.createdAt ||
+                      "-"}
+                  </span>
+                </S.MetaItem>
+              </S.BannerMeta>
+            </S.BannerContent>
           </S.BannerCard>
 
           {/* 최근 문서 카드 */}
@@ -299,14 +315,13 @@ export default function TeamProjectLeader({ onNavigate }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {docs.map((doc) => (
+                  {docs.map((doc, idx) => (
                     <tr
                       key={doc.id}
                       onClick={() => navigate(`/doc-edit/${doc.id}`)}
                     >
-                      <td className="font-bold">
+                      <td className={idx < 2 ? "doc-title" : "plain-title"}>
                         <S.TitleWithIcon>
-                          <S.DocIconImg src={FileIcon} alt="문서 아이콘" />
                           <span>{doc.name || doc.title}</span>
                         </S.TitleWithIcon>
                       </td>
@@ -333,15 +348,17 @@ export default function TeamProjectLeader({ onNavigate }) {
                 <S.EmptyDocIconImg src={FileIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-                <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
-                  새로운 문서 작성하기
-                </S.ActionButton>
+                {isLeader && (
+                  <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
+                    새로운 문서 작성하기
+                  </S.ActionButton>
+                )}
               </S.EmptyBox>
             )}
           </S.RecentDocsCard>
 
           <S.BottomRow>
-            {/* 활동 요약 (최신 4개 노출) */}
+            {/* 활동 요약 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>활동 요약</h3>
@@ -373,7 +390,7 @@ export default function TeamProjectLeader({ onNavigate }) {
               )}
             </S.HalfCard>
 
-            {/* 프로젝트 멤버 (넘치면 내부 스크롤) */}
+            {/* 프로젝트 멤버 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>프로젝트 멤버</h3>
@@ -406,6 +423,8 @@ export default function TeamProjectLeader({ onNavigate }) {
                   </S.MemberItem>
                 ))}
               </S.MemberListScrollWrapper>
+
+              {/* 초대 버튼 상시 노출 */}
               <S.InviteButton onClick={() => setIsInviteModalOpen(true)}>
                 <span>+</span> 멤버 초대하기
               </S.InviteButton>
@@ -413,7 +432,7 @@ export default function TeamProjectLeader({ onNavigate }) {
           </S.BottomRow>
         </S.MainSection>
 
-        {/* 사이드바 - 문서 모아보기 (넘치면 내부 스크롤) */}
+        {/* 사이드바 - 문서 모아보기 */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -460,7 +479,7 @@ export default function TeamProjectLeader({ onNavigate }) {
                         ]
                       ).map((ver) => (
                         <option key={ver} value={ver}>
-                          ver.{ver}
+                          ver. {ver}
                         </option>
                       ))}
                     </S.VersionSelect>
@@ -472,95 +491,33 @@ export default function TeamProjectLeader({ onNavigate }) {
                 <S.EmptyDocIconImg src={FileIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-                <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
-                  새로운 문서 작성하기
-                </S.ActionButton>
+                {isLeader && (
+                  <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
+                    새로운 문서 작성하기
+                  </S.ActionButton>
+                )}
               </S.SidebarEmptyBox>
             )}
           </S.SidebarCard>
         </S.SidebarSection>
       </S.Container>
 
-      {/* 문서 생성 모달 */}
-      {isCreateDocModalOpen && (
-        <S.ModalOverlay onClick={() => setIsCreateDocModalOpen(false)}>
-          <S.ModalContent onClick={(e) => e.stopPropagation()}>
-            <S.ModalHeader>
-              <h3>문서 생성</h3>
-              <button onClick={() => setIsCreateDocModalOpen(false)}>✕</button>
-            </S.ModalHeader>
-            <S.ModalBody>
-              <S.InputGroup>
-                <label>문서 제목</label>
-                <input
-                  type="text"
-                  placeholder="문서 제목을 입력해 주세요."
-                  value={docTitle}
-                  onChange={(e) => setDocTitle(e.target.value)}
-                />
-              </S.InputGroup>
-              <S.InputGroup>
-                <label>문서 종류</label>
-                <select
-                  value={docType}
-                  onChange={(e) => setDocType(e.target.value)}
-                >
-                  <option value="기능 명세서">기능 명세서</option>
-                  <option value="화면 설계서">화면 설계서</option>
-                  <option value="스토리보드">스토리보드</option>
-                  <option value="기획서">기획서</option>
-                  <option value="회의록">회의록</option>
-                </select>
-              </S.InputGroup>
-            </S.ModalBody>
-            <S.ModalFooter>
-              <S.ModalCancelButton
-                onClick={() => setIsCreateDocModalOpen(false)}
-              >
-                취소
-              </S.ModalCancelButton>
-              <S.ModalSubmitButton onClick={handleCreateDocument}>
-                생성하기
-              </S.ModalSubmitButton>
-            </S.ModalFooter>
-          </S.ModalContent>
-        </S.ModalOverlay>
-      )}
+      {/* 1. 문서 생성 모달 */}
+      <CreateDocumentModal
+        isOpen={isCreateDocModalOpen}
+        onClose={() => {
+          setIsCreateDocModalOpen(false);
+          fetchTeamData();
+        }}
+        onSuccess={handleDocumentSuccess}
+      />
 
-      {/* 초대 코드 모달 */}
-      {isInviteModalOpen && (
-        <S.ModalOverlay onClick={() => setIsInviteModalOpen(false)}>
-          <S.ModalContent onClick={(e) => e.stopPropagation()}>
-            <S.ModalHeader>
-              <h3>초대 코드</h3>
-              <button onClick={() => setIsInviteModalOpen(false)}>✕</button>
-            </S.ModalHeader>
-            <S.ModalBody>
-              <p style={{ fontSize: "12px", color: "#828282" }}>
-                팀원에게 아래 초대 코드를 공유해 보세요.
-              </p>
-              <S.CodeBox>
-                <span>{inviteCode || "초대 코드를 불러올 수 없습니다."}</span>
-                {inviteCode && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(inviteCode);
-                      alert("초대 코드가 복사되었습니다!");
-                    }}
-                  >
-                    복사
-                  </button>
-                )}
-              </S.CodeBox>
-            </S.ModalBody>
-            <S.ModalFooter>
-              <S.ModalSubmitButton onClick={() => setIsInviteModalOpen(false)}>
-                확인
-              </S.ModalSubmitButton>
-            </S.ModalFooter>
-          </S.ModalContent>
-        </S.ModalOverlay>
-      )}
+      {/* 2. 전용 팀 초대 코드 모달 */}
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        inviteCode={inviteCode}
+      />
     </S.PageWrapper>
   );
 }
