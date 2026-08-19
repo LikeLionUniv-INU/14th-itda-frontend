@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Lock, Globe, Languages, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { signupApi } from "../api/auth";
+import { signupApi } from "../services/auth";
 import * as S from "./Signup.styles";
 
 const Signup = ({ onNavigateToLogin }) => {

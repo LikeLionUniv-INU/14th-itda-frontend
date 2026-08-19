@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
-import { loginApi } from "../api/auth"; // 작성한 API 모듈 import
+import { loginApi } from "../services/auth"; // 작성한 API 모듈 import
 import * as S from "./Login.styles";
 
 const Login = () => {
