@@ -13,7 +13,7 @@ import {
   saveDocument,
   autoSaveDocument,
   requestTranslation,
-} from "../../services/documentApi";
+} from "../../api/documentApi";
 import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
@@ -39,14 +39,19 @@ export default function DocEditPage() {
     description: "",
   });
 
-  // 1. 문서 상세 조회 (API)
   const fetchDoc = useCallback(async () => {
     if (!docId) return;
     try {
       const res = await getDocumentDetail(docId, currentVersion);
-      const data = res.data;
-      setDocumentInfo({ name: data.name, updatedAt: data.updatedAt });
-      setCurrentVersion(data.version);
+      // res.data가 있으면 쓰고, 없으면 res 자체를 사용
+      const data = res?.data || res;
+      if (!data) return;
+
+      setDocumentInfo({
+        name: data.name || "스토리보드",
+        updatedAt: data.updatedAt || "",
+      });
+      if (data.version) setCurrentVersion(data.version);
 
       if (data.pages?.length > 0) {
         const formattedPages = data.pages.map((p) => {
@@ -91,13 +96,9 @@ export default function DocEditPage() {
         setPages(formattedPages);
       }
     } catch (e) {
-      alert(e.message || "문서 조회 실패");
+      console.error("문서 조회 실패:", e);
     }
   }, [docId, currentVersion]);
-
-  useEffect(() => {
-    fetchDoc();
-  }, [fetchDoc]);
 
   // 2. 서버 전송용 Payload 빌더
   const buildSavePayload = (summaryText) => ({

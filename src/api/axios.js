@@ -1,14 +1,18 @@
 import axios from "axios";
 
-// 공통 API 설정
+// 공통 API 설정 (기본 포트 폴백 및 10초 타임아웃 추가)
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:8080",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// API 요청할 때 자동으로 로컬스토리지 토큰 꺼내서 헤더에 넣기
+// 요청 인터셉터: 토큰 자동 주입
 api.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -20,7 +24,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// 토큰 만료(401 에러) 시 자동으로 토큰 재발급 요청받기
+// 응답 인터셉터: 데이터 언래핑 및 401 만료 시 자동 리프레시
 api.interceptors.response.use(
   (response) => response.data,
   async (error) => {
@@ -33,12 +37,13 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error("No refresh token");
 
         const res = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
+          `${api.defaults.baseURL}/api/auth/refresh`,
           { refreshToken },
         );
 
-        if (res.data.success) {
-          const { accessToken } = res.data.data;
+        if (res.data?.success || res.data?.data?.accessToken) {
+          const accessToken =
+            res.data.data?.accessToken || res.data.accessToken;
           localStorage.setItem("accessToken", accessToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
@@ -47,7 +52,7 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
-        window.location.href = "/login";
+        window.location.href = "/";
         return Promise.reject(refreshError);
       }
     }

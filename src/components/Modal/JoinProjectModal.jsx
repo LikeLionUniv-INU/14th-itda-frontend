@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import BaseModal from "./BaseModal";
-import { joinTeam } from "../../services/teamApi";
+import { joinTeam } from "../../api/teamApi";
 import * as S from "./JoinProjectModal.styles";
 
 function JoinProjectModal({ isOpen, onClose, onSuccess }) {
@@ -64,16 +64,15 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
     try {
       setIsLoading(true);
       const res = await joinTeam({ inviteCode });
+      const resultData = res?.data || res;
 
-      // 참여 성공 시 처리 (팀 상세로 이동 또는 콜백 호출)
       handleCloseAll();
       if (onSuccess) {
-        onSuccess(res.data);
-      } else if (res.data?.teamProjectId) {
-        window.location.href = `/teams/${res.data.teamProjectId}`;
+        onSuccess(resultData);
+      } else if (resultData?.teamProjectId) {
+        window.location.href = `/teamp-member/${resultData.teamProjectId}`;
       }
     } catch (error) {
-      // 404, 409 등 백엔드 에러 메시지 바인딩
       setErrorMessage(error.message || "존재하지 않는 초대 코드입니다.");
     } finally {
       setIsLoading(false);

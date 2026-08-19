@@ -12,8 +12,7 @@ import {
   getDocumentDetail,
   getDocumentChanges,
   confirmChange,
-} from "../../services/documentApi";
-
+} from "../../api/documentApi";
 import * as S from "./DocCompare.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
@@ -54,26 +53,25 @@ export default function DocComparePage() {
     try {
       setIsLoading(true);
 
-      // 1. 현재 문서 상세 조회 (기본 currVersion 조회)
+      // 1. 현재 문서 상세 조회
       const docRes = await getDocumentDetail(docId, docInfo.currVersion);
-      const docData = docRes.data;
+      const docData = docRes?.data || docRes;
 
-      const currentVer = docData.version;
+      const currentVer = docData?.version || docInfo.currVersion;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
       setDocInfo({
-        docName: docData.name,
+        docName: docData?.name || "스토리보드",
         prevVersion: prevVer,
         currVersion: currentVer,
-        updatedAt: docData.updatedAt || "",
+        updatedAt: docData?.updatedAt || "",
       });
 
-      // 2. 수정사항 목록 조회 (GET /api/documents/{docId}/versions/{version}/changes)
+      // 2. 수정사항 목록 조회
       const changesRes = await getDocumentChanges(docId, currentVer);
-      const changesData = changesRes.data;
+      const changesData = changesRes?.data || changesRes;
 
-      // 수정사항 요약 리스트 매핑
-      const formattedSummary = (changesData.changes || []).map((ch) => {
+      const formattedSummary = (changesData?.changes || []).map((ch) => {
         const afterParsed = safeJsonParse(ch.afterValue);
         const beforeParsed = safeJsonParse(ch.beforeValue);
 
@@ -115,7 +113,7 @@ export default function DocComparePage() {
       setCheckedIds(initialChecked);
 
       // 3. 페이지 상세 정보 및 요구사항 전/후 diff 3색 분기 구조 생성
-      if (docData.pages && docData.pages.length > 0) {
+      if (docData?.pages && docData.pages.length > 0) {
         const mappedPages = docData.pages.map((p, pIdx) => {
           const pageChanges = formattedSummary.filter(
             (ch) => ch.pageIndex === pIdx,
@@ -135,7 +133,7 @@ export default function DocComparePage() {
           const currScreenName = p.screenName;
           const currScreenId = p.screenId;
 
-          // 와이어프레임 이미지 변경 여부 (IMAGE_MODIFIED, IMAGE_ADDED, IMAGE_DELETED)
+          // 와이어프레임 이미지 변경 여부
           const imgChange = pageChanges.find((ch) =>
             ["IMAGE_MODIFIED", "IMAGE_ADDED", "IMAGE_DELETED"].includes(
               ch.changeType,
@@ -148,7 +146,7 @@ export default function DocComparePage() {
             imgChange?.after?.imageUrl ||
             "";
 
-          // 핀 목록 구성 (prevPins, currPins)
+          // 핀 목록 구성
           const prevPins = [];
           const currPins = [];
 
@@ -169,7 +167,6 @@ export default function DocComparePage() {
               pinType,
             });
 
-            // 변경 전 핀 정보가 필요할 경우 세팅
             prevPins.push({
               id: pin.id,
               number: pin.pinNumber,
@@ -255,17 +252,15 @@ export default function DocComparePage() {
 
   const currentPage = pages[activePageIndex] || {};
 
-  // 상단 수정사항 항목 클릭 시 (선택 및 개별 확인 POST 호출)
+  // 상단 수정사항 항목 클릭 시
   const handleSelectSummary = async (item) => {
     setSelectedSummaryId(item.id);
 
-    // 아직 확인하지 않은 항목이면 백엔드 확인 API 호출
     if (!checkedIds.includes(item.id)) {
       setCheckedIds((prev) => [...prev, item.id]);
       try {
         await confirmChange(docId, docInfo.currVersion, item.id);
       } catch (e) {
-        // 이미 확인된 항목(409) 등은 정상 통과
         console.warn("확인 처리 안내:", e.message);
       }
     }
@@ -281,7 +276,7 @@ export default function DocComparePage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단바: props 이름 일치 완료 */}
+        {/* 상단바 */}
         <DocHeader
           docName={docInfo.docName}
           currVersion={docInfo.currVersion}
