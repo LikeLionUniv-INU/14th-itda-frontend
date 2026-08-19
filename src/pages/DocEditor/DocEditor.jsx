@@ -22,7 +22,7 @@ export default function DocEditorPage() {
   const location = useLocation();
   const { teamId: paramTeamId, docId: paramDocId } = useParams();
 
-  // 1. TeamProject에서 전달받은 문서 정보 (state 우선 처리)
+  // 1. TeamProject에서 전달받은 문서 정보 바인딩
   const passedState = location.state || {};
   const teamId = paramTeamId || passedState.teamId;
   const docId = paramDocId || passedState.docId;
@@ -61,7 +61,7 @@ export default function DocEditorPage() {
     );
   };
 
-  // 이미지 업로드 처리
+  // 이미지 업로드
   const handleUploadImage = async (fileOrUrl) => {
     if (typeof fileOrUrl === "string") {
       handleUpdatePage({ imageUrl: fileOrUrl });
@@ -87,7 +87,7 @@ export default function DocEditorPage() {
     }
   };
 
-  // Payload 빌더 (5개 직무 탭 각각 분리하여 생성)
+  // 5개 탭 독립 Payload 구성
   const buildSavePayload = (summaryText = "최초 생성") => ({
     name: docName,
     teamId: teamId || null,
@@ -136,7 +136,7 @@ export default function DocEditorPage() {
     }
   };
 
-  // 최종 저장 및 번역 요청
+  // 최종 저장 & 번역
   const handleFinalSave = async (selectedMembers = []) => {
     try {
       let currentDocId = docId;
@@ -155,7 +155,7 @@ export default function DocEditorPage() {
       }
 
       setModalState({ isOpen: false, step: "exit" });
-      alert("문서가 성공적으로 저장되었습니다!");
+      alert("문서 저장이 완료되었습니다!");
       navigate(teamId ? `/teamp/${teamId}` : -1);
     } catch (e) {
       console.error("저장 실패:", e);
@@ -163,7 +163,7 @@ export default function DocEditorPage() {
     }
   };
 
-  // 핀 추가 시 각 직무 탭에 슬롯 생성 (초기값 빈 문자열)
+  // 핀 추가 시 5개 탭 각각 빈 항목 생성
   const handleAddPin = ({ x, y }) => {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
@@ -214,7 +214,7 @@ export default function DocEditorPage() {
     setFocusedPinId(null);
   };
 
-  // 요구사항 직무별 독립 수정 (선택된 role만 개별 수정)
+  // 요구사항 독립 업데이트 (공통 포함 현재 선택된 role 탭만 수정)
   const handleUpdateRequirement = (role, reqId, field, value) => {
     const updatedRequirements = { ...(currentPage.requirements || {}) };
     const list = updatedRequirements[role] || [];
@@ -231,7 +231,7 @@ export default function DocEditorPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단 헤더: 제목 및 임시저장/저장 버튼 노출 */}
+        {/* 상단 헤더: 타이틀 + 임시저장/저장 버튼 */}
         <S.HeaderWrapper>
           <DocHeader
             docName={docName}
@@ -320,7 +320,7 @@ export default function DocEditorPage() {
         </S.MainSection>
       </S.ContentContainer>
 
-      {/* 저장 및 나가기 모달 플로우 */}
+      {/* 저장 플로우 모달 */}
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
