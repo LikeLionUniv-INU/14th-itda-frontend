@@ -1,17 +1,56 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // react -> react-router-dom 수정
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import DocIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProjectDocs.styles";
 import { getTeamDetail } from "../../api/teamApi";
 
+// 언어 코드를 표기명으로 변환하는 함수 (TeamProject.jsx와 동일)
+const getLanguageFullName = (langCode) => {
+  if (!langCode) return "-";
+  const code = String(langCode).toLowerCase().trim();
+  const langMap = {
+    ko: "한국어",
+    korean: "한국어",
+    en: "English",
+    english: "English",
+    ja: "日本語",
+    japanese: "日本語",
+    zh: "中文",
+    chinese: "中文",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    vi: "Tiếng Việt",
+  };
+  return langMap[code] || langCode;
+};
+
+// 단일 언어 및 배열 형태의 언어 목록 모두 처리하는 함수
+const getLanguagesDisplay = (languages, fallback) => {
+  if (Array.isArray(languages) && languages.length > 0) {
+    return languages.map(getLanguageFullName).join(", ");
+  }
+  return getLanguageFullName(fallback);
+};
+
 const getRelativeTime = (dateString) => {
   if (!dateString) return "방금 전";
   const now = new Date();
-  const past = new Date(dateString);
+
+  let formatted = dateString;
+  if (
+    typeof dateString === "string" &&
+    !dateString.endsWith("Z") &&
+    !dateString.includes("+")
+  ) {
+    formatted = dateString.replace(" ", "T");
+  }
+
+  const past = new Date(formatted);
   if (isNaN(past.getTime())) return "방금 전";
 
-  const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+  const diffInMinutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60));
   if (diffInMinutes < 1) return "방금 전";
   if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
 
@@ -42,8 +81,8 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
       }
       try {
         const res = await getTeamDetail(teamId);
-        const resData = res.data;
-        if (resData.success || resData.data) {
+        const resData = res?.data;
+        if (resData) {
           setProjectData(resData.data || resData);
         }
       } catch (error) {
@@ -59,9 +98,9 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
   if (loading) return <div>로딩 중...</div>;
 
   const projectInfo = projectData || {
-    name: "AI 서비스 플랫폼",
-    defaultLanguage: "한국어",
-    createdAt: "2026.06.30",
+    name: "프로젝트",
+    defaultLanguage: "ko",
+    createdAt: "",
     members: [],
     documents: [],
   };
@@ -76,7 +115,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
 
   const memberInitials = members
     .slice(0, 3)
-    .map((m) => getInitial(m.name || m.firstName));
+    .map((m) => getInitial(m.name || m.firstName || m.nickname));
   const extraMemberCount = members.length - 3;
 
   return (
@@ -89,14 +128,19 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
       />
 
       <S.Content>
-        <S.ProjectSummaryCard>
-          <S.ProjectTitle>
+        {/* 프로젝트 배너 */}
+        <S.BannerCard>
+          <S.BannerTitle>
             {projectInfo.name || projectInfo.title}
-          </S.ProjectTitle>
-          <S.ProjectMetaInfo>
+          </S.BannerTitle>
+          <S.BannerMeta>
             <S.MetaItem>
               <span className="label">기본 언어</span>
-              <span className="value">{projectInfo.defaultLanguage}</span>
+              <span className="value">
+                {getLanguageFullName(
+                  projectInfo.defaultLanguage || projectInfo.language
+                )}
+              </span>
             </S.MetaItem>
 
             <S.MetaItem>
@@ -106,7 +150,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                   <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
                 ))}
                 {extraMemberCount > 0 && (
-                  <S.MiniAvatar className="more">
+                  <S.MiniAvatar $isMore>
                     +{extraMemberCount}
                   </S.MiniAvatar>
                 )}
@@ -116,11 +160,11 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
             <S.MetaItem>
               <span className="label">생성일</span>
               <span className="value">
-                {projectInfo.createdAt?.split("T")[0] || projectInfo.createdAt}
+                {projectInfo.createdAt?.split("T")[0] || projectInfo.createdAt || "-"}
               </span>
             </S.MetaItem>
-          </S.ProjectMetaInfo>
-        </S.ProjectSummaryCard>
+          </S.BannerMeta>
+        </S.BannerCard>
 
         <S.SectionTitle>전체 문서 목록</S.SectionTitle>
 
@@ -145,33 +189,38 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
               <tbody>
                 {docs.map((doc) => (
                   <tr
-                    key={doc.id}
+                    key={doc.id || doc.documentId}
                     onClick={() => {
+                      const targetId = doc.id || doc.documentId;
                       if (onSelectDocument) {
-                        onSelectDocument(doc.id);
+                        onSelectDocument(targetId);
                       } else if (onNavigate) {
-                        onNavigate("docDetail", doc.id);
+                        onNavigate("docDetail", targetId);
                       } else {
-                        navigate(`/doc-edit/${doc.id}`);
+                        navigate(`/doc-edit/${targetId}`);
                       }
                     }}
                   >
                     <td className="doc-name">{doc.name || doc.title}</td>
-                    <td>{projectInfo.name || doc.project}</td>
+                    <td>{projectInfo.name || doc.projectName || doc.project}</td>
                     <td>
-                      {doc.language ||
-                        doc.selectedLang ||
-                        (doc.languages && doc.languages[0]) ||
-                        "한국어"}
+                      {getLanguagesDisplay(
+                        doc.languages,
+                        doc.language || doc.selectedLang
+                      )}
                     </td>
                     <td>
-                      ver.
+                      ver.{" "}
                       {doc.latestVersion ||
                         doc.currentVersion ||
                         doc.version ||
                         1}
                     </td>
-                    <td>{getRelativeTime(doc.updatedAt || doc.updated)}</td>
+                    <td>
+                      {getRelativeTime(
+                        doc.updatedAt || doc.updated || doc.lastUpdatedAt || doc.createdAt
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
