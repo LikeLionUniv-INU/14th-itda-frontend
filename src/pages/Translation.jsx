@@ -4,7 +4,7 @@ import { Check, Sparkles, Clock, CheckCircle2 } from "lucide-react";
 import * as S from "./Translation.styles";
 import { getTranslationStatus } from "../api/translationApi";
 
-// 전체 지원 국가/언어 국기 이미지 및 명칭 매핑
+// 국가/언어 국기 이미지 및 명칭 매핑
 const LANG_META = {
   ko: { name: "한국어", flag: "https://flagcdn.com/w160/kr.png" },
   en: { name: "영어", flag: "https://flagcdn.com/w160/gb.png" },
@@ -21,21 +21,46 @@ const LANG_META = {
   id: { name: "인도네시아어", flag: "https://flagcdn.com/w160/id.png" },
 };
 
+// 백엔드 상태값 보정 헬퍼 함수
+const normalizeStatus = (statusStr) => {
+  if (!statusStr) return "WAITING";
+  const s = String(statusStr).toUpperCase();
+  if (["COMPLETED", "COMPLETE", "DONE", "FINISHED"].includes(s)) return "COMPLETED";
+  if (["IN_PROGRESS", "PROGRESS", "PROCESSING", "TRANSLATING"].includes(s)) return "IN_PROGRESS";
+  return "WAITING";
+};
+
+// 언어 코드 보정 헬퍼 함수
+const normalizeCode = (codeStr) => {
+  if (!codeStr) return "ko";
+  const c = String(codeStr).toLowerCase().trim();
+  if (c.startsWith("en")) return "en";
+  if (c.startsWith("ko")) return "ko";
+  if (c.startsWith("ja") || c.startsWith("jp")) return "ja";
+  if (c.startsWith("zh") || c.startsWith("cn")) return "zh";
+  if (c.startsWith("es")) return "es";
+  if (c.startsWith("fr")) return "fr";
+  if (c.startsWith("de")) return "de";
+  if (c.startsWith("vi") || c.startsWith("vn")) return "vi";
+  if (c.startsWith("id")) return "id";
+  return c.slice(0, 2);
+};
+
 export default function Translation() {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
 
-  // URL 파라미터 또는 라우팅 state로부터 동적 ID 추출
   const projectId =
     params.projectId || params.teamId || location.state?.projectId || 1;
 
-  // 초기 더미 데이터를 완전히 제거한 빈 배열 상태
   const [languages, setLanguages] = useState([]);
   const [serverProgress, setServerProgress] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  
   const pollingRef = useRef(null);
+  const hasNavigatedRef = useRef(false);
 
   // 기획서 고정 안내 멘트
   const getStatusDesc = (langCode, status) => {
@@ -56,45 +81,51 @@ export default function Translation() {
       const response = await getTranslationStatus(projectId);
       const resData = response?.data?.data || response?.data || response;
 
-      // 백엔드에서 내려온 번역 목록 매핑
-      if (resData?.languages && Array.isArray(resData.languages)) {
-        const formatted = resData.languages.map((item, idx) => {
-          const rawCode = (item.code || item.language || "ko").toLowerCase();
-          const meta = LANG_META[rawCode] || {
-            name: item.name || rawCode.toUpperCase(),
-            flag: `https://flagcdn.com/w160/${rawCode}.png`,
+      // 1. 유연한 배열 데이터 추출 (백엔드 필드명 유연화)
+      const rawList =
+        resData?.languages ||
+        resData?.translationStatuses ||
+        resData?.translations ||
+        (Array.isArray(resData) ? resData : []);
+
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        const formatted = rawList.map((item, idx) => {
+          const rawCode = item.code || item.languageCode || item.targetLanguage || item.language || "ko";
+          const normCode = normalizeCode(rawCode);
+          const meta = LANG_META[normCode] || {
+            name: item.name || item.languageName || normCode.toUpperCase(),
+            flag: `https://flagcdn.com/w160/${normCode}.png`,
           };
 
           return {
             id: item.id || idx + 1,
-            code: rawCode,
-            name: meta.name || item.name,
+            code: normCode,
+            name: meta.name || item.name || "언어",
             flagImg: meta.flag,
-            status: item.status || "WAITING", // COMPLETED | IN_PROGRESS | WAITING
+            status: normalizeStatus(item.status),
           };
         });
         setLanguages(formatted);
+
+        // 2. 전체 완료 여부 판단 및 페이지 이동
+        const allCompleted =
+          resData?.isAllCompleted ||
+          (formatted.length > 0 && formatted.every((l) => l.status === "COMPLETED"));
+
+        if (allCompleted && !hasNavigatedRef.current) {
+          hasNavigatedRef.current = true;
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setShowToast(true);
+
+          setTimeout(() => {
+            navigate(`/project/${projectId}`);
+          }, 3000);
+        }
       }
 
-      // 서버에서 직접 계산해주는 진행률이 있다면 반영
+      // 3. 서버 진척도 반영
       if (typeof resData?.progressPercentage === "number") {
         setServerProgress(resData.progressPercentage);
-      }
-
-      // 전체 완료 여부 체크
-      const allCompleted =
-        resData?.isAllCompleted ||
-        (resData?.languages &&
-          resData.languages.length > 0 &&
-          resData.languages.every((l) => l.status === "COMPLETED"));
-
-      if (allCompleted) {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        setShowToast(true);
-
-        setTimeout(() => {
-          navigate(`/project/${projectId}`);
-        }, 3000);
       }
     } catch (error) {
       console.error("실시간 번역 상태 조회 오류:", error);
@@ -104,7 +135,6 @@ export default function Translation() {
   useEffect(() => {
     fetchStatus();
 
-    // 3초 주기로 실시간 상태 갱신
     pollingRef.current = setInterval(() => {
       fetchStatus();
     }, 3000);
@@ -114,16 +144,14 @@ export default function Translation() {
     };
   }, [projectId]);
 
-  // 실시간 프로그레스바 퍼센티지 계산 (서버 제공값 우선, 없을 시 완료 개수 1/N 계산)
-  const completedCount = languages.filter(
-    (l) => l.status === "COMPLETED",
-  ).length;
+  // 프로그레스바 퍼센티지 계산 (서버값 우선, 없을시 완료 개수 1/N 계산)
+  const completedCount = languages.filter((l) => l.status === "COMPLETED").length;
   const progressPercentage =
     serverProgress !== null
       ? serverProgress
       : languages.length > 0
-        ? Math.round((completedCount / languages.length) * 100)
-        : 0;
+      ? Math.round((completedCount / languages.length) * 100)
+      : 0;
 
   // 3개 초과 시 좌우 슬라이드 버튼 활성화
   const maxVisible = 3;
@@ -146,7 +174,7 @@ export default function Translation() {
   return (
     <S.PageWrapper>
       <S.CenterContainer>
-        {/* 상단 반짝이 아이콘 */}
+        {/* 아이콘 */}
         <S.SparkleIconWrapper>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
             <path
@@ -172,7 +200,7 @@ export default function Translation() {
         </S.ProgressSection>
 
         <S.CardsWrapper>
-          {/* 이전 버튼 (3개 초과 시 활성화) */}
+          {/* 이전 버튼 */}
           <S.TriangleButton
             onClick={handlePrev}
             disabled={!canPrev}
@@ -185,44 +213,50 @@ export default function Translation() {
 
           {/* 언어 카드 리스트 */}
           <S.CardGrid>
-            {visibleLanguages.map((lang) => (
-              <S.LangCard key={lang.id}>
-                <S.FlagCircle>
-                  {lang.flagImg ? (
-                    <img src={lang.flagImg} alt={`${lang.name} 국기`} />
-                  ) : (
-                    <span>{lang.name?.charAt(0)}</span>
-                  )}
-                </S.FlagCircle>
+            {languages.length === 0 ? (
+              <p style={{ color: "#888", padding: "40px 0" }}>
+                번역 정보를 불러오는 중입니다...
+              </p>
+            ) : (
+              visibleLanguages.map((lang) => (
+                <S.LangCard key={lang.id}>
+                  <S.FlagCircle>
+                    {lang.flagImg ? (
+                      <img src={lang.flagImg} alt={`${lang.name} 국기`} />
+                    ) : (
+                      <span>{lang.name?.charAt(0)}</span>
+                    )}
+                  </S.FlagCircle>
 
-                <S.LangName>{lang.name}</S.LangName>
+                  <S.LangName>{lang.name}</S.LangName>
 
-                <S.StatusBadge $status={lang.status}>
-                  {lang.status === "COMPLETED" && (
-                    <>
-                      <Check size={14} strokeWidth={2.5} /> 완료
-                    </>
-                  )}
-                  {lang.status === "IN_PROGRESS" && (
-                    <>
-                      <Sparkles size={14} className="spinner" /> 번역 중
-                    </>
-                  )}
-                  {lang.status === "WAITING" && (
-                    <>
-                      <Clock size={14} /> 대기 중
-                    </>
-                  )}
-                </S.StatusBadge>
+                  <S.StatusBadge $status={lang.status}>
+                    {lang.status === "COMPLETED" && (
+                      <>
+                        <Check size={14} strokeWidth={2.5} /> 완료
+                      </>
+                    )}
+                    {lang.status === "IN_PROGRESS" && (
+                      <>
+                        <Sparkles size={14} className="spinner" /> 번역 중
+                      </>
+                    )}
+                    {lang.status === "WAITING" && (
+                      <>
+                        <Clock size={14} /> 대기 중
+                      </>
+                    )}
+                  </S.StatusBadge>
 
-                <S.DescriptionText>
-                  {getStatusDesc(lang.code, lang.status)}
-                </S.DescriptionText>
-              </S.LangCard>
-            ))}
+                  <S.DescriptionText>
+                    {getStatusDesc(lang.code, lang.status)}
+                  </S.DescriptionText>
+                </S.LangCard>
+              ))
+            )}
           </S.CardGrid>
 
-          {/* 다음 버튼 (3개 초과 시 활성화) */}
+          {/* 다음 버튼 */}
           <S.TriangleButton
             onClick={handleNext}
             disabled={!canNext}

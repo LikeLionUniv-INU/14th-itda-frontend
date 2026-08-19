@@ -2,6 +2,7 @@ import styled, { createGlobalStyle } from "styled-components";
 import DocBridge로고 from "../assets/image/DocBridge로고.svg";
 import map from "../assets/image/map.svg";
 
+
 export const GlobalStyle = createGlobalStyle`
   *, *::before, *::after {
     box-sizing: border-box;
@@ -100,6 +101,12 @@ export const FeatureIconBox = styled.div`
   align-items: center;
   justify-content: center;
   position: relative;
+
+  img {
+    width: 30px; 
+    height: 30px;
+    object-fit: contain;
+  }
 `;
 
 export const FeatureText = styled.div`

@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { signupApi } from "../api/auth";
 import LanguageSelect from "../components/LanguageSelect";
 import * as S from "./Signup.styles";
+import globe from "../assets/image/globe.svg";
+import robot from "../assets/image/robot.svg";
+import people from "../assets/image/people.svg";
+import manage from "../assets/image/manage.svg";
 
 // 국가 옵션 리스트 (ISO-2 국가 코드)
 const COUNTRY_OPTIONS = [
@@ -141,59 +145,64 @@ const Signup = ({ onNavigateToLogin }) => {
     <S.Container>
       <S.MainWrapper>
         <S.LeftSection>
-          <S.ContentWrapper>
-            <S.MainTitle>
-              언어의 경계를 넘어
-              <br />
-              모두의 이해를 잇다
-              <br />
-              <span>하나의 협업으로</span>
-            </S.MainTitle>
-            <S.SubDescription>
-              하나의 문서만 작성하세요.
-              <br />
-              변경사항은 자동으로 동기화되고,
-              <br />
-              글로벌 팀은 언제나 같은 내용을 이해합니다.
-            </S.SubDescription>
-          </S.ContentWrapper>
-
-          <S.FeatureList>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>글로벌 협업</strong>
-                <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>AI 자동 동기화</strong>
-                <span>
-                  수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
-                  유지합니다.
-                </span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>팀 협업</strong>
-                <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>버전 관리</strong>
-                <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-          </S.FeatureList>
-
-          <S.MapGraphic />
-        </S.LeftSection>
+                  <S.MainTitle>
+                    언어의 경계를 넘어
+                    <br />
+                    모두의 이해를 잇다
+                    <br />
+                    <span>하나의 협업으로</span>
+                  </S.MainTitle>
+                  <S.SubDescription>
+                    하나의 문서만 작성하세요.
+                    <br />
+                    변경사항은 자동으로 동기화되고,
+                    <br />
+                    글로벌 팀은 언제나 같은 내용을 이해합니다.
+                  </S.SubDescription>
+        
+                  <S.FeatureList>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={globe} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>글로벌 협업</strong>
+                        <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={robot} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>AI 자동 동기화</strong>
+                        <span>
+                          수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
+                          유지합니다.
+                        </span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={people} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>팀 협업</strong>
+                        <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={manage} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>버전 관리</strong>
+                        <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                  </S.FeatureList>
+                  <S.MapGraphic />
+                </S.LeftSection>
 
         <S.RightSection>
           <S.Card>

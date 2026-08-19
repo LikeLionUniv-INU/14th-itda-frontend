@@ -121,5 +121,4 @@ export const Avatar = styled.div`
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  cursor: pointer;
 `;

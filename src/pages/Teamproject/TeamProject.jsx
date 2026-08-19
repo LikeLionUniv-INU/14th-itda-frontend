@@ -68,6 +68,7 @@ export default function TeamProject({ onNavigate }) {
   const navigate = useNavigate();
   const { teamId } = useParams();
 
+  // API 데이터 및 로딩 상태
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +76,10 @@ export default function TeamProject({ onNavigate }) {
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
+  // 선택된 버전 상태
   const [selectedVersions, setSelectedVersions] = useState({});
+
+  // 알림 관련 상태
   const [notification, setNotification] = useState(null);
 
   const fetchTeamData = async () => {
@@ -84,11 +88,12 @@ export default function TeamProject({ onNavigate }) {
       return;
     }
     try {
-      setLoading(true);
       const res = await getTeamDetail(teamId);
-      const data = res.data?.data || res.data || {};
+      const resData = res.data;
+      const data = resData?.data || resData || {};
       setProject(data);
 
+      // 문서 버전 초기화
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
@@ -110,6 +115,7 @@ export default function TeamProject({ onNavigate }) {
     try {
       const res = await getTeamNotifications(teamId);
       const notifications = res.data?.data || res.data || [];
+
       if (Array.isArray(notifications) && notifications.length > 0) {
         setNotification(notifications[0]);
       } else {
@@ -150,7 +156,7 @@ export default function TeamProject({ onNavigate }) {
       const resData = res.data?.data || res.data || {};
       const newDocId = resData.id || resData.documentId || resData.docId;
 
-      // 생성된 docId 및 설정 정보(이름, 언어, 버전 등)를 가지고 신규 작성 페이지(/doc-create)로 이동
+      // 생성된 docId 및 설정 정보를 가지고 신규 작성 페이지(/doc-create)로 이동
       navigate("/doc-create", {
         state: {
           docId: newDocId,
@@ -200,9 +206,11 @@ export default function TeamProject({ onNavigate }) {
   const hasDocs = docs.length > 0;
   const hasActivities = activities.length > 0;
 
+  // 알림 문구 파싱
   const renderNotificationTitle = (noti) => {
     if (!noti) return "";
     const { documentName, beforeVersion, afterVersion } = noti;
+
     if (beforeVersion !== undefined && beforeVersion !== afterVersion) {
       return `${documentName}_version${beforeVersion}이 수정되어 version${afterVersion}가 업로드 되었습니다.`;
     }
@@ -217,6 +225,7 @@ export default function TeamProject({ onNavigate }) {
     const time = noti.createdAt
       ? noti.createdAt.replace("T", " ").slice(0, 16)
       : "";
+
     return `${author ? `${author} 님께서 업로드 하셨어요. ` : ""}${time}`;
   };
 
@@ -231,7 +240,7 @@ export default function TeamProject({ onNavigate }) {
 
       <S.Container>
         <S.MainSection>
-          {/* 알림 바 */}
+          {/* ===== 알림 바 영역 ===== */}
           {notification && (
             <S.NotificationBar>
               <S.NotificationLeft>

@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { loginApi } from "../api/auth";
 import * as S from "./Login.styles";
+import globe from "../assets/image/globe.svg";
+import robot from "../assets/image/robot.svg";
+import people from "../assets/image/people.svg";
+import manage from "../assets/image/manage.svg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -126,14 +130,18 @@ const Login = () => {
 
           <S.FeatureList>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={globe} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>글로벌 협업</strong>
                 <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={robot} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>AI 자동 동기화</strong>
                 <span>
@@ -143,14 +151,18 @@ const Login = () => {
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={people} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>팀 협업</strong>
                 <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={manage} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>버전 관리</strong>
                 <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>

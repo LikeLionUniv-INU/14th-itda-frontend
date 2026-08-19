@@ -50,7 +50,7 @@ export default function MainHome({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // 모달 오픈 핸들러 (props 우선, 없으면 자체 모달 open)
+  // 모달 열기 핸들러
   const handleOpenCreateModal = () => {
     if (onCreateProject) onCreateProject();
     else setIsCreateOpen(true);
@@ -79,6 +79,19 @@ export default function MainHome({
     ? `${userInfo.lastName || ""}${userInfo.firstName || ""}`.trim() || "사용자"
     : "사용자";
 
+  // 프로필 이니셜 계산 (회원가입 시 들어온 성(lastName) 또는 이름(firstName)의 첫 글자 대문자)
+  const getUserInitial = () => {
+    if (!userInfo) return "U";
+    if (userInfo.initial) return userInfo.initial.toUpperCase();
+    if (userInfo.lastName) return userInfo.lastName.charAt(0).toUpperCase();
+    if (userInfo.firstName) return userInfo.firstName.charAt(0).toUpperCase();
+    if (userInfo.name) return userInfo.name.charAt(0).toUpperCase();
+    if (userInfo.email) return userInfo.email.charAt(0).toUpperCase();
+    return "U";
+  };
+
+  const userInitial = getUserInitial();
+
   if (loading) {
     return <S.PageWrapper>로딩 중...</S.PageWrapper>;
   }
@@ -89,7 +102,7 @@ export default function MainHome({
         activeTab="home"
         showNav={true}
         userName={displayUserName}
-        userInitial={userInfo?.initial}
+        userInitial={userInitial}
         onNavigate={onNavigate}
         onCreateProject={handleOpenCreateModal}
         onJoinProject={handleOpenJoinModal}
@@ -165,8 +178,8 @@ export default function MainHome({
                   {p.members?.map((m, idx) => (
                     <S.MiniAvatar key={idx}>
                       {typeof m === "string"
-                        ? m.charAt(0)
-                        : m.initial || m.firstName?.charAt(0)}
+                        ? m.charAt(0).toUpperCase()
+                        : (m.initial || m.firstName?.charAt(0) || m.lastName?.charAt(0) || "U").toUpperCase()}
                     </S.MiniAvatar>
                   ))}
                 </S.AvatarGroup>

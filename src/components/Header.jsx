@@ -10,6 +10,8 @@ import JoinProjectModal from "./Modal/JoinProjectModal";
 export default function Header({
   type = "main",
   showNav = true,
+  userName, // 유저 이름 (props)
+  userInitial, // 유저 이니셜 (props)
   onCreateProject,
   onJoinProject,
   onCreateDoc,
@@ -22,6 +24,12 @@ export default function Header({
   // 모달 열림/닫힘 상태 관리
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+
+  // 이니셜 계산 (props로 넘어온 userInitial 우선 -> userName의 첫 글자 -> 기본값 'U')
+  const displayInitial = (
+    userInitial ||
+    (userName ? userName.charAt(0) : "U")
+  ).toUpperCase();
 
   const handleExit = () => {
     if (onExit) {
@@ -96,7 +104,7 @@ export default function Header({
               <S.ProjectEnterButton onClick={handleOpenJoin}>
                 프로젝트 입장
               </S.ProjectEnterButton>
-              <S.Avatar>S</S.Avatar>
+              <S.Avatar title={userName}>{displayInitial}</S.Avatar>
             </>
           )}
         </S.HeaderRight>
