@@ -1,10 +1,12 @@
-// src/components/Modal/JoinProjectModal.jsx
 import React, { useState, useRef, useEffect } from "react";
-import styled from "styled-components";
+import BaseModal from "./BaseModal";
+import { joinTeam } from "../../services/teamApi";
+import * as S from "./JoinProjectModal.styles";
 
-function JoinProjectModal({ isOpen, onClose }) {
+function JoinProjectModal({ isOpen, onClose, onSuccess }) {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef([]);
 
   useEffect(() => {
@@ -13,8 +15,6 @@ function JoinProjectModal({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleInputChange = (e, index) => {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!value) return;
@@ -22,7 +22,7 @@ function JoinProjectModal({ isOpen, onClose }) {
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
-    setShowError(false);
+    setErrorMessage("");
 
     if (index < 5 && value) {
       inputRefs.current[index + 1].focus();
@@ -51,40 +51,53 @@ function JoinProjectModal({ isOpen, onClose }) {
     if (pasteData.length === 6) {
       const newCode = pasteData.split("");
       setCode(newCode);
-      setShowError(false);
+      setErrorMessage("");
       inputRefs.current[5].focus();
     }
   };
 
-  const handleJoinSubmit = () => {
-    const fullCode = code.join("");
+  // 5. 팀 참여 API 연동 (POST /api/teams/join)
+  const handleJoinSubmit = async () => {
+    const inviteCode = code.join("");
+    if (inviteCode.length !== 6 || isLoading) return;
 
-    if (fullCode.length !== 6 || fullCode !== "AB7K9P") {
-      setShowError(true);
-    } else {
-      alert("프로젝트 참여에 성공했습니다!");
+    try {
+      setIsLoading(true);
+      const res = await joinTeam({ inviteCode });
+
+      // 참여 성공 시 처리 (팀 상세로 이동 또는 콜백 호출)
       handleCloseAll();
+      if (onSuccess) {
+        onSuccess(res.data);
+      } else if (res.data?.teamProjectId) {
+        window.location.href = `/teams/${res.data.teamProjectId}`;
+      }
+    } catch (error) {
+      // 404, 409 등 백엔드 에러 메시지 바인딩
+      setErrorMessage(error.message || "존재하지 않는 초대 코드입니다.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCloseAll = () => {
     setCode(["", "", "", "", "", ""]);
-    setShowError(false);
-    onClose();
+    setErrorMessage("");
+    onClose?.();
   };
 
-  const isAllEntered = code.every((char) => char !== "");
+  const isAllEntered = code.every((char) => char !== "") && !isLoading;
 
   return (
-    <Overlay onClick={handleCloseAll}>
-      <ModalContainer onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={handleCloseAll}>✕</CloseButton>
-        <Title>팀 프로젝트 참여</Title>
-        <Description>팀 리더에게 받은 초대 코드를 입력하세요.</Description>
+    <BaseModal isOpen={isOpen} onClose={handleCloseAll} width="480px">
+      <S.ContentWrapper>
+        <S.CloseButton onClick={handleCloseAll}>✕</S.CloseButton>
+        <S.Title>팀 프로젝트 참여</S.Title>
+        <S.Description>팀 리더에게 받은 초대 코드를 입력하세요.</S.Description>
 
-        <CodeInputGroup onPaste={handlePaste}>
+        <S.CodeInputGroup onPaste={handlePaste}>
           {code.map((char, index) => (
-            <SingleInput
+            <S.SingleInput
               key={index}
               ref={(el) => (inputRefs.current[index] = el)}
               type="text"
@@ -92,146 +105,22 @@ function JoinProjectModal({ isOpen, onClose }) {
               value={char}
               onChange={(e) => handleInputChange(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className={showError ? "error" : ""}
+              className={errorMessage ? "error" : ""}
             />
           ))}
-        </CodeInputGroup>
+        </S.CodeInputGroup>
 
-        {showError && <ErrorText>존재하지 않는 코드입니다.</ErrorText>}
+        {errorMessage && <S.ErrorText>{errorMessage}</S.ErrorText>}
 
-        <ButtonGroup>
-          <CancelButton onClick={handleCloseAll}>취소</CancelButton>
-          <SubmitButton onClick={handleJoinSubmit} disabled={!isAllEntered}>
-            참여하기
-          </SubmitButton>
-        </ButtonGroup>
-      </ModalContainer>
-    </Overlay>
+        <S.ButtonGroup>
+          <S.CancelButton onClick={handleCloseAll}>취소</S.CancelButton>
+          <S.SubmitButton onClick={handleJoinSubmit} disabled={!isAllEntered}>
+            {isLoading ? "참여 중..." : "참여하기"}
+          </S.SubmitButton>
+        </S.ButtonGroup>
+      </S.ContentWrapper>
+    </BaseModal>
   );
 }
 
 export default JoinProjectModal;
-
-// ==============================
-// styled-components 정의 (수정 부분)
-// ==============================
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContainer = styled.div`
-  position: relative;
-  background-color: #fdf5f5;
-  border-radius: 16px;
-  padding: 32px 28px 28px 28px;
-  width: 90%;
-  max-width: 480px; /* 64px x 6개 + 간격에 맞춘 모달 너비 */
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-  text-align: left; /* 👈 전체 왼쪽 정렬 */
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #0a0a0a; /* 👈 #0A0A0A 적용 */
-`;
-
-const Title = styled.h2`
-  margin: 0 0 12px 0;
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #0a0a0a; /* 👈 #0A0A0A 적용 */
-  text-align: left;
-`;
-
-const Description = styled.p`
-  font-size: 0.9rem;
-  color: #0a0a0a; /* 👈 #0A0A0A 적용 */
-  margin: 0 0 28px 0;
-  text-align: left;
-`;
-
-const CodeInputGroup = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-`;
-
-const SingleInput = styled.input`
-  width: 64px; /* 👈 64px 지정 */
-  height: 64px; /* 👈 64px 지정 */
-  border: 1px solid #dcdcdc;
-  border-radius: 12px;
-  background-color: #f7f1f1; /* 이미지 스펙 기반 미세하게 연한 배경 */
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #0a0a0a; /* 👈 #0A0A0A 적용 */
-  text-align: center;
-  outline: none;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #2703f1; /* 👈 보라색 #2703F1 적용 */
-    border-width: 2px;
-    background-color: #fff;
-  }
-
-  &.error {
-    border-color: #e53e3e;
-  }
-`;
-
-const ErrorText = styled.p`
-  color: #e53e3e;
-  font-size: 0.8rem;
-  text-align: center;
-  margin: 8px 0 0 0;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 32px;
-`;
-
-const CancelButton = styled.button`
-  flex: 1;
-  height: 48px;
-  border: 1px solid #2703f1; /* 👈 보라색 #2703F1 적용 */
-  background-color: transparent;
-  color: #2703f1; /* 👈 보라색 #2703F1 적용 */
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: bold;
-  cursor: pointer;
-`;
-
-const SubmitButton = styled.button`
-  flex: 1;
-  height: 48px;
-  border: none;
-  background-color: #2703f1; /* 👈 보라색 #2703F1 적용 */
-  color: #fff;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: bold;
-  cursor: pointer;
-
-  &:disabled {
-    background-color: #a393f9; /* 비활성화 시 연한 보라 느낌 */
-    cursor: not-allowed;
-  }
-`;

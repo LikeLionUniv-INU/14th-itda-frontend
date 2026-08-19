@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
@@ -7,7 +6,8 @@ import PageNavigator from "./components/PageNavigator";
 import ScreenInfoForm from "./components/ScreenInfoForm";
 import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
-import SaveFlowModals from "./components/SaveFlowModals";
+import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
@@ -34,11 +34,7 @@ export default function DocEditorPage() {
 
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
-
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    step: "exit",
-  });
+  const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
 
   const currentPage = pages[activePageIndex] || {};
 
@@ -54,14 +50,12 @@ export default function DocEditorPage() {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
     const newPinNumber = currentPins.length + 1;
-
     const newPin = { id: newPinId, number: newPinNumber, x, y };
     const newReqItem = {
       id: newPinId,
       number: newPinNumber,
       item: "",
       detail: "",
-      isModified: false,
     };
 
     const updatedRequirements = { ...(currentPage.requirements || {}) };
@@ -98,10 +92,7 @@ export default function DocEditorPage() {
         .map((r, idx) => ({ ...r, number: idx + 1 }));
     });
 
-    handleUpdatePage({
-      pins: filteredPins,
-      requirements: updatedRequirements,
-    });
+    handleUpdatePage({ pins: filteredPins, requirements: updatedRequirements });
     setFocusedPinId(null);
   };
 
@@ -146,12 +137,12 @@ export default function DocEditorPage() {
   };
 
   return (
-    <PageLayout>
-      <ContentContainer>
-        <HeaderWrapper>
+    <S.PageLayout>
+      <S.ContentContainer>
+        <S.HeaderWrapper>
           <DocHeader
             docName="스토리보드"
-            version={1}
+            currVersion={1}
             mode="create"
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
             onTempSave={() => alert("임시저장되었습니다.")}
@@ -159,12 +150,11 @@ export default function DocEditorPage() {
               setModalState({ isOpen: true, step: "complete_confirm" })
             }
           />
-        </HeaderWrapper>
+        </S.HeaderWrapper>
 
-        <MainSection>
-          {/* 좌측 (712px × 854px) */}
-          <LeftColumn>
-            <PageNavWrapper>
+        <S.MainSection>
+          <S.LeftColumn>
+            <S.PageNavWrapper>
               <PageNavigator
                 pages={pages}
                 activePageIndex={activePageIndex}
@@ -194,9 +184,9 @@ export default function DocEditorPage() {
                   setActivePageIndex(pages.length);
                 }}
               />
-            </PageNavWrapper>
+            </S.PageNavWrapper>
 
-            <LeftBox>
+            <S.LeftBox>
               <ScreenInfoForm
                 screenName={currentPage.screenName}
                 screenId={currentPage.screenId}
@@ -205,6 +195,7 @@ export default function DocEditorPage() {
                 }
                 onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
               />
+              <S.Divider />
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
@@ -217,12 +208,11 @@ export default function DocEditorPage() {
                 onFocusPin={(id) => setFocusedPinId(id)}
                 onDeletePin={handleDeletePin}
               />
-            </LeftBox>
-          </LeftColumn>
+            </S.LeftBox>
+          </S.LeftColumn>
 
-          {/* 우측 (468px × 854px) */}
-          <RightColumn>
-            <RightBox>
+          <S.RightColumn>
+            <S.RightBox>
               <RequirementSection
                 mode="create"
                 requirements={currentPage.requirements || {}}
@@ -230,10 +220,10 @@ export default function DocEditorPage() {
                 onUpdateRequirement={handleUpdateRequirement}
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
-            </RightBox>
-          </RightColumn>
-        </MainSection>
-      </ContentContainer>
+            </S.RightBox>
+          </S.RightColumn>
+        </S.MainSection>
+      </S.ContentContainer>
 
       <SaveFlowModals
         isOpen={modalState.isOpen}
@@ -252,85 +242,6 @@ export default function DocEditorPage() {
           alert("스토리보드가 성공적으로 저장되었습니다!");
         }}
       />
-    </PageLayout>
+    </S.PageLayout>
   );
 }
-
-const PageLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff;
-  padding: 40px 0 80px 0;
-  box-sizing: border-box;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-  width: 1200px;
-`;
-
-const HeaderWrapper = styled.div`
-  width: 1200px;
-  height: 61px;
-  display: flex;
-  align-items: center;
-`;
-
-const MainSection = styled.div`
-  display: flex;
-  width: 1200px;
-  justify-content: space-between;
-  align-items: flex-end;
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 712px;
-`;
-
-const PageNavWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-`;
-
-/* 712px × 854px 고정 박스 */
-const LeftBox = styled.div`
-  width: 712px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 468px;
-`;
-
-/* 468px × 854px 고정 박스 */
-const RightBox = styled.div`
-  width: 468px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-`;
