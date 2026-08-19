@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import FileIcon from "../../assets/image/file.svg";
-import BannerSvg from "../../assets/image/banner.svg";
 import * as S from "./TeamProject.styles";
 
-// 단독 모달 컴포넌트 import
 import CreateDocumentModal from "../../components/Modal/CreateDocumentModal";
 import InviteModal from "../../components/Modal/InviteModal";
 
@@ -18,7 +16,7 @@ import {
 
 const getLanguageFullName = (langCode) => {
   if (!langCode) return "-";
-  const code = langCode.toLowerCase().trim();
+  const code = String(langCode).toLowerCase().trim();
   const langMap = {
     ko: "한국어",
     korean: "한국어",
@@ -44,10 +42,24 @@ const getLanguagesDisplay = (languages, fallback) => {
 };
 
 const getRelativeTime = (dateString) => {
-  if (!dateString) return "";
+  if (!dateString) return "방금 전";
   const now = new Date();
-  const past = new Date(dateString);
-  const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+
+  let formatted = dateString;
+  if (
+    typeof dateString === "string" &&
+    !dateString.endsWith("Z") &&
+    !dateString.includes("+")
+  ) {
+    formatted = dateString.replace(" ", "T");
+  }
+
+  const past = new Date(formatted);
+  if (isNaN(past.getTime())) return "방금 전";
+
+  const diffInMinutes = Math.floor(
+    (now.getTime() - past.getTime()) / (1000 * 60),
+  );
 
   if (diffInMinutes < 1) return "방금 전";
   if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
@@ -56,30 +68,30 @@ const getRelativeTime = (dateString) => {
   if (diffInHours < 24) return `${diffInHours}시간 전`;
 
   const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}일 전`;
+  if (diffInDays < 30) return `${diffInDays}일 전`;
+
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths}달 전`;
+
+  return `${Math.floor(diffInMonths / 12)}년 전`;
 };
 
 const getInitial = (name) => {
   if (!name) return "";
-  return name.trim().charAt(0).toUpperCase();
+  return String(name).trim().charAt(0).toUpperCase();
 };
 
 export default function TeamProject({ onNavigate }) {
   const navigate = useNavigate();
   const { teamId } = useParams();
 
-  // API 데이터 및 로딩 상태
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 모달 상태
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // 선택된 버전 상태
   const [selectedVersions, setSelectedVersions] = useState({});
-
-  // 알림 관련 상태
   const [notification, setNotification] = useState(null);
 
   const fetchTeamData = async () => {
@@ -88,12 +100,12 @@ export default function TeamProject({ onNavigate }) {
       return;
     }
     try {
+      setLoading(true);
       const res = await getTeamDetail(teamId);
-      const resData = res.data;
+      const resData = res?.data;
       const data = resData?.data || resData || {};
       setProject(data);
 
-      // 문서 버전 초기화
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
@@ -114,7 +126,7 @@ export default function TeamProject({ onNavigate }) {
     if (!teamId) return;
     try {
       const res = await getTeamNotifications(teamId);
-      const notifications = res.data?.data || res.data || [];
+      const notifications = res?.data?.data || res?.data || [];
 
       if (Array.isArray(notifications) && notifications.length > 0) {
         setNotification(notifications[0]);
@@ -142,7 +154,6 @@ export default function TeamProject({ onNavigate }) {
     fetchNotification();
   }, [teamId]);
 
-  // 문서 생성 완료 시 신규 작성 페이지(/doc-create)로 이동
   const handleDocumentSuccess = async (docData) => {
     setIsCreateDocModalOpen(false);
     try {
@@ -153,10 +164,9 @@ export default function TeamProject({ onNavigate }) {
         version: Number(docData.version) || 1,
       });
 
-      const resData = res.data?.data || res.data || {};
+      const resData = res?.data?.data || res?.data || {};
       const newDocId = resData.id || resData.documentId || resData.docId;
 
-      // 생성된 docId 및 설정 정보를 가지고 신규 작성 페이지(/doc-create)로 이동
       navigate("/doc-create", {
         state: {
           docId: newDocId,
@@ -175,6 +185,15 @@ export default function TeamProject({ onNavigate }) {
     }
   };
 
+  // "전체보기 >" 클릭 핸들러 (TeamProjectDocs로 이동)
+  const handleGoToAllDocs = () => {
+    if (onNavigate) {
+      onNavigate("teamDocs", teamId);
+    } else {
+      navigate(`/teamp-doc/${teamId}`);
+    }
+  };
+
   const handleVersionChange = (docId, newVersion) => {
     setSelectedVersions((prev) => ({
       ...prev,
@@ -182,8 +201,18 @@ export default function TeamProject({ onNavigate }) {
     }));
   };
 
-  if (loading) return <div>로딩 중...</div>;
-  if (!project) return <div>프로젝트 정보를 불러올 수 없습니다.</div>;
+  if (loading)
+    return (
+      <S.PageWrapper style={{ padding: "40px", textAlign: "center" }}>
+        로딩 중...
+      </S.PageWrapper>
+    );
+  if (!project)
+    return (
+      <S.PageWrapper style={{ padding: "40px", textAlign: "center" }}>
+        프로젝트 정보를 불러올 수 없습니다.
+      </S.PageWrapper>
+    );
 
   const isLeader =
     project.myRole === "LEADER" ||
@@ -206,7 +235,6 @@ export default function TeamProject({ onNavigate }) {
   const hasDocs = docs.length > 0;
   const hasActivities = activities.length > 0;
 
-  // 알림 문구 파싱
   const renderNotificationTitle = (noti) => {
     if (!noti) return "";
     const { documentName, beforeVersion, afterVersion } = noti;
@@ -240,7 +268,6 @@ export default function TeamProject({ onNavigate }) {
 
       <S.Container>
         <S.MainSection>
-          {/* ===== 알림 바 영역 ===== */}
           {notification && (
             <S.NotificationBar>
               <S.NotificationLeft>
@@ -270,88 +297,92 @@ export default function TeamProject({ onNavigate }) {
 
           {/* 프로젝트 배너 */}
           <S.BannerCard>
-            <S.BannerBgImg src={BannerSvg} alt="배너 배경" />
-            <S.BannerContent>
-              <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
-              <S.BannerMeta>
-                <S.MetaItem>
-                  <span className="label">기본 언어</span>
-                  <span className="value">
-                    {getLanguageFullName(
-                      project.defaultLanguage || project.language,
-                    )}
-                  </span>
-                </S.MetaItem>
-                <S.MetaItem>
-                  <span className="label">멤버</span>
-                  <S.AvatarGroup>
-                    {memberInitials.map((initial, idx) => (
-                      <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
-                    ))}
-                    {extraMemberCount > 0 && (
-                      <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
-                    )}
-                  </S.AvatarGroup>
-                </S.MetaItem>
-                <S.MetaItem>
-                  <span className="label">생성일</span>
-                  <span className="value">
-                    {project.createdAt?.split("T")[0] ||
-                      project.createdAt ||
-                      "-"}
-                  </span>
-                </S.MetaItem>
-              </S.BannerMeta>
-            </S.BannerContent>
+            <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
+            <S.BannerMeta>
+              <S.MetaItem>
+                <span className="label">기본 언어</span>
+                <span className="value">
+                  {getLanguageFullName(
+                    project.defaultLanguage || project.language,
+                  )}
+                </span>
+              </S.MetaItem>
+              <S.MetaItem>
+                <span className="label">멤버</span>
+                <S.AvatarGroup>
+                  {memberInitials.map((initial, idx) => (
+                    <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
+                  ))}
+                  {extraMemberCount > 0 && (
+                    <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
+                  )}
+                </S.AvatarGroup>
+              </S.MetaItem>
+              <S.MetaItem>
+                <span className="label">생성일</span>
+                <span className="value">
+                  {project.createdAt?.split("T")[0] || project.createdAt || "-"}
+                </span>
+              </S.MetaItem>
+            </S.BannerMeta>
           </S.BannerCard>
 
           {/* 최근 문서 카드 */}
           <S.RecentDocsCard>
             <S.CardHeader>
               <h3>최근 문서</h3>
-              <S.MoreButton onClick={() => navigate(`/teamp-doc/${teamId}`)}>
+              {/* "전체보기 >" 클릭 시 TeamProjectDocs로 이동 */}
+              <S.MoreButton onClick={handleGoToAllDocs}>
                 <span>{"전체보기 >"} </span>
               </S.MoreButton>
             </S.CardHeader>
             {hasDocs ? (
-              <S.Table>
-                <thead>
-                  <tr>
-                    <th>문서 이름</th>
-                    <th>언어</th>
-                    <th>버전</th>
-                    <th>최종 업데이트</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {docs.map((doc, idx) => (
-                    <tr
-                      key={doc.id}
-                      onClick={() => navigate(`/doc-edit/${doc.id}`)}
-                    >
-                      <td className={idx < 2 ? "doc-title" : "plain-title"}>
-                        <S.TitleWithIcon>
-                          <span>{doc.name || doc.title}</span>
-                        </S.TitleWithIcon>
-                      </td>
-                      <td>
-                        {getLanguagesDisplay(
-                          doc.languages,
-                          doc.language || doc.selectedLang,
-                        )}
-                      </td>
-                      <td>
-                        ver.
-                        {selectedVersions[doc.id] ||
-                          doc.latestVersion ||
-                          doc.currentVersion ||
-                          1}
-                      </td>
-                      <td>{getRelativeTime(doc.updatedAt)}</td>
+              <S.TableContainer>
+                <S.Table>
+                  <thead>
+                    <tr>
+                      <th>문서 이름</th>
+                      <th>언어</th>
+                      <th>버전</th>
+                      <th>최종 업데이트</th>
                     </tr>
-                  ))}
-                </tbody>
-              </S.Table>
+                  </thead>
+                  <tbody>
+                    {docs.slice(0, 5).map((doc, idx) => (
+                      <tr
+                        key={doc.id}
+                        onClick={() => navigate(`/doc-edit/${doc.id}`)}
+                      >
+                        {/* 피그마 시안대로 첫 2개 항목 밑줄 적용 */}
+                        <td className={idx < 2 ? "doc-title" : "plain-title"}>
+                          <span>{doc.name || doc.title}</span>
+                        </td>
+                        <td>
+                          {getLanguagesDisplay(
+                            doc.languages,
+                            doc.language || doc.selectedLang,
+                          )}
+                        </td>
+                        <td>
+                          ver.
+                          {selectedVersions[doc.id] ||
+                            doc.latestVersion ||
+                            doc.currentVersion ||
+                            1}
+                        </td>
+                        <td>
+                          {getRelativeTime(
+                            doc.updatedAt ||
+                              doc.lastUpdatedAt ||
+                              doc.modifiedAt ||
+                              doc.createdAt,
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </S.Table>
+              </S.TableContainer>
             ) : (
               <S.EmptyBox>
                 <S.EmptyDocIconImg src={FileIcon} alt="문서 아이콘" />
@@ -433,7 +464,7 @@ export default function TeamProject({ onNavigate }) {
                 ))}
               </S.MemberListScrollWrapper>
 
-              {/* 초대 버튼 상시 노출 */}
+              {/* 초대 버튼 */}
               <S.InviteButton onClick={() => setIsInviteModalOpen(true)}>
                 <span>+</span> 멤버 초대하기
               </S.InviteButton>
@@ -466,7 +497,10 @@ export default function TeamProject({ onNavigate }) {
                           )}
                         </p>
                         <p className="time">
-                          최종 업데이트 {getRelativeTime(doc.updatedAt)}
+                          최종 업데이트{" "}
+                          {getRelativeTime(
+                            doc.updatedAt || doc.lastUpdatedAt || doc.createdAt,
+                          )}
                         </p>
                       </S.DocInfo>
                     </S.DocItemLeft>
