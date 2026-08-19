@@ -35,22 +35,16 @@ export default function TeamProjectLeader({ onNavigate }) {
   const navigate = useNavigate();
   const { teamId } = useParams();
 
-  // API 데이터 및 로딩 상태
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 모달 상태
   const [isCreateDocModalOpen, setIsCreateDocModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // 문서 생성 폼 상태
   const [docTitle, setDocTitle] = useState("");
   const [docType, setDocType] = useState("기능 명세서");
 
-  // 선택된 버전 상태
   const [selectedVersions, setSelectedVersions] = useState({});
-
-  // 알림 관련 상태
   const [notification, setNotification] = useState(null);
 
   // 1. 팀 상세 데이터 받아오기
@@ -60,24 +54,21 @@ export default function TeamProjectLeader({ onNavigate }) {
       return;
     }
     try {
+      setLoading(true);
       const res = await getTeamDetail(teamId);
-      const resData = res.data;
-      if (resData.success || resData.data) {
-        const data = resData.data || resData;
-        setProject(data);
+      const data = res.data?.data || res.data || {};
+      console.log("팀 상세 데이터 응답:", data);
+      setProject(data);
 
-        // 문서 버전 초기화
-        const initialMap = {};
-        if (data.documents) {
-          data.documents.forEach((doc) => {
-            initialMap[doc.id] =
-              doc.latestVersion ||
-              (doc.versions && doc.versions[doc.versions.length - 1]) ||
-              1;
-          });
-        }
-        setSelectedVersions(initialMap);
-      }
+      const docs = data.documents || data.docs || [];
+      const initialMap = {};
+      docs.forEach((doc) => {
+        initialMap[doc.id] =
+          doc.latestVersion ||
+          (doc.versions && doc.versions[doc.versions.length - 1]) ||
+          1;
+      });
+      setSelectedVersions(initialMap);
     } catch (error) {
       console.error("팀 정보 조회 실패:", error);
     } finally {
@@ -85,15 +76,13 @@ export default function TeamProjectLeader({ onNavigate }) {
     }
   };
 
-  // 2. 알림 불러오기 함수 (명세서 데이터 필드 매칭)
+  // 2. 알림 불러오기
   const fetchNotification = async () => {
     if (!teamId) return;
     try {
       const res = await getTeamNotifications(teamId);
       const notifications = res.data?.data || res.data || [];
-
       if (Array.isArray(notifications) && notifications.length > 0) {
-        // 안 읽은 알림 중 가장 최신 1개 선택 (백엔드에서 읽은 알림을 제외하고 보낸다면 첫 항목 사용)
         setNotification(notifications[0]);
       } else {
         setNotification(null);
@@ -103,7 +92,7 @@ export default function TeamProjectLeader({ onNavigate }) {
     }
   };
 
-  // 3. 알림 확인(읽음) 처리 함수
+  // 3. 알림 읽음 처리
   const handleReadNotification = async () => {
     if (!notification) return;
     try {
@@ -120,7 +109,7 @@ export default function TeamProjectLeader({ onNavigate }) {
     fetchNotification();
   }, [teamId]);
 
-  // 문서 생성 버튼 클릭 시 백엔드 호출
+  // 문서 생성
   const handleCreateDocument = async () => {
     if (!docTitle.trim()) {
       alert("문서 제목을 입력해 주세요.");
@@ -130,12 +119,12 @@ export default function TeamProjectLeader({ onNavigate }) {
     try {
       const res = await createTeamDocument(teamId, {
         name: docTitle,
-        language: "ko",
+        language: project?.defaultLanguage || "ko",
         version: 1,
         documentType: docType,
       });
 
-      if (res.data?.success || res.status === 200) {
+      if (res.data?.success || res.status === 200 || res.status === 201) {
         alert("문서가 생성되었습니다.");
         setIsCreateDocModalOpen(false);
         setDocTitle("");
@@ -155,40 +144,24 @@ export default function TeamProjectLeader({ onNavigate }) {
   };
 
   if (loading) return <div>로딩 중...</div>;
+  if (!project) return <div>프로젝트 정보를 불러올 수 없습니다.</div>;
 
-  // 기본값 설정
-  const currentProject = project || {
-    name: "AI 서비스 플랫폼",
-    defaultLanguage: "한국어",
-    createdAt: "2026.06.30",
-    members: [{ id: "m1", name: "김서연", role: "팀장", isLeader: true }],
-    documents: [],
-    activityLogs: [],
-    inviteCode: "DOC-BRIDGE-2026-X9Y8",
-  };
-
-  const isLeader = currentProject.myRole
-    ? currentProject.myRole === "LEADER"
-    : true;
-  const docs = currentProject.documents || currentProject.docs || [];
-  const activities =
-    currentProject.activityLogs || currentProject.activities || [];
-  const members = currentProject.members || [];
-  const inviteCode = currentProject.inviteCode || "DOC-BRIDGE-2026-X9Y8";
+  const docs = project.documents || project.docs || [];
+  const activities = project.activityLogs || project.activities || [];
+  const members = project.members || [];
+  const inviteCode = project.inviteCode || "";
 
   const memberInitials = members
     .slice(0, 3)
-    .map((m) => getInitial(m.name || m.firstName));
+    .map((m) => getInitial(m.name || m.firstName || m.lastName));
   const extraMemberCount = members.length - 3;
 
   const hasDocs = docs.length > 0;
   const hasActivities = activities.length > 0;
 
-  // 알림 문구 파싱 헬퍼 함수
   const renderNotificationTitle = (noti) => {
     if (!noti) return "";
     const { documentName, beforeVersion, afterVersion } = noti;
-
     if (beforeVersion !== undefined && beforeVersion !== afterVersion) {
       return `${documentName}_Version.${beforeVersion}이 수정되어 Version.${afterVersion}가 업로드 되었습니다.`;
     }
@@ -203,7 +176,6 @@ export default function TeamProjectLeader({ onNavigate }) {
     const time = noti.createdAt
       ? noti.createdAt.replace("T", " ").slice(0, 16)
       : "";
-
     return `${author ? `${author} 님께서 업로드 하셨어요. ` : ""}${time}`;
   };
 
@@ -211,13 +183,13 @@ export default function TeamProjectLeader({ onNavigate }) {
     <S.PageWrapper>
       <Header
         type="project"
-        onCreateDoc={isLeader ? () => setIsCreateDocModalOpen(true) : undefined}
-        onExit={() => (onNavigate ? onNavigate("home") : navigate("/"))}
+        onCreateDoc={() => setIsCreateDocModalOpen(true)}
+        onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
       />
 
       <S.Container>
         <S.MainSection>
-          {/* ===== 알림 바 영역 ===== */}
+          {/* 알림 바 */}
           {notification && (
             <S.NotificationBar>
               <S.NotificationLeft>
@@ -245,14 +217,15 @@ export default function TeamProjectLeader({ onNavigate }) {
             </S.NotificationBar>
           )}
 
+          {/* 프로젝트 배너 */}
           <S.BannerCard>
-            <S.BannerTitle>
-              {currentProject.name || currentProject.title}
-            </S.BannerTitle>
+            <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
             <S.BannerMeta>
               <S.MetaItem>
                 <span className="label">기본 언어</span>
-                <span className="value">{currentProject.defaultLanguage}</span>
+                <span className="value">
+                  {project.defaultLanguage || project.language || "-"}
+                </span>
               </S.MetaItem>
               <S.MetaItem>
                 <span className="label">멤버</span>
@@ -268,17 +241,17 @@ export default function TeamProjectLeader({ onNavigate }) {
               <S.MetaItem>
                 <span className="label">생성일</span>
                 <span className="value">
-                  {currentProject.createdAt?.split("T")[0] ||
-                    currentProject.createdAt}
+                  {project.createdAt?.split("T")[0] || project.createdAt || "-"}
                 </span>
               </S.MetaItem>
             </S.BannerMeta>
           </S.BannerCard>
 
+          {/* 최근 문서 카드 */}
           <S.Card>
             <S.CardHeader>
               <h3>최근 문서</h3>
-              <S.MoreButton onClick={() => navigate("/teamp-doc")}>
+              <S.MoreButton onClick={() => navigate(`/teamp-doc/${teamId}`)}>
                 <span>{"전체보기 >"} </span>
               </S.MoreButton>
             </S.CardHeader>
@@ -296,11 +269,7 @@ export default function TeamProjectLeader({ onNavigate }) {
                   {docs.map((doc) => (
                     <tr
                       key={doc.id}
-                      onClick={() =>
-                        onNavigate
-                          ? onNavigate("docDetail", doc.id)
-                          : navigate(`/documents/${doc.id}`)
-                      }
+                      onClick={() => navigate(`/doc-edit/${doc.id}`)}
                     >
                       <td className="font-bold">
                         <S.TitleWithIcon>
@@ -311,13 +280,15 @@ export default function TeamProjectLeader({ onNavigate }) {
                       <td>
                         {doc.language ||
                           doc.selectedLang ||
-                          (doc.languages && doc.languages[0])}
+                          (doc.languages && doc.languages[0]) ||
+                          "-"}
                       </td>
                       <td>
                         v
                         {selectedVersions[doc.id] ||
                           doc.latestVersion ||
-                          doc.currentVersion}
+                          doc.currentVersion ||
+                          1}
                       </td>
                       <td>{getRelativeTime(doc.updatedAt)}</td>
                     </tr>
@@ -329,16 +300,15 @@ export default function TeamProjectLeader({ onNavigate }) {
                 <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-                {isLeader && (
-                  <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
-                    새로운 문서 작성하기
-                  </S.ActionButton>
-                )}
+                <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
+                  새로운 문서 작성하기
+                </S.ActionButton>
               </S.EmptyBox>
             )}
           </S.Card>
 
           <S.BottomRow>
+            {/* 활동 요약 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>활동 요약</h3>
@@ -370,6 +340,7 @@ export default function TeamProjectLeader({ onNavigate }) {
               )}
             </S.HalfCard>
 
+            {/* 프로젝트 멤버 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>프로젝트 멤버</h3>
@@ -383,7 +354,7 @@ export default function TeamProjectLeader({ onNavigate }) {
                       </S.MemberAvatar>
                       <S.MemberName>
                         {member.name ||
-                          `${member.lastName || ""} ${member.firstName || ""}`}
+                          `${member.lastName || ""} ${member.firstName || ""}`.trim()}
                       </S.MemberName>
                     </S.MemberLeft>
                     <S.RoleBadge
@@ -407,6 +378,7 @@ export default function TeamProjectLeader({ onNavigate }) {
           </S.BottomRow>
         </S.MainSection>
 
+        {/* 사이드바 문서 모아보기 */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -419,18 +391,15 @@ export default function TeamProjectLeader({ onNavigate }) {
                 {docs.map((doc) => (
                   <S.DocItemCard key={doc.id}>
                     <S.DocItemLeft
-                      onClick={() =>
-                        onNavigate
-                          ? onNavigate("docDetail", doc.id)
-                          : navigate(`/documents/${doc.id}`)
-                      }
+                      onClick={() => navigate(`/doc-edit/${doc.id}`)}
                     >
                       <S.SidebarDocIconImg src={DocIcon} alt="문서 아이콘" />
                       <S.DocInfo>
                         <h4>{doc.name || doc.title}</h4>
                         <p className="langs">
                           {doc.language ||
-                            (doc.languages && doc.languages.join(", "))}
+                            (doc.languages && doc.languages.join(", ")) ||
+                            "-"}
                         </p>
                         <p className="time">
                           최종 업데이트 {getRelativeTime(doc.updatedAt)}
@@ -442,7 +411,8 @@ export default function TeamProjectLeader({ onNavigate }) {
                       value={
                         selectedVersions[doc.id] ||
                         doc.latestVersion ||
-                        doc.currentVersion
+                        doc.currentVersion ||
+                        1
                       }
                       onChange={(e) =>
                         handleVersionChange(doc.id, e.target.value)
@@ -466,11 +436,9 @@ export default function TeamProjectLeader({ onNavigate }) {
                 <S.EmptyDocIconImg src={DocIcon} alt="문서 아이콘" />
                 <h4>작성한 문서가 아직 없어요</h4>
                 <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
-                {isLeader && (
-                  <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
-                    새로운 문서 작성하기
-                  </S.ActionButton>
-                )}
+                <S.ActionButton onClick={() => setIsCreateDocModalOpen(true)}>
+                  새로운 문서 작성하기
+                </S.ActionButton>
               </S.SidebarEmptyBox>
             )}
           </S.SidebarCard>
@@ -536,15 +504,17 @@ export default function TeamProjectLeader({ onNavigate }) {
                 팀원에게 아래 초대 코드를 공유해 보세요.
               </p>
               <S.CodeBox>
-                <span>{inviteCode}</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(inviteCode);
-                    alert("초대 코드가 복사되었습니다!");
-                  }}
-                >
-                  복사
-                </button>
+                <span>{inviteCode || "초대 코드를 불러올 수 없습니다."}</span>
+                {inviteCode && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteCode);
+                      alert("초대 코드가 복사되었습니다!");
+                    }}
+                  >
+                    복사
+                  </button>
+                )}
               </S.CodeBox>
             </S.ModalBody>
             <S.ModalFooter>
