@@ -224,8 +224,14 @@ export const autoSaveDocument = (documentId, version, data) => {
 };
 
 // 7-6. 수정 확인 - diff 조회 & 확인 처리
-export const getDocumentChanges = (documentId, version) => {
-  return api.get(`/api/documents/${documentId}/versions/${version}/changes`);
+export const getDocumentChanges = async (documentId, version) => {
+  const lang = await getUserLanguage();
+  const cleanLang =
+    lang && String(lang).toLowerCase().trim() !== "ko"
+      ? String(lang).toLowerCase().trim()
+      : undefined;
+  const config = cleanLang ? { params: { lang: cleanLang } } : {};
+  return api.get(`/api/documents/${documentId}/versions/${version}/changes`, config);
 };
 
 export const confirmChange = (documentId, version, changeId) => {
