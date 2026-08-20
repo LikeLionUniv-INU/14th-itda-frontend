@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import DocIcon from "../../assets/image/file.svg";
-import * as S from "./TeamProjectDocs.styles";
 import { getTeamDetail } from "../../api/teamApi";
+import { getDocumentVersions } from "../../api/documentApi";
+import { getRelativeTime } from "../../components/dateUtil";
+import * as S from "./TeamProjectDocs.styles";
 
-// 언어 코드를 표기명으로 변환하는 함수
 const getLanguageFullName = (langCode) => {
   if (!langCode) return "-";
   const code = String(langCode).toLowerCase().trim();
@@ -26,41 +27,11 @@ const getLanguageFullName = (langCode) => {
   return langMap[code] || langCode;
 };
 
-// 단일 언어 및 배열 형태의 언어 목록 모두 처리하는 함수
 const getLanguagesDisplay = (languages, fallback) => {
   if (Array.isArray(languages) && languages.length > 0) {
     return languages.map(getLanguageFullName).join(", ");
   }
   return getLanguageFullName(fallback);
-};
-
-const getRelativeTime = (dateString) => {
-  if (!dateString) return "방금 전";
-  const now = new Date();
-
-  let formatted = dateString;
-  if (
-    typeof dateString === "string" &&
-    !dateString.endsWith("Z") &&
-    !dateString.includes("+")
-  ) {
-    formatted = dateString.replace(" ", "T");
-  }
-
-  const past = new Date(formatted);
-  if (isNaN(past.getTime())) return "방금 전";
-
-  const diffInMinutes = Math.floor(
-    (now.getTime() - past.getTime()) / (1000 * 60),
-  );
-  if (diffInMinutes < 1) return "방금 전";
-  if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}시간 전`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}일 전`;
 };
 
 const getInitial = (name) => {
@@ -73,6 +44,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
   const { teamId } = useParams();
 
   const [projectData, setProjectData] = useState(null);
+  const [docLatestTimes, setDocLatestTimes] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,7 +57,36 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
         const res = await getTeamDetail(teamId);
         const resData = res?.data;
         if (resData) {
-          setProjectData(resData.data || resData);
+          const pData = resData.data || resData;
+          setProjectData(pData);
+
+          const docs = pData.documents || pData.docs || [];
+          if (docs.length > 0) {
+            const timeMap = {};
+            await Promise.allSettled(
+              docs.map(async (doc) => {
+                const dId = doc.id || doc.documentId;
+                try {
+                  const vRes = await getDocumentVersions(dId);
+                  const vList = vRes?.data?.data || vRes?.data || [];
+                  if (Array.isArray(vList) && vList.length > 0) {
+                    const latestVerObj = vList.reduce(
+                      (prev, curr) =>
+                        Number(curr.version) > Number(prev.version)
+                          ? curr
+                          : prev,
+                      vList[0],
+                    );
+                    timeMap[dId] =
+                      latestVerObj.updatedAt || latestVerObj.createdAt;
+                  }
+                } catch (err) {
+                  console.warn(`문서(${dId}) 버전 목록 조회 스킵:`, err);
+                }
+              }),
+            );
+            setDocLatestTimes(timeMap);
+          }
         }
       } catch (error) {
         console.error("팀 문서 목록 조회 실패:", error);
@@ -120,7 +121,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     .map((m) => getInitial(m.name || m.firstName || m.nickname));
   const extraMemberCount = members.length - 3;
 
-  // 전체 문서 목록 클릭 분기 핸들러
   const handleDocClick = (doc) => {
     const targetId = doc.id || doc.documentId;
     const docVersion = Number(
@@ -133,7 +133,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     }
 
     if (isLeader) {
-      // 1. 팀장 -> 문서 수정 화면
       if (onNavigate) {
         onNavigate("docEdit", targetId);
       } else {
@@ -142,9 +141,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
         });
       }
     } else {
-      // 2. 팀원
       if (docVersion === 1) {
-        // Version 1 -> 수정 요약 없는 순수 작성 문서 확인 뷰어
         if (onNavigate) {
           onNavigate("docView", targetId);
         } else {
@@ -153,7 +150,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
           });
         }
       } else {
-        // Version 2 이상 -> 수정 문서 확인 (비교 및 요약)
         if (onNavigate) {
           onNavigate("docDetail", targetId);
         } else {
@@ -175,7 +171,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
       />
 
       <S.Content>
-        {/* 프로젝트 배너 */}
         <S.BannerCard>
           <S.BannerTitle>{projectInfo.name || projectInfo.title}</S.BannerTitle>
           <S.BannerMeta>
@@ -232,39 +227,42 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                 </tr>
               </thead>
               <tbody>
-                {docs.map((doc) => (
-                  <tr
-                    key={doc.id || doc.documentId}
-                    onClick={() => handleDocClick(doc)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td className="doc-name">{doc.name || doc.title}</td>
-                    <td>
-                      {projectInfo.name || doc.projectName || doc.project}
-                    </td>
-                    <td>
-                      {getLanguagesDisplay(
-                        doc.languages,
-                        doc.language || doc.selectedLang,
-                      )}
-                    </td>
-                    <td>
-                      ver.{" "}
-                      {doc.latestVersion ||
-                        doc.currentVersion ||
-                        doc.version ||
-                        1}
-                    </td>
-                    <td>
-                      {getRelativeTime(
-                        doc.updatedAt ||
-                          doc.updated ||
-                          doc.lastUpdatedAt ||
-                          doc.createdAt,
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {docs.map((doc) => {
+                  const docId = doc.id || doc.documentId;
+                  const realTime =
+                    docLatestTimes[docId] ||
+                    doc.latestVersionUpdatedAt ||
+                    doc.versionUpdatedAt ||
+                    doc.updatedAt ||
+                    doc.createdAt;
+
+                  return (
+                    <tr
+                      key={docId}
+                      onClick={() => handleDocClick(doc)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td className="doc-name">{doc.name || doc.title}</td>
+                      <td>
+                        {projectInfo.name || doc.projectName || doc.project}
+                      </td>
+                      <td>
+                        {getLanguagesDisplay(
+                          doc.languages,
+                          doc.language || doc.selectedLang,
+                        )}
+                      </td>
+                      <td>
+                        ver.{" "}
+                        {doc.latestVersion ||
+                          doc.currentVersion ||
+                          doc.version ||
+                          1}
+                      </td>
+                      <td>{getRelativeTime(realTime)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </S.Table>
           </S.TableContainer>
