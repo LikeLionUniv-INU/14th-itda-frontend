@@ -137,10 +137,10 @@ const WireframeCanvas = ({
               </S.ChangeImageButton>
             )}
 
-            <S.ScrollViewport device={device}>
+            <S.ScrollViewport $device={device}>
               <S.ImageWrapper
                 ref={imageWrapperRef}
-                isAddingPin={isAddingPin}
+                $isAddingPin={isAddingPin}
                 onClick={handleCanvasClick}
               >
                 <img src={imageUrl} alt="와이어프레임" />
@@ -149,7 +149,7 @@ const WireframeCanvas = ({
                     key={pin.id}
                     x={pin.x}
                     y={pin.y}
-                    isFocused={pin.id === focusedPinId}
+                    $isFocused={pin.id === focusedPinId}
                     onMouseDown={(e) => handlePinMouseDown(e, pin.id)}
                   >
                     {pin.number}
@@ -162,7 +162,7 @@ const WireframeCanvas = ({
               <S.BottomButtonGroup>
                 <S.AddPinButton
                   type="button"
-                  isAddingPin={isAddingPin}
+                  $isAddingPin={isAddingPin}
                   onClick={() => setIsAddingPin((prev) => !prev)}
                 >
                   {isAddingPin ? "클릭하여 배치" : "핀 추가"}
