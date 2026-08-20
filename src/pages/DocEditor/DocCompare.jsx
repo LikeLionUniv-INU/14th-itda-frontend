@@ -287,7 +287,8 @@ export default function DocComparePage() {
           };
 
           (prevPage?.pins || []).forEach((pin) => {
-            const tab = pin.tabType || "공통";
+            const rawTab = pin.tabType || "공통";
+            const tab = rawTab === "프론트엔드" ? "프론트" : rawTab;
             const targetTab = prevPinMap[tab] ? tab : "공통";
             prevPinMap[targetTab].push({
               id: pin.id || pin.pinNumber,
@@ -298,7 +299,8 @@ export default function DocComparePage() {
           });
 
           (p.pins || []).forEach((pin) => {
-            const tab = pin.tabType || "공통";
+            const rawTab = pin.tabType || "공통";
+            const tab = rawTab === "프론트엔드" ? "프론트" : rawTab;
             const targetTab = currPinMap[tab] ? tab : "공통";
 
             const pinChange = pageChanges.find(
@@ -344,7 +346,8 @@ export default function DocComparePage() {
               });
             } else {
               pinReqs.forEach((req) => {
-                const reqTab = req.tabType || targetTab;
+                const rawReqTab = req.tabType || targetTab;
+                const reqTab = rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
                 const prevReq = (prevPage?.pins || [])
                   .find(
                     (pp) =>

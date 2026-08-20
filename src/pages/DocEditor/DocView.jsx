@@ -68,7 +68,8 @@ export default function DocViewPage() {
           };
 
           (p.pins || []).forEach((pin) => {
-            const pinTab = pin.tabType || "공통";
+            const rawTab = pin.tabType || "공통";
+            const pinTab = rawTab === "프론트엔드" ? "프론트" : rawTab;
             const targetTab = pinMap[pinTab] ? pinTab : "공통";
 
             const pinId = pin.id || pin.pinNumber;
@@ -83,7 +84,8 @@ export default function DocViewPage() {
             const reqList = pin.requirements || [];
             if (reqList.length > 0) {
               reqList.forEach((req) => {
-                const reqTab = req.tabType || targetTab;
+                const rawReqTab = req.tabType || targetTab;
+                const reqTab = rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
                 if (reqMap[reqTab]) {
                   reqMap[reqTab].push({
                     id: pinId,
