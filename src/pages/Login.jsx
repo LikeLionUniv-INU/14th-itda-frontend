@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { loginApi } from "../api/auth";
+import api from "../api/axios";
+import { clearUserLangCache } from "../api/documentApi";
 import * as S from "./Login.styles";
 import globe from "../assets/image/globe.svg";
 import robot from "../assets/image/robot.svg";
@@ -85,6 +87,16 @@ const Login = () => {
         if (refreshToken) {
           localStorage.setItem("refreshToken", refreshToken);
         }
+
+        // 사용자 언어 저장 (번역 문서 조회용)
+        clearUserLangCache();
+        try {
+          const meRes = await api.get("/api/users/me");
+          const meData = meRes?.data?.data || meRes?.data || {};
+          if (meData.language) {
+            localStorage.setItem("userLanguage", meData.language);
+          }
+        } catch (_) {}
       }
 
       // 3. 메인 홈 화면으로 이동
