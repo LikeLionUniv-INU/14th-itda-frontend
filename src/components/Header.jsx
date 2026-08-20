@@ -6,6 +6,7 @@ import * as S from "./Header.styles";
 // 모달 컴포넌트 불러오기
 import CreateProjectModal from "./Modal/CreateProjectModal";
 import JoinProjectModal from "./Modal/JoinProjectModal";
+import { clearUserLangCache } from "../api/documentApi";
 
 export default function Header({
   type = "main",
@@ -40,11 +41,13 @@ export default function Header({
 
   // 로그아웃 핸들러 (토큰 삭제 및 로그인 페이지로 이동)
   const handleLogout = () => {
-    
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userName");
-    
+    localStorage.removeItem("userLanguage");
+    clearUserLangCache();
+
     // 로그인으로 이동
     navigate("/");
   };
