@@ -8,6 +8,7 @@ import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
 
 import { getDocumentDetail } from "../../api/documentApi";
+import { getTeamDetail } from "../../api/teamApi";
 import * as S from "./DocEditor.styles";
 
 export default function DocViewPage() {
@@ -34,7 +35,28 @@ export default function DocViewPage() {
     if (!docId) return;
 
     try {
-      const docRes = await getDocumentDetail(docId, 1);
+      // 1. 현재 계정의 언어 자동 추출 (en, ja 등)
+      let resolvedLang =
+        passedState.language ||
+        passedState.lang ||
+        localStorage.getItem("userLanguage") ||
+        localStorage.getItem("language") ||
+        "";
+
+      if (!resolvedLang && teamId) {
+        try {
+          const teamRes = await getTeamDetail(teamId);
+          const teamData = teamRes?.data?.data || teamRes?.data || {};
+          resolvedLang =
+            teamData?.myLanguage ||
+            teamData?.userLanguage ||
+            teamData?.defaultLanguage ||
+            "";
+        } catch (tErr) {}
+      }
+
+      // 2. ?lang={resolvedLang} 붙여서 번역된 텍스트 조회
+      const docRes = await getDocumentDetail(docId, 1, resolvedLang);
       const docData = docRes?.data?.data || docRes?.data || {};
 
       const rawName = docData?.name || docData?.title || "스토리보드";
@@ -135,7 +157,7 @@ export default function DocViewPage() {
     } catch (error) {
       console.error("Version 1 문서 조회 실패:", error);
     }
-  }, [docId]);
+  }, [docId, teamId, passedState]);
 
   useEffect(() => {
     fetchVersion1Data();
@@ -184,7 +206,6 @@ export default function DocViewPage() {
                 isReadOnly={true}
               />
               <S.Divider />
-              {/* 🔥 현재 선택된 탭의 핀들만 와이어프레임에 노출 */}
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}

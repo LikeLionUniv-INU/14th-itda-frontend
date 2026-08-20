@@ -14,6 +14,7 @@ import {
   getDocumentVersions,
   confirmChange,
 } from "../../api/documentApi";
+import { getTeamDetail } from "../../api/teamApi";
 import * as S from "./DocCompare.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
@@ -95,6 +96,27 @@ export default function DocComparePage() {
     if (!docId) return;
 
     try {
+      // 1. 현재 계정의 언어 자동 추출 (en, ja 등)
+      let resolvedLang =
+        passedState.language ||
+        passedState.lang ||
+        localStorage.getItem("userLanguage") ||
+        localStorage.getItem("language") ||
+        "";
+
+      if (!resolvedLang && teamId) {
+        try {
+          const teamRes = await getTeamDetail(teamId);
+          const teamData = teamRes?.data?.data || teamRes?.data || {};
+          resolvedLang =
+            teamData?.myLanguage ||
+            teamData?.userLanguage ||
+            teamData?.defaultLanguage ||
+            "";
+        } catch (tErr) {}
+      }
+
+      // 2. 버전 결정
       let currentVer = targetVersion;
       if (!currentVer) {
         try {
@@ -103,17 +125,16 @@ export default function DocComparePage() {
           if (Array.isArray(verList) && verList.length > 0) {
             currentVer = Number(verList[verList.length - 1].version);
           }
-        } catch (verErr) {
-          console.warn("버전 목록 조회 실패:", verErr);
-        }
+        } catch (verErr) {}
       }
       currentVer = currentVer || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
+      // 🔥 Step 3: resolvedLang이 있을 때 ?lang=en 을 붙여서 번역된 문서 조회
       const [docRes, prevDocRes] = await Promise.all([
-        getDocumentDetail(docId, currentVer),
+        getDocumentDetail(docId, currentVer, resolvedLang),
         prevVer !== currentVer
-          ? getDocumentDetail(docId, prevVer).catch(() => null)
+          ? getDocumentDetail(docId, prevVer, resolvedLang).catch(() => null)
           : Promise.resolve(null),
       ]);
 
@@ -208,9 +229,7 @@ export default function DocComparePage() {
           .filter((item) => item.confirmedByMe)
           .map((item) => item.id);
         setCheckedIds(initialChecked);
-      } catch (err) {
-        console.warn("변경사항 내역 조회 실패:", err);
-      }
+      } catch (err) {}
 
       if (docData?.pages && docData.pages.length > 0) {
         const mappedPages = docData.pages.map((p, pIdx) => {
@@ -261,7 +280,6 @@ export default function DocComparePage() {
             imgChange?.after?.imageUrl ||
             (!isImageModified ? prevImageUrl : "");
 
-          // 탭별 핀 및 요구사항 분리
           const prevPinMap = {
             공통: [],
             기획: [],
@@ -449,7 +467,7 @@ export default function DocComparePage() {
     } catch (error) {
       console.error("비교 데이터 로드 실패:", error);
     }
-  }, [docId, targetVersion]);
+  }, [docId, targetVersion, teamId]);
 
   useEffect(() => {
     fetchCompareData();
@@ -533,7 +551,6 @@ export default function DocComparePage() {
                 isModified={currentPage.isScreenInfoModified}
               />
               <S.Divider />
-              {/* 🔥 현재 선택된 탭의 비교 핀들만 와이어프레임에 노출 */}
               <DiffWireframeCanvas
                 device={currentPage.device}
                 isImageModified={currentPage.isImageModified}

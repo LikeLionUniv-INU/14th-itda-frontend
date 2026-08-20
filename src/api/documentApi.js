@@ -50,12 +50,15 @@ export const createDocument = (
   });
 };
 
-// 7. 문서 상세 조회 (버전별, 번역 파라미터 지원)
+// 7 & 9-3. 문서 상세 조회 (Step 3: ?lang=en 지원)
 export const getDocumentDetail = (documentId, version, lang) => {
-  const params = lang ? { lang } : {};
-  return api.get(`/api/documents/${documentId}/versions/${version}`, {
-    params,
-  });
+  const cleanLang =
+    lang && String(lang).toLowerCase().trim() !== "ko"
+      ? String(lang).toLowerCase().trim()
+      : undefined;
+
+  const config = cleanLang ? { params: { lang: cleanLang } } : {};
+  return api.get(`/api/documents/${documentId}/versions/${version}`, config);
 };
 
 // 7-1. 페이지 관리
