@@ -94,12 +94,12 @@ const RequirementSection = ({
           </S.TableHeader>
 
           <S.TableBody>
-            {currentList.map((req) => {
+            {currentList.map((req, index) => {
               const isEditing = editingId === req.id;
 
               return (
                 <S.Row
-                  key={req.id}
+                  key={req.reqId || `${req.id}_${index}`}
                   isModified={req.isModified}
                   onClick={() => onFocusPin?.(req.id)}
                 >
