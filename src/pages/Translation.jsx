@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { Check, Sparkles, Clock, CheckCircle2 } from "lucide-react";
+import {
+  Check,
+  Sparkles,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import * as S from "./Translation.styles";
 import { getTranslationStatus } from "../api/documentApi";
 
@@ -17,14 +23,15 @@ const LANG_META = {
   id: { name: "인도네시아어", flag: "https://flagcdn.com/w160/id.png" },
 };
 
-// 백엔드 상태값 정규화 (PENDING, IN_PROGRESS, COMPLETED, FAILED)
+// 백엔드 명세서 상태값 정규화 (PENDING, IN_PROGRESS, COMPLETED, FAILED)
 const normalizeStatus = (statusStr) => {
   if (!statusStr) return "WAITING";
-  const s = String(statusStr).toUpperCase();
+  const s = String(statusStr).toUpperCase().trim();
   if (["COMPLETED", "COMPLETE", "DONE", "FINISHED", "SUCCESS"].includes(s))
     return "COMPLETED";
   if (["IN_PROGRESS", "PROGRESS", "PROCESSING", "TRANSLATING"].includes(s))
     return "IN_PROGRESS";
+  if (["FAILED", "FAIL", "ERROR"].includes(s)) return "FAILED";
   return "WAITING";
 };
 
@@ -59,13 +66,13 @@ export default function Translation() {
     localStorage.getItem("currentTeamId") ||
     "";
 
-  // 전달받은 정확한 jobId 추출
   const jobId = passedState.jobId || params.jobId;
 
   const [languages, setLanguages] = useState([]);
-  const [serverProgress, setServerProgress] = useState(null);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const pollingRef = useRef(null);
   const hasNavigatedRef = useRef(false);
@@ -80,6 +87,9 @@ export default function Translation() {
     if (status === "IN_PROGRESS") {
       return "자연스러운 표현으로 번역하고 있습니다.";
     }
+    if (status === "FAILED") {
+      return "번역 중 오류가 발생했습니다.";
+    }
     return "현재 언어 번역이 완료되면 자동으로 진행합니다.";
   };
 
@@ -93,6 +103,23 @@ export default function Translation() {
       const response = await getTranslationStatus(jobId);
       const resData = response?.data?.data || response?.data || response;
 
+      if (!resData) return;
+
+      // 1. 🔥 FAILED(실패) 상태 감지 시 즉시 처리
+      if (resData.status === "FAILED" || resData.status === "FAIL") {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setErrorMessage(
+          "AI 번역 서버 오류로 번역이 중단되었습니다. 문서는 정상 저장되었습니다.",
+        );
+
+        setTimeout(() => {
+          alert("AI 번역 처리에 실패했습니다. (문서는 정상 저장되었습니다)");
+          navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
+        }, 2000);
+        return;
+      }
+
+      // 2. 언어 목록 파싱
       const rawList =
         resData?.languages ||
         resData?.translationStatuses ||
@@ -113,39 +140,51 @@ export default function Translation() {
             flag: `https://flagcdn.com/w160/${normCode}.png`,
           };
 
+          const rawStatus = item.status || "PENDING";
+
           return {
             id: item.id || idx + 1,
             code: normCode,
             name: meta.name || item.name || "언어",
             flagImg: meta.flag,
-            status: normalizeStatus(item.status),
+            status:
+              normCode === "ko" ? "COMPLETED" : normalizeStatus(rawStatus),
           };
         });
         setLanguages(formatted);
-
-        // 명세서 기준 완료 조건: status가 COMPLETED 이거나 progress가 100
-        const isFinished =
-          resData?.status === "COMPLETED" ||
-          resData?.progress === 100 ||
-          (formatted.length > 0 &&
-            formatted.every((l) => l.status === "COMPLETED"));
-
-        if (isFinished && !hasNavigatedRef.current) {
-          hasNavigatedRef.current = true;
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          setServerProgress(100);
-          setShowToast(true);
-
-          setTimeout(() => {
-            navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
-          }, 1800);
-        }
       }
 
+      // 3. 진행률 파싱
+      let currentProgress = 0;
       if (typeof resData?.progress === "number") {
-        setServerProgress(resData.progress);
+        currentProgress = resData.progress;
       } else if (typeof resData?.progressPercentage === "number") {
-        setServerProgress(resData.progressPercentage);
+        currentProgress = resData.progressPercentage;
+      } else if (Array.isArray(rawList) && rawList.length > 0) {
+        const doneCount = rawList.filter(
+          (l) => normalizeStatus(l.status) === "COMPLETED",
+        ).length;
+        currentProgress = Math.round((doneCount / rawList.length) * 100);
+      }
+
+      setProgressPercent(currentProgress);
+
+      // 4. 완료 판별
+      const isJobDone =
+        resData?.status === "COMPLETED" ||
+        currentProgress >= 100 ||
+        (rawList.length > 0 &&
+          rawList.every((l) => normalizeStatus(l.status) === "COMPLETED"));
+
+      if (isJobDone && !hasNavigatedRef.current) {
+        hasNavigatedRef.current = true;
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setProgressPercent(100);
+        setShowToast(true);
+
+        setTimeout(() => {
+          navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
+        }, 1500);
       }
     } catch (error) {
       console.error("실시간 번역 상태 조회 오류:", error);
@@ -163,17 +202,6 @@ export default function Translation() {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [jobId]);
-
-  const completedCount = languages.filter(
-    (l) => l.status === "COMPLETED",
-  ).length;
-
-  const progressPercentage =
-    serverProgress !== null
-      ? serverProgress
-      : languages.length > 0
-        ? Math.round((completedCount / languages.length) * 100)
-        : 0;
 
   const maxVisible = 3;
   const canPrev = currentIndex > 0;
@@ -213,10 +241,23 @@ export default function Translation() {
 
         <S.ProgressSection>
           <S.ProgressBarTrack>
-            <S.ProgressBarFill $percentage={progressPercentage} />
+            <S.ProgressBarFill $percentage={progressPercent} />
           </S.ProgressBarTrack>
-          <S.ProgressText>{progressPercentage}%</S.ProgressText>
+          <S.ProgressText>{progressPercent}%</S.ProgressText>
         </S.ProgressSection>
+
+        {errorMessage && (
+          <div
+            style={{
+              color: "#EF4444",
+              fontWeight: "600",
+              margin: "16px 0",
+              textAlign: "center",
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
 
         <S.CardsWrapper>
           <S.TriangleButton
@@ -261,6 +302,11 @@ export default function Translation() {
                     {lang.status === "WAITING" && (
                       <>
                         <Clock size={14} /> 대기 중
+                      </>
+                    )}
+                    {lang.status === "FAILED" && (
+                      <>
+                        <AlertCircle size={14} color="#EF4444" /> 실패
                       </>
                     )}
                   </S.StatusBadge>

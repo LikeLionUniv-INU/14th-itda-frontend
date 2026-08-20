@@ -352,6 +352,7 @@ export default function DocEditPage() {
         console.error("새 이미지 업로드 중 오류:", imgErr);
       }
 
+      // 🔥 Step 1: 한국어(ko)는 제외하고 번역 대상자만 필터링
       const validMembers = Array.isArray(selectedMembers)
         ? selectedMembers.filter((m) => m.checked !== false)
         : [];
@@ -363,7 +364,9 @@ export default function DocEditPage() {
             .toLowerCase()
             .trim(),
         }))
-        .filter((t) => t.userId && !isNaN(t.userId));
+        .filter(
+          (t) => t.userId && !isNaN(t.userId) && t.targetLanguage !== "ko",
+        );
 
       setModalState({ isOpen: false, step: "exit" });
 
@@ -375,12 +378,12 @@ export default function DocEditPage() {
         );
         const transData =
           transRes?.data?.data || transRes?.data || transRes || {};
-        const jobId = transData.jobId || transData.id;
+        const realJobId = transData.jobId || transData.id;
 
-        if (jobId) {
+        if (realJobId) {
           navigate("/trans", {
             state: {
-              jobId,
+              jobId: realJobId,
               teamId,
               docId,
               version: targetVersion,
@@ -594,7 +597,6 @@ export default function DocEditPage() {
                 onChangeScreenId={(screenId) => handleUpdatePage({ screenId })}
               />
               <S.Divider />
-              {/* 🔥 현재 선택된 탭의 핀들만 와이어프레임에 노출 */}
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
