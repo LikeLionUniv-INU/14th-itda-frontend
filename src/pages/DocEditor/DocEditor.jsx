@@ -19,6 +19,28 @@ import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
+const createInitialPage = (pageId = 1) => ({
+  pageId,
+  screenName: "",
+  screenId: "",
+  imageUrl: "",
+  device: "desktop",
+  pins: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+  requirements: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+});
+
 const formatCurrentTime = (dateObj = new Date()) => {
   const d = new Date(dateObj);
   const pad = (n) => String(n).padStart(2, "0");
@@ -37,31 +59,16 @@ export default function DocEditorPage() {
   const docVersion = passedState.version ? Number(passedState.version) : 1;
 
   const [updatedAt, setUpdatedAt] = useState("");
+  const [activeRole, setActiveRole] = useState("공통");
 
-  const [pages, setPages] = useState([
-    {
-      pageId: 1,
-      screenName: "",
-      screenId: "",
-      imageUrl: "",
-      device: "desktop",
-      pins: [],
-      requirements: {
-        공통: [],
-        기획: [],
-        프론트: [],
-        백엔드: [],
-        디자인: [],
-      },
-    },
-  ]);
-
+  const [pages, setPages] = useState([createInitialPage(1)]);
   const pendingFilesRef = useRef({});
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
 
   const currentPage = pages[activePageIndex] || pages[0] || {};
+  const currentTabPins = currentPage.pins?.[activeRole] || [];
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
@@ -84,21 +91,20 @@ export default function DocEditorPage() {
     }
   };
 
-  // 🔥 device 필드를 포함하여 백엔드로 전달
+  // 🔥 5개 직무 탭의 핀들을 각각 tabType을 붙여 평탄화하여 서버로 전송
   const buildSavePayload = (summaryText = "최초 작성 저장") => ({
     status: "IN_PROGRESS",
     changeSummary: summaryText,
-    pages: pages.map((p, idx) => ({
-      pageNumber: idx + 1,
-      screenName: p.screenName || "",
-      screenId: p.screenId || "",
-      device: p.device || "desktop",
-      pins: (p.pins || []).map((pin) => {
-        const pinReqs = [];
-        INITIAL_ROLES.forEach((role) => {
-          const found = (p.requirements?.[role] || []).find(
-            (r) => r.id === pin.id,
-          );
+    pages: pages.map((p, idx) => {
+      const allFlattenedPins = [];
+
+      INITIAL_ROLES.forEach((role) => {
+        const rolePins = p.pins?.[role] || [];
+        const roleReqs = p.requirements?.[role] || [];
+
+        rolePins.forEach((pin) => {
+          const found = roleReqs.find((r) => r.id === pin.id);
+          const pinReqs = [];
           if (found && (found.item || found.detail)) {
             pinReqs.push({
               tabType: role,
@@ -107,16 +113,25 @@ export default function DocEditorPage() {
               isRequired: Boolean(found.isRequired),
             });
           }
+
+          allFlattenedPins.push({
+            pinNumber: pin.number,
+            tabType: role,
+            xCoordinate: Number(pin.x) || 0.0,
+            yCoordinate: Number(pin.y) || 0.0,
+            requirements: pinReqs,
+          });
         });
-        return {
-          pinNumber: pin.number,
-          tabType: "공통",
-          xCoordinate: Number(pin.x) || 0.0,
-          yCoordinate: Number(pin.y) || 0.0,
-          requirements: pinReqs,
-        };
-      }),
-    })),
+      });
+
+      return {
+        pageNumber: idx + 1,
+        screenName: p.screenName || "",
+        screenId: p.screenId || "",
+        device: p.device || "desktop",
+        pins: allFlattenedPins,
+      };
+    }),
   });
 
   const handleTempSave = async () => {
@@ -161,7 +176,6 @@ export default function DocEditorPage() {
     try {
       let currentDocId = docId;
 
-      // 1. 문서 생성
       if (!currentDocId && teamId) {
         const createRes = await createDocument(teamId, {
           name: docName,
@@ -173,7 +187,6 @@ export default function DocEditorPage() {
         if (currentDocId) setDocId(currentDocId);
       }
 
-      // 2. 전체 페이지 저장 (PUT)
       if (currentDocId) {
         await saveDocument(
           currentDocId,
@@ -181,7 +194,6 @@ export default function DocEditorPage() {
           buildSavePayload("최초 작성 저장"),
         );
 
-        // 3. 서버가 발급한 실제 pageId로 이미지 업로드
         try {
           const detailRes = await getDocumentDetail(currentDocId, docVersion);
           const detailData = detailRes?.data?.data || detailRes?.data || {};
@@ -200,7 +212,6 @@ export default function DocEditorPage() {
         }
       }
 
-      // 4. 번역 대상 필터링 및 명세서 규격 포맷팅
       const validMembers = Array.isArray(selectedMembers)
         ? selectedMembers.filter((m) => m.checked !== false)
         : [];
@@ -216,7 +227,6 @@ export default function DocEditorPage() {
 
       setModalState({ isOpen: false, step: "exit" });
 
-      // 5. 번역 요청 및 /trans 이동
       if (currentDocId && translations.length > 0) {
         const transRes = await requestTranslation(
           currentDocId,
@@ -253,52 +263,74 @@ export default function DocEditorPage() {
     }
   };
 
+  // 🔥 현재 활성화된 직무 탭(`activeRole`)에만 핀 추가 (1번부터 시작)
   const handleAddPin = ({ x, y }) => {
-    const currentPins = currentPage.pins || [];
+    const rolePins = currentPage.pins?.[activeRole] || [];
     const newPinId = Date.now();
-    const newPinNumber = currentPins.length + 1;
+    const newPinNumber = rolePins.length + 1;
     const newPin = { id: newPinId, number: newPinNumber, x, y };
 
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
-    INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = [
-        ...(updatedRequirements[role] || []),
+    const updatedPins = {
+      ...(currentPage.pins || {}),
+      [activeRole]: [...rolePins, newPin],
+    };
+
+    const roleReqs = currentPage.requirements?.[activeRole] || [];
+    const updatedRequirements = {
+      ...(currentPage.requirements || {}),
+      [activeRole]: [
+        ...roleReqs,
         {
           id: newPinId,
           number: newPinNumber,
           item: "",
           detail: "",
         },
-      ];
-    });
+      ],
+    };
 
     handleUpdatePage({
-      pins: [...currentPins, newPin],
+      pins: updatedPins,
       requirements: updatedRequirements,
     });
     setFocusedPinId(newPin.id);
   };
 
   const handleUpdatePinPos = (pinId, { x, y }) => {
-    const updatedPins = (currentPage.pins || []).map((p) =>
+    const rolePins = currentPage.pins?.[activeRole] || [];
+    const updatedRolePins = rolePins.map((p) =>
       p.id === pinId ? { ...p, x, y } : p,
     );
-    handleUpdatePage({ pins: updatedPins });
+
+    handleUpdatePage({
+      pins: {
+        ...(currentPage.pins || {}),
+        [activeRole]: updatedRolePins,
+      },
+    });
   };
 
   const handleDeletePin = (pinId) => {
-    const filteredPins = (currentPage.pins || [])
+    const rolePins = currentPage.pins?.[activeRole] || [];
+    const filteredPins = rolePins
       .filter((p) => p.id !== pinId)
       .map((p, idx) => ({ ...p, number: idx + 1 }));
 
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
-    INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = (updatedRequirements[role] || [])
-        .filter((r) => r.id !== pinId)
-        .map((r, idx) => ({ ...r, number: idx + 1 }));
-    });
+    const roleReqs = currentPage.requirements?.[activeRole] || [];
+    const filteredReqs = roleReqs
+      .filter((r) => r.id !== pinId)
+      .map((r, idx) => ({ ...r, number: idx + 1 }));
 
-    handleUpdatePage({ pins: filteredPins, requirements: updatedRequirements });
+    handleUpdatePage({
+      pins: {
+        ...(currentPage.pins || {}),
+        [activeRole]: filteredPins,
+      },
+      requirements: {
+        ...(currentPage.requirements || {}),
+        [activeRole]: filteredReqs,
+      },
+    });
     setFocusedPinId(null);
   };
 
@@ -341,24 +373,7 @@ export default function DocEditorPage() {
                   setFocusedPinId(null);
                 }}
                 onAddPage={() => {
-                  setPages([
-                    ...pages,
-                    {
-                      pageId: Date.now(),
-                      screenName: "",
-                      screenId: "",
-                      imageUrl: "",
-                      device: "desktop",
-                      pins: [],
-                      requirements: {
-                        공통: [],
-                        기획: [],
-                        프론트: [],
-                        백엔드: [],
-                        디자인: [],
-                      },
-                    },
-                  ]);
+                  setPages([...pages, createInitialPage(Date.now())]);
                   setActivePageIndex(pages.length);
                 }}
               />
@@ -374,10 +389,11 @@ export default function DocEditorPage() {
                 onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
               />
               <S.Divider />
+              {/* 🔥 현재 선택된 탭의 핀들만 와이어프레임에 노출 */}
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
-                pins={currentPage.pins}
+                pins={currentTabPins}
                 focusedPinId={focusedPinId}
                 onChangeDevice={(device) => handleUpdatePage({ device })}
                 onUploadImage={handleUploadImage}
@@ -395,6 +411,11 @@ export default function DocEditorPage() {
                 mode="create"
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
+                activeRole={activeRole}
+                onChangeRole={(role) => {
+                  setActiveRole(role);
+                  setFocusedPinId(null);
+                }}
                 onUpdateRequirement={handleUpdateRequirement}
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
