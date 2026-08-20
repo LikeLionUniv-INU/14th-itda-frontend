@@ -15,7 +15,7 @@ export const PageWrapper = styled.div`
 
 export const Content = styled.div`
   width: 100%;
-  max-width: 1202px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 32px 24px 80px 24px;
   box-sizing: border-box;
@@ -243,8 +243,7 @@ export const DocIcon = styled.div`
 `;
 
 export const NotificationBar = styled.div`
-  grid-column: 1 / -1;
-  width: 1050px;
+  width: 100%;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -253,7 +252,7 @@ export const NotificationBar = styled.div`
   border: 1px solid #bed8ff;
   border-radius: 12px;
   padding: 16px 24px;
-  margin-bottom: 4px;
+  margin-bottom: 20px; /* 다른 섹션들과의 간격 맞춤 */
 `;
 
 export const NotificationLeft = styled.div`
