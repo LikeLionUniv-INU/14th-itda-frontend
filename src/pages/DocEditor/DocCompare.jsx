@@ -16,6 +16,8 @@ import {
 } from "../../api/documentApi";
 import * as S from "./DocCompare.styles";
 
+const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
+
 const safeJsonParse = (str) => {
   if (!str) return null;
   try {
@@ -38,8 +40,20 @@ const createEmptyComparePage = (pageNumber = 1) => ({
   isImageModified: false,
   prevImageUrl: "",
   currImageUrl: "",
-  prevPins: [],
-  currPins: [],
+  prevPins: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+  currPins: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
   requirements: {
     공통: [],
     기획: [],
@@ -69,6 +83,7 @@ export default function DocComparePage() {
     updatedAt: "",
   });
 
+  const [activeRole, setActiveRole] = useState("공통");
   const [summaryList, setSummaryList] = useState([]);
   const [checkedIds, setCheckedIds] = useState([]);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
@@ -80,7 +95,6 @@ export default function DocComparePage() {
     if (!docId) return;
 
     try {
-      // 1. 버전 번호 결정
       let currentVer = targetVersion;
       if (!currentVer) {
         try {
@@ -96,7 +110,6 @@ export default function DocComparePage() {
       currentVer = currentVer || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
-      // 2. 현재 버전 & 이전 버전 문서 상세 동시 조회
       const [docRes, prevDocRes] = await Promise.all([
         getDocumentDetail(docId, currentVer),
         prevVer !== currentVer
@@ -107,8 +120,13 @@ export default function DocComparePage() {
       const docData = docRes?.data?.data || docRes?.data || {};
       const prevDocData = prevDocRes?.data?.data || prevDocRes?.data || null;
 
+      const rawDocName = docData?.name || docData?.title || "스토리보드";
+      const cleanDocName = rawDocName
+        .replace(/_?[Vv]ersion\.?\d+/gi, "")
+        .trim();
+
       setDocInfo({
-        docName: docData?.name || docData?.title || "스토리보드",
+        docName: cleanDocName || "스토리보드",
         prevVersion: prevVer,
         currVersion: currentVer,
         updatedAt: docData?.updatedAt
@@ -116,7 +134,6 @@ export default function DocComparePage() {
           : "",
       });
 
-      // 3. 수정사항 목록 조회
       let formattedSummary = [];
       try {
         const changesRes = await getDocumentChanges(docId, currentVer);
@@ -195,7 +212,6 @@ export default function DocComparePage() {
         console.warn("변경사항 내역 조회 실패:", err);
       }
 
-      // 4. 페이지 상세 정보 및 요구사항 구성
       if (docData?.pages && docData.pages.length > 0) {
         const mappedPages = docData.pages.map((p, pIdx) => {
           const prevPage = prevDocData?.pages?.[pIdx] || null;
@@ -203,7 +219,6 @@ export default function DocComparePage() {
             (ch) => ch.pageIndex === pIdx,
           );
 
-          // 화면 정보 Diff
           const screenChange = pageChanges.find(
             (ch) => ch.changeType === "SCREEN_MODIFIED",
           );
@@ -225,7 +240,6 @@ export default function DocComparePage() {
           const currScreenName = p.screenName || "";
           const currScreenId = p.screenId || "";
 
-          // 와이어프레임 이미지 변경 여부 판별 (changes에 이미지 변경 내역이 명확히 있을 때만 듀얼 뷰 활성화)
           const imgChange = pageChanges.find((ch) =>
             ["IMAGE_MODIFIED", "IMAGE_ADDED", "IMAGE_DELETED"].includes(
               ch.changeType,
@@ -247,39 +261,23 @@ export default function DocComparePage() {
             imgChange?.after?.imageUrl ||
             (!isImageModified ? prevImageUrl : "");
 
-          // 핀 목록 구성
-          const prevPins = (prevPage?.pins || []).map((pin) => ({
-            id: pin.id || pin.pinNumber,
-            number: pin.pinNumber,
-            x: Number(pin.xCoordinate) || 0,
-            y: Number(pin.yCoordinate) || 0,
-          }));
+          // 탭별 핀 및 요구사항 분리
+          const prevPinMap = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
 
-          const currPins = (p.pins || []).map((pin) => {
-            const pinChange = pageChanges.find(
-              (ch) =>
-                ch.pinId === pin.pinNumber || ch.pinNumber === pin.pinNumber,
-            );
-            let pinType = "curr";
-            if (
-              pinChange?.changeType === "REQUIREMENT_ADDED" ||
-              pinChange?.changeType === "PIN_ADDED" ||
-              !(prevPage?.pins || []).some(
-                (pp) => pp.pinNumber === pin.pinNumber,
-              )
-            ) {
-              pinType = "added";
-            }
-            return {
-              id: pin.id || pin.pinNumber,
-              number: pin.pinNumber,
-              x: Number(pin.xCoordinate) || 0,
-              y: Number(pin.yCoordinate) || 0,
-              pinType,
-            };
-          });
+          const currPinMap = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
 
-          // 직무별 요구사항 Diff 구성
           const requirements = {
             공통: [],
             기획: [],
@@ -288,93 +286,124 @@ export default function DocComparePage() {
             디자인: [],
           };
 
-          (p.pins || []).forEach((pin) => {
-            const pinReqs = pin.requirements || [];
-            const prevPin = (prevPage?.pins || []).find(
-              (pp) => pp.pinNumber === pin.pinNumber || pp.id === pin.id,
-            );
-
-            const pinChanges = pageChanges.filter(
-              (ch) =>
-                ch.pinNumber === pin.pinNumber ||
-                ch.pinId === pin.id ||
-                ch.pinId === pin.pinNumber,
-            );
-
-            if (pinReqs.length === 0) {
-              const tab = pin.tabType || "공통";
-              if (requirements[tab]) {
-                requirements[tab].push({
-                  id: pin.id || pin.pinNumber,
-                  reqId: null,
-                  number: pin.pinNumber,
-                  type: !prevPin ? "added" : "normal",
-                  prevItem: "",
-                  prevDetail: "",
-                  currItem: "-",
-                  currDetail: "-",
-                });
-              }
-              return;
-            }
-
-            pinReqs.forEach((req) => {
-              const tab = req.tabType || "공통";
-              const prevReq = (prevPin?.requirements || []).find(
-                (pr) => (pr.tabType || "공통") === tab,
-              );
-
-              const reqChange = pinChanges.find(
-                (ch) =>
-                  ch.tabType === tab ||
-                  ch.itemName === req.itemName ||
-                  ch.after?.itemName === req.itemName ||
-                  ch.itemDescription === req.itemName ||
-                  !ch.after?.itemName,
-              );
-
-              let type = "normal";
-              let prevItem = "";
-              let prevDetail = "";
-
-              if (
-                reqChange?.changeType === "REQUIREMENT_MODIFIED" ||
-                reqChange?.changeType === "ITEM_MODIFIED" ||
-                (prevReq &&
-                  (prevReq.itemName !== req.itemName ||
-                    prevReq.content !== req.content))
-              ) {
-                type = "modified";
-                prevItem =
-                  reqChange?.before?.itemName || prevReq?.itemName || "";
-                prevDetail =
-                  reqChange?.before?.content || prevReq?.content || "";
-              } else if (
-                reqChange?.changeType === "REQUIREMENT_ADDED" ||
-                reqChange?.changeType === "PIN_ADDED" ||
-                reqChange?.changeType === "ITEM_ADDED" ||
-                !prevPin ||
-                !prevReq
-              ) {
-                type = "added";
-              }
-
-              if (requirements[tab]) {
-                requirements[tab].push({
-                  id: pin.id || pin.pinNumber,
-                  reqId: req.id,
-                  number: pin.pinNumber,
-                  type,
-                  prevItem,
-                  prevDetail,
-                  currItem: req.itemName || "",
-                  currDetail: req.content || "",
-                });
-              }
+          (prevPage?.pins || []).forEach((pin) => {
+            const tab = pin.tabType || "공통";
+            const targetTab = prevPinMap[tab] ? tab : "공통";
+            prevPinMap[targetTab].push({
+              id: pin.id || pin.pinNumber,
+              number: pin.pinNumber,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
             });
           });
 
-          // 🔥 디바이스 정보 정확 매핑 (모바일/데스크탑 판별)
+          (p.pins || []).forEach((pin) => {
+            const tab = pin.tabType || "공통";
+            const targetTab = currPinMap[tab] ? tab : "공통";
+
+            const pinChange = pageChanges.find(
+              (ch) =>
+                (ch.tabType === targetTab || !ch.tabType) &&
+                (ch.pinId === pin.pinNumber || ch.pinNumber === pin.pinNumber),
+            );
+
+            let pinType = "curr";
+            if (
+              pinChange?.changeType === "REQUIREMENT_ADDED" ||
+              pinChange?.changeType === "PIN_ADDED" ||
+              !(prevPinMap[targetTab] || []).some(
+                (pp) => pp.number === pin.pinNumber,
+              )
+            ) {
+              pinType = "added";
+            }
+
+            currPinMap[targetTab].push({
+              id: pin.id || pin.pinNumber,
+              number: pin.pinNumber,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
+              pinType,
+            });
+
+            const pinReqs = pin.requirements || [];
+            const prevPin = (prevPinMap[targetTab] || []).find(
+              (pp) => pp.number === pin.pinNumber,
+            );
+
+            if (pinReqs.length === 0) {
+              requirements[targetTab].push({
+                id: pin.id || pin.pinNumber,
+                reqId: null,
+                number: pin.pinNumber,
+                type: !prevPin ? "added" : "normal",
+                prevItem: "",
+                prevDetail: "",
+                currItem: "-",
+                currDetail: "-",
+              });
+            } else {
+              pinReqs.forEach((req) => {
+                const reqTab = req.tabType || targetTab;
+                const prevReq = (prevPage?.pins || [])
+                  .find(
+                    (pp) =>
+                      (pp.tabType || "공통") === reqTab &&
+                      pp.pinNumber === pin.pinNumber,
+                  )
+                  ?.requirements?.find(
+                    (pr) => (pr.tabType || "공통") === reqTab,
+                  );
+
+                const reqChange = pageChanges.find(
+                  (ch) =>
+                    (ch.tabType === reqTab || !ch.tabType) &&
+                    (ch.pinNumber === pin.pinNumber || ch.pinId === pin.id) &&
+                    (ch.itemName === req.itemName || !ch.after?.itemName),
+                );
+
+                let type = "normal";
+                let prevItem = "";
+                let prevDetail = "";
+
+                if (
+                  reqChange?.changeType === "REQUIREMENT_MODIFIED" ||
+                  reqChange?.changeType === "ITEM_MODIFIED" ||
+                  (prevReq &&
+                    (prevReq.itemName !== req.itemName ||
+                      prevReq.content !== req.content))
+                ) {
+                  type = "modified";
+                  prevItem =
+                    reqChange?.before?.itemName || prevReq?.itemName || "";
+                  prevDetail =
+                    reqChange?.before?.content || prevReq?.content || "";
+                } else if (
+                  reqChange?.changeType === "REQUIREMENT_ADDED" ||
+                  reqChange?.changeType === "PIN_ADDED" ||
+                  reqChange?.changeType === "ITEM_ADDED" ||
+                  !prevPin ||
+                  !prevReq
+                ) {
+                  type = "added";
+                }
+
+                if (requirements[reqTab]) {
+                  requirements[reqTab].push({
+                    id: pin.id || pin.pinNumber,
+                    reqId: req.id,
+                    number: pin.pinNumber,
+                    type,
+                    prevItem,
+                    prevDetail,
+                    currItem: req.itemName || "",
+                    currDetail: req.content || "",
+                  });
+                }
+              });
+            }
+          });
+
           const imgObj = p.wireframeImages?.[0] || {};
           const prevImgObj = prevPage?.wireframeImages?.[0] || {};
 
@@ -407,8 +436,8 @@ export default function DocComparePage() {
             isImageModified,
             prevImageUrl,
             currImageUrl: currImageUrl || prevImageUrl,
-            prevPins: prevPins.length > 0 ? prevPins : currPins,
-            currPins,
+            prevPins: prevPinMap,
+            currPins: currPinMap,
             requirements,
           };
         });
@@ -427,6 +456,8 @@ export default function DocComparePage() {
   }, [fetchCompareData]);
 
   const currentPage = pages[activePageIndex] || pages[0] || {};
+  const currentPrevPins = currentPage.prevPins?.[activeRole] || [];
+  const currentCurrPins = currentPage.currPins?.[activeRole] || [];
 
   const handleSelectSummary = async (item) => {
     setSelectedSummaryId(item.id);
@@ -443,6 +474,9 @@ export default function DocComparePage() {
     if (item.pageIndex !== undefined && !isNaN(item.pageIndex)) {
       setActivePageIndex(item.pageIndex);
     }
+    if (item.tabType) {
+      setActiveRole(item.tabType);
+    }
     if (item.pinNumber) {
       setFocusedPinId(item.pinNumber);
     }
@@ -450,7 +484,7 @@ export default function DocComparePage() {
 
   const handleBack = () => {
     if (teamId) {
-      navigate(`/teamp/${teamId}`);
+      navigate(`/teamp-leader/${teamId}`);
     } else {
       navigate(-1);
     }
@@ -499,13 +533,14 @@ export default function DocComparePage() {
                 isModified={currentPage.isScreenInfoModified}
               />
               <S.Divider />
+              {/* 🔥 현재 선택된 탭의 비교 핀들만 와이어프레임에 노출 */}
               <DiffWireframeCanvas
                 device={currentPage.device}
                 isImageModified={currentPage.isImageModified}
                 prevImageUrl={currentPage.prevImageUrl}
                 currImageUrl={currentPage.currImageUrl}
-                prevPins={currentPage.prevPins}
-                currPins={currentPage.currPins}
+                prevPins={currentPrevPins}
+                currPins={currentCurrPins}
                 focusedPinId={focusedPinId}
                 onFocusPin={(id) => {
                   setFocusedPinId(id);
@@ -520,6 +555,11 @@ export default function DocComparePage() {
               <DiffRequirementSection
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
+                activeRole={activeRole}
+                onChangeRole={(role) => {
+                  setActiveRole(role);
+                  setFocusedPinId(null);
+                }}
                 onFocusPin={(id) => {
                   setFocusedPinId(id);
                   setSelectedSummaryId(null);

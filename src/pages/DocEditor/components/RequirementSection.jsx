@@ -9,23 +9,28 @@ const RequirementSection = ({
   requirements = {},
   focusedPinId,
   isReadOnly = false,
+  activeRole: externalActiveRole,
   onChangeRole,
   onUpdateRequirement,
   onFocusPin,
 }) => {
-  const [activeRole, setActiveRole] = useState("공통");
+  const [internalActiveRole, setInternalActiveRole] = useState("공통");
+  const activeRole = externalActiveRole || internalActiveRole;
+
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ item: "", detail: "" });
 
   const currentList = requirements[activeRole] || [];
 
   const handleTabChange = (role) => {
-    setActiveRole(role);
-    onChangeRole?.(role);
+    if (onChangeRole) {
+      onChangeRole(role);
+    } else {
+      setInternalActiveRole(role);
+    }
     setEditingId(null);
   };
 
-  // 공통 포함 5개 탭 모두 독립적 수정 (activeRole만 개별 업데이트)
   const handleInputChange = (id, field, value) => {
     onUpdateRequirement?.(activeRole, id, field, value);
   };

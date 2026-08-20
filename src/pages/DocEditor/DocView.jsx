@@ -10,8 +10,6 @@ import RequirementSection from "./components/RequirementSection";
 import { getDocumentDetail } from "../../api/documentApi";
 import * as S from "./DocEditor.styles";
 
-const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
-
 export default function DocViewPage() {
   const { docId: paramDocId, documentId } = useParams();
   const docId = paramDocId || documentId;
@@ -27,6 +25,7 @@ export default function DocViewPage() {
     updatedAt: "",
   });
 
+  const [activeRole, setActiveRole] = useState("공통");
   const [pages, setPages] = useState([]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
@@ -38,7 +37,6 @@ export default function DocViewPage() {
       const docRes = await getDocumentDetail(docId, 1);
       const docData = docRes?.data?.data || docRes?.data || {};
 
-      // 이름 뒤에 이미 붙은 _Version.1 제거하여 중복 방지
       const rawName = docData?.name || docData?.title || "스토리보드";
       const cleanName = rawName.replace(/_?[Vv]ersion\.?\d+/g, "").trim();
 
@@ -51,6 +49,14 @@ export default function DocViewPage() {
 
       if (docData?.pages && docData.pages.length > 0) {
         const formattedPages = docData.pages.map((p, idx) => {
+          const pinMap = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
+
           const reqMap = {
             공통: [],
             기획: [],
@@ -59,31 +65,45 @@ export default function DocViewPage() {
             디자인: [],
           };
 
-          const pins = (p.pins || []).map((pin) => {
+          (p.pins || []).forEach((pin) => {
+            const pinTab = pin.tabType || "공통";
+            const targetTab = pinMap[pinTab] ? pinTab : "공통";
+
             const pinId = pin.id || pin.pinNumber;
             const pinNum = pin.pinNumber;
 
-            INITIAL_ROLES.forEach((role) => {
-              const foundReq = (pin.requirements || []).find(
-                (r) => (r.tabType || "공통") === role,
-              );
-
-              reqMap[role].push({
-                id: pinId,
-                reqId: foundReq?.id || null,
-                number: pinNum,
-                item: foundReq?.itemName || "",
-                detail: foundReq?.content || "",
-                isRequired: foundReq?.isRequired || false,
-              });
-            });
-
-            return {
+            pinMap[targetTab].push({
               id: pinId,
               number: pinNum,
               x: Number(pin.xCoordinate) || 0,
               y: Number(pin.yCoordinate) || 0,
-            };
+            });
+
+            const reqList = pin.requirements || [];
+            if (reqList.length > 0) {
+              reqList.forEach((req) => {
+                const reqTab = req.tabType || targetTab;
+                if (reqMap[reqTab]) {
+                  reqMap[reqTab].push({
+                    id: pinId,
+                    reqId: req.id || null,
+                    number: pinNum,
+                    item: req.itemName || "",
+                    detail: req.content || "",
+                    isRequired: Boolean(req.isRequired),
+                  });
+                }
+              });
+            } else {
+              reqMap[targetTab].push({
+                id: pinId,
+                reqId: null,
+                number: pinNum,
+                item: "",
+                detail: "",
+                isRequired: false,
+              });
+            }
           });
 
           const imgUrl =
@@ -92,14 +112,21 @@ export default function DocViewPage() {
             p.imageUrl ||
             "";
 
+          const serverDevice =
+            p.device ||
+            p.deviceType ||
+            (p.wireframeImages?.[0]?.displayWidth === 214
+              ? "mobile"
+              : "desktop");
+
           return {
             pageId: p.id || idx + 1,
             pageNumber: p.pageNumber || idx + 1,
             screenName: p.screenName || "",
             screenId: p.screenId || "",
             imageUrl: imgUrl,
-            device: p.device || "desktop",
-            pins,
+            device: serverDevice,
+            pins: pinMap,
             requirements: reqMap,
           };
         });
@@ -115,6 +142,7 @@ export default function DocViewPage() {
   }, [fetchVersion1Data]);
 
   const currentPage = pages[activePageIndex] || {};
+  const currentTabPins = currentPage.pins?.[activeRole] || [];
 
   const handleBack = () => {
     if (teamId) {
@@ -127,7 +155,6 @@ export default function DocViewPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단바: mode="view"로 임시저장/저장 버튼 제거 */}
         <DocHeader
           docName={`${documentInfo.name}_Version.1`}
           currVersion={1}
@@ -146,7 +173,7 @@ export default function DocViewPage() {
                   setActivePageIndex(index);
                   setFocusedPinId(null);
                 }}
-                isReadOnly={true} // 페이지 추가 버튼 숨김
+                isReadOnly={true}
               />
             </S.PageNavWrapper>
 
@@ -157,12 +184,13 @@ export default function DocViewPage() {
                 isReadOnly={true}
               />
               <S.Divider />
+              {/* 🔥 현재 선택된 탭의 핀들만 와이어프레임에 노출 */}
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
-                pins={currentPage.pins || []}
+                pins={currentTabPins}
                 focusedPinId={focusedPinId}
-                isReadOnly={true} // 핀 추가/이동/삭제 불가
+                isReadOnly={true}
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
             </S.LeftBox>
@@ -171,9 +199,14 @@ export default function DocViewPage() {
           <S.RightColumn>
             <S.RightBox>
               <RequirementSection
-                mode="view" // 읽기 전용 모드
+                mode="view"
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
+                activeRole={activeRole}
+                onChangeRole={(role) => {
+                  setActiveRole(role);
+                  setFocusedPinId(null);
+                }}
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
             </S.RightBox>
