@@ -11,6 +11,8 @@ import { getDocumentDetail } from "../../api/documentApi";
 import { getTeamDetail } from "../../api/teamApi";
 import * as S from "./DocEditor.styles";
 
+const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
+
 export default function DocViewPage() {
   const { docId: paramDocId, documentId } = useParams();
   const docId = paramDocId || documentId;
