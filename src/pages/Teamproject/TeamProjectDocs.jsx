@@ -113,9 +113,30 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     projectInfo.isLeader === true ||
     projectInfo.role === "LEADER";
 
-  const docs = projectInfo.documents || projectInfo.docs || [];
-  const members = projectInfo.members || [];
+  const rawDocs = projectInfo.documents || projectInfo.docs || [];
 
+  // 최신순(내림차순) 정렬
+  const docs = [...rawDocs].sort((a, b) => {
+    const aId = a.id || a.documentId;
+    const bId = b.id || b.documentId;
+    const timeA = new Date(
+      docLatestTimes[aId] ||
+        a.latestVersionUpdatedAt ||
+        a.updatedAt ||
+        a.createdAt ||
+        0,
+    ).getTime();
+    const timeB = new Date(
+      docLatestTimes[bId] ||
+        b.latestVersionUpdatedAt ||
+        b.updatedAt ||
+        b.createdAt ||
+        0,
+    ).getTime();
+    return timeB - timeA;
+  });
+
+  const members = projectInfo.members || [];
   const memberInitials = members
     .slice(0, 3)
     .map((m) => getInitial(m.name || m.firstName || m.nickname));
@@ -132,32 +153,40 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
       return;
     }
 
-    if (isLeader) {
+    if (docVersion === 1) {
       if (onNavigate) {
-        onNavigate("docEdit", targetId);
+        onNavigate("docView", targetId);
       } else {
-        navigate(`/doc-edit/${targetId}`, {
-          state: { teamId, version: docVersion, docId: targetId },
+        navigate(`/doc-view/${targetId}`, {
+          state: { teamId, version: 1, docId: targetId },
         });
       }
     } else {
-      if (docVersion === 1) {
-        if (onNavigate) {
-          onNavigate("docView", targetId);
-        } else {
-          navigate(`/doc-view/${targetId}`, {
-            state: { teamId, version: 1, docId: targetId },
-          });
-        }
+      if (onNavigate) {
+        onNavigate("docDetail", targetId);
       } else {
-        if (onNavigate) {
-          onNavigate("docDetail", targetId);
-        } else {
-          navigate(`/doc-compare/${targetId}`, {
-            state: { teamId, version: docVersion, docId: targetId },
-          });
-        }
+        navigate(`/doc-compare/${targetId}`, {
+          state: { teamId, version: docVersion, docId: targetId },
+        });
       }
+    }
+  };
+
+  const handleEditClick = (e, doc) => {
+    e.stopPropagation();
+    const targetId = doc.id || doc.documentId;
+    const docVersion = Number(
+      doc.latestVersion || doc.currentVersion || doc.version || 1,
+    );
+
+    localStorage.setItem("currentTeamId", String(teamId));
+
+    if (onNavigate) {
+      onNavigate("docEdit", targetId);
+    } else {
+      navigate(`/doc-edit/${targetId}`, {
+        state: { teamId, version: docVersion, docId: targetId },
+      });
     }
   };
 
@@ -224,6 +253,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                   <th>언어</th>
                   <th>버전</th>
                   <th>최종 업데이트</th>
+                  {isLeader && <th style={{ width: "90px" }}></th>}
                 </tr>
               </thead>
               <tbody>
@@ -235,6 +265,10 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                     doc.versionUpdatedAt ||
                     doc.updatedAt ||
                     doc.createdAt;
+
+                  const docVersion = Number(
+                    doc.latestVersion || doc.currentVersion || doc.version || 1,
+                  );
 
                   return (
                     <tr
@@ -252,14 +286,31 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                           doc.language || doc.selectedLang,
                         )}
                       </td>
-                      <td>
-                        ver.{" "}
-                        {doc.latestVersion ||
-                          doc.currentVersion ||
-                          doc.version ||
-                          1}
-                      </td>
+                      <td>ver. {docVersion}</td>
                       <td>{getRelativeTime(realTime)}</td>
+                      {isLeader && (
+                        <td
+                          style={{ textAlign: "center" }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => handleEditClick(e, doc)}
+                            style={{
+                              padding: "4px 10px",
+                              backgroundColor: "#ffffff",
+                              color: "#4f46e5",
+                              border: "1px solid #4f46e5",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                            }}
+                          >
+                            수정하기
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
