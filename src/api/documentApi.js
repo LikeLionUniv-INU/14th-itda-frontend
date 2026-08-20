@@ -50,9 +50,33 @@ export const createDocument = (
   });
 };
 
+// 사용자 언어 캐시 (API 호출 최소화)
+let _cachedUserLang = null;
+const getUserLanguage = async () => {
+  if (_cachedUserLang) return _cachedUserLang;
+  try {
+    const res = await api.get("/api/users/me");
+    const userData = res?.data?.data || res?.data || res;
+    _cachedUserLang = userData?.language || null;
+    return _cachedUserLang;
+  } catch {
+    return null;
+  }
+};
+
+// 로그아웃 시 캐시 초기화용
+export const clearUserLangCache = () => {
+  _cachedUserLang = null;
+};
+
 // 7. 문서 상세 조회 (버전별, 번역 파라미터 지원)
-export const getDocumentDetail = (documentId, version, lang) => {
-  const params = lang ? { lang } : {};
+// lang이 명시되면 그대로 사용, 미지정이면 사용자 언어 자동 감지
+export const getDocumentDetail = async (documentId, version, lang) => {
+  let effectiveLang = lang;
+  if (!effectiveLang) {
+    effectiveLang = await getUserLanguage();
+  }
+  const params = effectiveLang ? { lang: effectiveLang } : {};
   return api.get(`/api/documents/${documentId}/versions/${version}`, {
     params,
   });
