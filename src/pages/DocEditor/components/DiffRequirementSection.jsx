@@ -68,13 +68,13 @@ export default function DiffRequirementSection({
           {currentList.length === 0 ? (
             <S.EmptyRow>등록된 요구사항이 없습니다.</S.EmptyRow>
           ) : (
-            currentList.map((row) => {
+            currentList.map((row, index) => {
               const isFocused = focusedPinId === row.id;
 
               if (row.type === "modified") {
                 return (
                   <S.ModifiedRowContainer
-                    key={row.id}
+                    key={row.reqId || `${row.id}_${index}`}
                     isFocused={isFocused}
                     onClick={() => onFocusPin?.(row.id)}
                   >
@@ -106,7 +106,7 @@ export default function DiffRequirementSection({
               const isAdded = row.type === "added";
               return (
                 <S.StandardRow
-                  key={row.id}
+                  key={row.reqId || `${row.id}_${index}`}
                   bgColor={isAdded ? "#E9F5FF" : "#FFFFFF"}
                   isFocused={isFocused}
                   onClick={() => onFocusPin?.(row.id)}
