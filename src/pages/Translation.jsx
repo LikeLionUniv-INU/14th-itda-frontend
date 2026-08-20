@@ -7,21 +7,17 @@ import { getTranslationStatus } from "../api/documentApi";
 // 국가/언어 국기 이미지 및 명칭 매핑
 const LANG_META = {
   ko: { name: "한국어", flag: "https://flagcdn.com/w160/kr.png" },
-  en: { name: "영어", flag: "https://flagcdn.com/w160/gb.png" },
-  us: { name: "영어", flag: "https://flagcdn.com/w160/us.png" },
+  en: { name: "영어", flag: "https://flagcdn.com/w160/us.png" },
   ja: { name: "일본어", flag: "https://flagcdn.com/w160/jp.png" },
-  jp: { name: "일본어", flag: "https://flagcdn.com/w160/jp.png" },
   zh: { name: "중국어", flag: "https://flagcdn.com/w160/cn.png" },
-  cn: { name: "중국어", flag: "https://flagcdn.com/w160/cn.png" },
   es: { name: "스페인어", flag: "https://flagcdn.com/w160/es.png" },
   fr: { name: "프랑스어", flag: "https://flagcdn.com/w160/fr.png" },
   de: { name: "독일어", flag: "https://flagcdn.com/w160/de.png" },
   vi: { name: "베트남어", flag: "https://flagcdn.com/w160/vn.png" },
-  vn: { name: "베트남어", flag: "https://flagcdn.com/w160/vn.png" },
   id: { name: "인도네시아어", flag: "https://flagcdn.com/w160/id.png" },
 };
 
-// 백엔드 상태값 보정 헬퍼
+// 백엔드 상태값 정규화 (PENDING, IN_PROGRESS, COMPLETED, FAILED)
 const normalizeStatus = (statusStr) => {
   if (!statusStr) return "WAITING";
   const s = String(statusStr).toUpperCase();
@@ -32,12 +28,13 @@ const normalizeStatus = (statusStr) => {
   return "WAITING";
 };
 
-// 언어 코드 보정 헬퍼
+// 언어 코드 정규화
 const normalizeCode = (codeStr) => {
   if (!codeStr) return "ko";
   const c = String(codeStr).toLowerCase().trim();
-  if (c.startsWith("en")) return "en";
-  if (c.startsWith("ko")) return "ko";
+  if (c.startsWith("en") || c.startsWith("us") || c.startsWith("gb"))
+    return "en";
+  if (c.startsWith("ko") || c.startsWith("kr")) return "ko";
   if (c.startsWith("ja") || c.startsWith("jp")) return "ja";
   if (c.startsWith("zh") || c.startsWith("cn")) return "zh";
   if (c.startsWith("es")) return "es";
@@ -59,8 +56,11 @@ export default function Translation() {
     params.teamId ||
     params.projectId ||
     passedState.projectId ||
+    localStorage.getItem("currentTeamId") ||
     "";
-  const jobId = passedState.jobId || teamId || 1;
+
+  // 전달받은 정확한 jobId 추출
+  const jobId = passedState.jobId || params.jobId;
 
   const [languages, setLanguages] = useState([]);
   const [serverProgress, setServerProgress] = useState(null);
@@ -84,6 +84,11 @@ export default function Translation() {
   };
 
   const fetchStatus = async () => {
+    if (!jobId) {
+      console.warn("진행할 jobId가 전달되지 않았습니다.");
+      return;
+    }
+
     try {
       const response = await getTranslationStatus(jobId);
       const resData = response?.data?.data || response?.data || response;
@@ -97,9 +102,9 @@ export default function Translation() {
       if (Array.isArray(rawList) && rawList.length > 0) {
         const formatted = rawList.map((item, idx) => {
           const rawCode =
+            item.targetLanguage ||
             item.code ||
             item.languageCode ||
-            item.targetLanguage ||
             item.language ||
             "ko";
           const normCode = normalizeCode(rawCode);
@@ -118,24 +123,28 @@ export default function Translation() {
         });
         setLanguages(formatted);
 
-        // 전체 완료 여부 판단 및 팀 프로젝트 메인으로 복귀
-        const allCompleted =
-          resData?.isAllCompleted ||
+        // 명세서 기준 완료 조건: status가 COMPLETED 이거나 progress가 100
+        const isFinished =
+          resData?.status === "COMPLETED" ||
+          resData?.progress === 100 ||
           (formatted.length > 0 &&
             formatted.every((l) => l.status === "COMPLETED"));
 
-        if (allCompleted && !hasNavigatedRef.current) {
+        if (isFinished && !hasNavigatedRef.current) {
           hasNavigatedRef.current = true;
           if (pollingRef.current) clearInterval(pollingRef.current);
+          setServerProgress(100);
           setShowToast(true);
 
           setTimeout(() => {
-            navigate(teamId ? `/teamp/${teamId}` : "/home");
-          }, 2000);
+            navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
+          }, 1800);
         }
       }
 
-      if (typeof resData?.progressPercentage === "number") {
+      if (typeof resData?.progress === "number") {
+        setServerProgress(resData.progress);
+      } else if (typeof resData?.progressPercentage === "number") {
         setServerProgress(resData.progressPercentage);
       }
     } catch (error) {
@@ -148,7 +157,7 @@ export default function Translation() {
 
     pollingRef.current = setInterval(() => {
       fetchStatus();
-    }, 2500);
+    }, 2000);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -158,6 +167,7 @@ export default function Translation() {
   const completedCount = languages.filter(
     (l) => l.status === "COMPLETED",
   ).length;
+
   const progressPercentage =
     serverProgress !== null
       ? serverProgress
@@ -185,7 +195,6 @@ export default function Translation() {
   return (
     <S.PageWrapper>
       <S.CenterContainer>
-        {/* 상단 반짝이 아이콘 */}
         <S.SparkleIconWrapper>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
             <path
@@ -202,7 +211,6 @@ export default function Translation() {
         <S.Title>AI 번역 진행중...</S.Title>
         <S.SubTitle>문서를 분석하고 각 언어로 번역을 진행합니다.</S.SubTitle>
 
-        {/* 프로그레스바 */}
         <S.ProgressSection>
           <S.ProgressBarTrack>
             <S.ProgressBarFill $percentage={progressPercentage} />
@@ -211,7 +219,6 @@ export default function Translation() {
         </S.ProgressSection>
 
         <S.CardsWrapper>
-          {/* 좌측 슬라이드 버튼 */}
           <S.TriangleButton
             onClick={handlePrev}
             disabled={!canPrev}
@@ -222,7 +229,6 @@ export default function Translation() {
             </svg>
           </S.TriangleButton>
 
-          {/* 언어 카드 그리드 */}
           <S.CardGrid>
             {languages.length === 0 ? (
               <p style={{ color: "#888", padding: "40px 0" }}>
@@ -267,7 +273,6 @@ export default function Translation() {
             )}
           </S.CardGrid>
 
-          {/* 우측 슬라이드 버튼 */}
           <S.TriangleButton
             onClick={handleNext}
             disabled={!canNext}
@@ -279,7 +284,6 @@ export default function Translation() {
           </S.TriangleButton>
         </S.CardsWrapper>
 
-        {/* 완료 안내 토스트 메시지 */}
         {showToast && (
           <S.ToastMessage>
             <CheckCircle2 size={16} color="#1CA74B" />

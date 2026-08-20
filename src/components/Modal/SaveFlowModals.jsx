@@ -22,7 +22,6 @@ export default function SaveFlowModals({
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 모달이 열리는 즉시(isOpen === true) 팀원 데이터를 사전 로드
   useEffect(() => {
     if (!isOpen || !teamId) return;
 
@@ -32,13 +31,11 @@ export default function SaveFlowModals({
         const res = await getTeamDetail(teamId);
         const resData = res?.data?.data || res?.data || {};
 
-        // members 또는 teamMembers 배열 대응
         const memberList =
           resData.members ||
           resData.teamMembers ||
           (Array.isArray(resData) ? resData : []);
 
-        // 팀 멤버 데이터 매핑
         const formattedMembers = memberList.map((m, index) => {
           const fullName =
             m.name ||
@@ -54,13 +51,16 @@ export default function SaveFlowModals({
             resData.defaultLanguage ||
             "ko";
 
-          const memberId = m.userId || m.memberId || m.id || index + 1;
+          // 백엔드 명세서 규격: userId를 정확한 숫자로 보장
+          const memberId = Number(m.userId || m.id || m.memberId || index + 1);
 
           return {
             id: memberId,
+            userId: memberId,
             name: fullName,
             checked: true,
             language: userLang,
+            targetLanguage: userLang,
           };
         });
 
@@ -89,7 +89,17 @@ export default function SaveFlowModals({
   };
 
   const handleChangeLanguage = (id, language) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, language } : m)));
+    setMembers(
+      members.map((m) =>
+        m.id === id ? { ...m, language, targetLanguage: language } : m,
+      ),
+    );
+  };
+
+  const handleComplete = () => {
+    // 체크된 멤버만 필터링하여 전달
+    const checkedMembers = members.filter((m) => m.checked);
+    onFinalSave(checkedMembers);
   };
 
   const modalWidth = currentStep === "language_select" ? "504px" : "424px";
@@ -215,9 +225,7 @@ export default function SaveFlowModals({
 
             <S.ButtonGroup>
               <S.CancelBtn onClick={onClose}>취소</S.CancelBtn>
-              <S.ActionBtn onClick={() => onFinalSave(members)}>
-                선택 완료
-              </S.ActionBtn>
+              <S.ActionBtn onClick={handleComplete}>선택 완료</S.ActionBtn>
             </S.ButtonGroup>
           </S.LangModalContent>
         )}
