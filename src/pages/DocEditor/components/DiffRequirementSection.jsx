@@ -6,10 +6,22 @@ const ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 export default function DiffRequirementSection({
   requirements = {},
   focusedPinId,
+  activeRole: externalActiveRole,
+  onChangeRole,
   onFocusPin,
 }) {
-  const [activeRole, setActiveRole] = useState("공통");
+  const [internalActiveRole, setInternalActiveRole] = useState("공통");
+  const activeRole = externalActiveRole || internalActiveRole;
+
   const currentList = requirements[activeRole] || [];
+
+  const handleTabChange = (role) => {
+    if (onChangeRole) {
+      onChangeRole(role);
+    } else {
+      setInternalActiveRole(role);
+    }
+  };
 
   return (
     <S.Container>
@@ -21,7 +33,7 @@ export default function DiffRequirementSection({
           <S.TabItem
             key={role}
             active={activeRole === role}
-            onClick={() => setActiveRole(role)}
+            onClick={() => handleTabChange(role)}
           >
             {role}
           </S.TabItem>
@@ -59,7 +71,6 @@ export default function DiffRequirementSection({
             currentList.map((row) => {
               const isFocused = focusedPinId === row.id;
 
-              // 수정사항 (2단 Diff: 위 빨강, 아래 초록)
               if (row.type === "modified") {
                 return (
                   <S.ModifiedRowContainer
@@ -92,7 +103,6 @@ export default function DiffRequirementSection({
                 );
               }
 
-              // 추가사항 (하늘색 배경) or 일반 항목
               const isAdded = row.type === "added";
               return (
                 <S.StandardRow

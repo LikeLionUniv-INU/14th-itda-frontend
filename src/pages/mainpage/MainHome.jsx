@@ -13,7 +13,6 @@ import { getDocumentVersions } from "../../api/documentApi";
 import { getRelativeTime } from "../../components/dateUtil";
 import * as S from "./MainHome.styles";
 
-// 언어 코드를 풀네임으로 변환하는 함수
 const getLanguageFullName = (langCode) => {
   if (!langCode) return "-";
   const code = String(langCode).toLowerCase().trim();
@@ -34,7 +33,6 @@ const getLanguageFullName = (langCode) => {
   return langMap[code] || langCode;
 };
 
-// 단일 언어 및 배열 형태의 언어 목록 모두 처리
 const getLanguagesDisplay = (languages, fallback) => {
   if (Array.isArray(languages) && languages.length > 0) {
     return languages.map(getLanguageFullName).join(", ");
@@ -42,7 +40,6 @@ const getLanguagesDisplay = (languages, fallback) => {
   return getLanguageFullName(fallback);
 };
 
-// 성(lastName)이 있으면 성의 첫 글자, 없으면 name의 첫 글자 추출
 const getInitial = (member) => {
   if (!member) return "";
   if (typeof member === "string") return member.charAt(0).toUpperCase();
@@ -56,7 +53,6 @@ export default function MainHome({
   onCreateProject,
   onJoinProject,
   onSelectProject,
-  onSelectDocument,
 }) {
   const navigate = useNavigate();
 
@@ -64,6 +60,7 @@ export default function MainHome({
   const [projects, setProjects] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docLatestTimes, setDocLatestTimes] = useState({});
+  const [docLatestVersions, setDocLatestVersions] = useState({});
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
 
@@ -105,9 +102,9 @@ export default function MainHome({
           const recentDocs = resData.recentDocuments;
           setDocuments(recentDocs);
 
-          // 최근 문서의 최신 버전 시간 병렬 조회
           if (recentDocs.length > 0) {
             const timeMap = {};
+            const verMap = {};
             await Promise.allSettled(
               recentDocs.map(async (doc) => {
                 const dId = doc.id || doc.documentId;
@@ -124,6 +121,7 @@ export default function MainHome({
                     );
                     timeMap[dId] =
                       latestVerObj.updatedAt || latestVerObj.createdAt;
+                    verMap[dId] = Number(latestVerObj.version);
                   }
                 } catch (err) {
                   console.warn(`문서(${dId}) 버전 목록 조회 스킵:`, err);
@@ -131,6 +129,7 @@ export default function MainHome({
               }),
             );
             setDocLatestTimes(timeMap);
+            setDocLatestVersions(verMap);
           }
         }
       }
@@ -145,13 +144,39 @@ export default function MainHome({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // 🔥 최근 문서 클릭 핸들러 (v1이면 doc-view, v2 이상이면 doc-compare)
+  const handleDocumentClick = (doc) => {
+    const docId = doc.id || doc.documentId;
+    const teamId = doc.teamProjectId || doc.teamId || doc.projectId;
+    const latestVer =
+      docLatestVersions[docId] || doc.latestVersion || doc.version || 1;
+
+    const versionToUse = Number(latestVer);
+
+    if (teamId) {
+      localStorage.setItem("currentTeamId", String(teamId));
+    }
+
+    if (versionToUse === 1) {
+      navigate(`/doc-view/${docId}`, {
+        state: { docId, teamId, version: 1 },
+      });
+    } else {
+      navigate(`/doc-compare/${docId}`, {
+        state: { docId, teamId, version: versionToUse },
+      });
+    }
+  };
+
   const handleReadNotification = async () => {
     if (!notification) return;
 
     const notifId = notification.id;
     const teamId = notification.teamId;
     const docId = notification.documentId || notification.docId;
-    const versionToUse = notification.afterVersion || notification.version || 1;
+    const versionToUse = Number(
+      notification.afterVersion || notification.version || 1,
+    );
 
     if (teamId && notifId) {
       try {
@@ -164,10 +189,12 @@ export default function MainHome({
     setNotification(null);
 
     if (docId) {
-      if (onSelectDocument) {
-        onSelectDocument(docId, versionToUse);
+      if (versionToUse === 1) {
+        navigate(`/doc-view/${docId}`, {
+          state: { docId, teamId, version: 1 },
+        });
       } else {
-        navigate(`/doc-edit/${docId}`, {
+        navigate(`/doc-compare/${docId}`, {
           state: { docId, teamId, version: versionToUse },
         });
       }
@@ -194,25 +221,6 @@ export default function MainHome({
     } else {
       fetchDashboardData();
     }
-  };
-
-  const renderNotificationTitle = (noti) => {
-    if (!noti) return "";
-    if (noti.title) return noti.title;
-    const { documentName, beforeVersion, afterVersion } = noti;
-    if (beforeVersion !== undefined && afterVersion !== undefined) {
-      return `${documentName || "문서"}_version${beforeVersion}이 수정되어 version${afterVersion}가 업로드 되었습니다.`;
-    }
-    return `${documentName || "문서"}가 수정되었습니다.`;
-  };
-
-  const renderNotificationSub = (noti) => {
-    if (!noti) return "";
-    if (noti.sender) return `${noti.sender} 님께서 업로드 하셨어요.`;
-    const firstName = noti.performedByFirstName || "";
-    const lastName = noti.performedByLastName || "";
-    const author = `${lastName}${firstName}`.trim();
-    return author ? `${author} 님께서 업로드 하셨어요.` : "";
   };
 
   const displayUserName = userInfo
@@ -263,9 +271,14 @@ export default function MainHome({
                   </svg>
                 </S.NotificationIconBox>
                 <S.NotificationTextContainer>
-                  <h4>{renderNotificationTitle(notification)}</h4>
+                  <h4>
+                    {notification.title ||
+                      `${notification.documentName || "문서"}가 수정되었습니다.`}
+                  </h4>
                   <p>
-                    {renderNotificationSub(notification)}
+                    {notification.sender
+                      ? `${notification.sender} 님께서 업로드 하셨어요.`
+                      : ""}
                     {notification.createdAt && (
                       <span style={{ marginLeft: "12px", color: "#8a8a8a" }}>
                         {getRelativeTime(notification.createdAt)}
@@ -369,6 +382,7 @@ export default function MainHome({
           <S.EmptyContainer>
             <S.DocIcon />
             <h4>작성한 문서가 아직 없어요</h4>
+            <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
           </S.EmptyContainer>
         ) : (
           <S.Table>
@@ -391,15 +405,22 @@ export default function MainHome({
                   doc.updatedAt ||
                   doc.createdAt;
 
+                const displayVer =
+                  docLatestVersions[docId] ||
+                  doc.latestVersion ||
+                  doc.version ||
+                  1;
+
                 return (
                   <tr
                     key={docId}
-                    onClick={() => navigate(`/doc-edit/${docId}`)}
+                    onClick={() => handleDocumentClick(doc)}
+                    style={{ cursor: "pointer" }}
                   >
                     <td className="doc-name">{doc.name || doc.title}</td>
                     <td>{doc.teamProjectName || "-"}</td>
                     <td>{getLanguagesDisplay(doc.languages, doc.language)}</td>
-                    <td>v{doc.latestVersion || doc.version || 1}</td>
+                    <td>v{displayVer}</td>
                     <td>{getRelativeTime(realTime)}</td>
                   </tr>
                 );

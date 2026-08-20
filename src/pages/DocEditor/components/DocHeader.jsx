@@ -6,7 +6,7 @@ export default function DocHeader({
   docName = "스토리보드",
   prevVersion = 1,
   currVersion = 1,
-  mode = "create", // 'create' | 'edit' | 'compare'
+  mode = "create", // 'create' | 'edit' | 'compare' | 'view'
   updatedAt,
   onBack,
   onTempSave,
@@ -23,13 +23,19 @@ export default function DocHeader({
   };
 
   const renderTitle = () => {
+    // docName에 이미 _Version.X 또는 _versionX 가 포함되어 있다면 제거하여 중복 방지
+    const cleanName =
+      String(docName)
+        .replace(/_?[Vv]ersion\.?\d+/gi, "")
+        .trim() || "스토리보드";
+
     if (mode === "edit") {
-      return `${docName} Version.${currVersion} 수정`;
+      return `${cleanName} Version.${currVersion} 수정`;
     }
     if (mode === "compare") {
-      return `${docName} Version.${currVersion}`;
+      return `${cleanName} Version.${currVersion}`;
     }
-    return `${docName}_Version.${currVersion}`;
+    return `${cleanName}_Version.${currVersion}`;
   };
 
   return (
@@ -48,8 +54,9 @@ export default function DocHeader({
         <S.DocTitle>{renderTitle()}</S.DocTitle>
       </S.LeftArea>
 
-      {/* 2. 우측: 업데이트 시간 + 임시저장/저장 버튼 */}
+      {/* 2. 우측: 업데이트 시간 + 임시저장/저장 버튼 / 버전 뱃지 */}
       <S.RightArea>
+        {/* compare (버전 비교 모드) */}
         {mode === "compare" && (
           <>
             {updatedAt && <S.UpdateText>업데이트 : {updatedAt}</S.UpdateText>}
@@ -73,9 +80,14 @@ export default function DocHeader({
           </>
         )}
 
+        {/* view (버전 1 단일 조회 모드: 버튼 없이 업데이트 시간만 노출) */}
+        {mode === "view" && updatedAt && (
+          <S.UpdateText>업데이트 : {updatedAt}</S.UpdateText>
+        )}
+
+        {/* create / edit (작성 및 수정 모드: 임시저장/저장 버튼 노출) */}
         {(mode === "create" || mode === "edit") && (
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            {/* 임시저장 시 업데이트 시간 노출 */}
             {updatedAt && (
               <S.UpdateText style={{ marginRight: "6px" }}>
                 업데이트 : {updatedAt}
