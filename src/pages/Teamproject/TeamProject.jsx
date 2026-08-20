@@ -102,6 +102,9 @@ export default function TeamProject({ onNavigate }) {
     }
     try {
       setLoading(true);
+      // 현재 팀 ID를 로컬스토리지에 항상 동기화
+      localStorage.setItem("currentTeamId", String(teamId));
+
       const res = await getTeamDetail(teamId);
       const resData = res?.data;
       const data = resData?.data || resData || {};
@@ -110,11 +113,15 @@ export default function TeamProject({ onNavigate }) {
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
-        initialMap[doc.id] =
+        const dId = doc.id || doc.documentId;
+        const ver =
           doc.latestVersion ||
-          (doc.versions && doc.versions[doc.versions.length - 1]) ||
+          (Array.isArray(doc.versions) && doc.versions.length > 0
+            ? doc.versions[doc.versions.length - 1]
+            : null) ||
           doc.version ||
           1;
+        initialMap[dId] = Number(ver);
       });
       setSelectedVersions(initialMap);
     } catch (error) {
@@ -151,7 +158,6 @@ export default function TeamProject({ onNavigate }) {
     }
   };
 
-  // 페이지 진입 또는 라우트 이동 복귀 시 최신 데이터 자동 조회
   useEffect(() => {
     fetchTeamData();
     fetchNotification();
@@ -170,7 +176,7 @@ export default function TeamProject({ onNavigate }) {
       const resData = res?.data?.data || res?.data || {};
       const newDocId = resData.id || resData.documentId || resData.docId;
 
-      navigate("/doc-create", {
+      navigate(`/doc-create`, {
         state: {
           docId: newDocId,
           teamId,
@@ -182,7 +188,7 @@ export default function TeamProject({ onNavigate }) {
       });
     } catch (error) {
       console.error("문서 생성 실패, 클라이언트 전환 진행:", error);
-      navigate("/doc-create", {
+      navigate(`/doc-create`, {
         state: { ...docData, teamId },
       });
     }
@@ -221,8 +227,11 @@ export default function TeamProject({ onNavigate }) {
     project.isLeader === true ||
     project.role === "LEADER";
 
+  // 문서 클릭 이동 핸들러
   const handleDocClick = (docId, targetVersion) => {
     const versionToUse = targetVersion || selectedVersions[docId] || 1;
+    localStorage.setItem("currentTeamId", String(teamId));
+
     if (isLeader) {
       navigate(`/doc-edit/${docId}`, {
         state: {
@@ -371,16 +380,20 @@ export default function TeamProject({ onNavigate }) {
                   </thead>
                   <tbody>
                     {docs.slice(0, 5).map((doc, idx) => {
+                      const docId = doc.id || doc.documentId;
                       const latestVer =
+                        selectedVersions[docId] ||
                         doc.latestVersion ||
-                        (doc.versions &&
-                          doc.versions[doc.versions.length - 1]) ||
+                        (Array.isArray(doc.versions) && doc.versions.length > 0
+                          ? doc.versions[doc.versions.length - 1]
+                          : null) ||
                         doc.version ||
                         1;
+
                       return (
                         <tr
-                          key={doc.id}
-                          onClick={() => handleDocClick(doc.id, latestVer)}
+                          key={docId}
+                          onClick={() => handleDocClick(docId, latestVer)}
                         >
                           <td className={idx < 2 ? "doc-title" : "plain-title"}>
                             <span>{doc.name || doc.title}</span>
@@ -506,16 +519,20 @@ export default function TeamProject({ onNavigate }) {
             {hasDocs ? (
               <S.GatheredListScrollWrapper>
                 {docs.map((doc) => {
+                  const docId = doc.id || doc.documentId;
                   const targetVer =
-                    selectedVersions[doc.id] ||
+                    selectedVersions[docId] ||
                     doc.latestVersion ||
-                    (doc.versions && doc.versions[doc.versions.length - 1]) ||
+                    (Array.isArray(doc.versions) && doc.versions.length > 0
+                      ? doc.versions[doc.versions.length - 1]
+                      : null) ||
+                    doc.version ||
                     1;
 
                   return (
-                    <S.DocItemCard key={doc.id}>
+                    <S.DocItemCard key={docId}>
                       <S.DocItemLeft
-                        onClick={() => handleDocClick(doc.id, targetVer)}
+                        onClick={() => handleDocClick(docId, targetVer)}
                       >
                         <S.SidebarDocIconImg src={FileIcon} alt="문서 아이콘" />
                         <S.DocInfo>
@@ -531,6 +548,7 @@ export default function TeamProject({ onNavigate }) {
                             {getRelativeTime(
                               doc.updatedAt ||
                                 doc.lastUpdatedAt ||
+                                doc.modifiedAt ||
                                 doc.createdAt,
                             )}
                           </p>
@@ -540,7 +558,7 @@ export default function TeamProject({ onNavigate }) {
                       <S.VersionSelect
                         value={targetVer}
                         onChange={(e) =>
-                          handleVersionChange(doc.id, e.target.value)
+                          handleVersionChange(docId, e.target.value)
                         }
                       >
                         {(

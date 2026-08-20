@@ -56,9 +56,7 @@ export default function DocEditorPage() {
     },
   ]);
 
-  // 페이지별 실제 파일 객체 보관 (신규 작성 시 MinIO 업로드용)
   const pendingFilesRef = useRef({});
-
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
   const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
@@ -73,18 +71,16 @@ export default function DocEditorPage() {
     );
   };
 
-  // 이미지 선택 핸들러
-  const handleUploadImage = async (tempUrl, rawFile) => {
-    const file = rawFile || (typeof tempUrl !== "string" ? tempUrl : null);
+  const handleUploadImage = (tempUrl, rawFile) => {
+    const fileToUpload =
+      rawFile || (typeof tempUrl !== "string" ? tempUrl : null);
 
-    // 1. 화면 즉시 미리보기
     if (tempUrl && typeof tempUrl === "string") {
       handleUpdatePage({ imageUrl: tempUrl });
     }
 
-    // 2. 파일 객체 보관
-    if (file) {
-      pendingFilesRef.current[activePageIndex] = file;
+    if (fileToUpload) {
+      pendingFilesRef.current[activePageIndex] = fileToUpload;
     }
   };
 
@@ -142,19 +138,16 @@ export default function DocEditorPage() {
           buildSavePayload("임시저장"),
         );
         const data = res?.data || res;
-        if (data?.updatedAt) {
-          setUpdatedAt(formatCurrentTime(data.updatedAt));
-        } else {
-          setUpdatedAt(formatCurrentTime());
-        }
-      } else {
-        setUpdatedAt(formatCurrentTime());
+        setUpdatedAt(
+          data?.updatedAt
+            ? formatCurrentTime(data.updatedAt)
+            : formatCurrentTime(),
+        );
       }
       alert("임시저장되었습니다.");
     } catch (e) {
       console.error("임시저장 실패:", e);
-      setUpdatedAt(formatCurrentTime());
-      alert(e.message || "임시저장되었습니다.");
+      alert(e.message || "임시저장 실패");
     }
   };
 
@@ -162,7 +155,6 @@ export default function DocEditorPage() {
     setModalState({ isOpen: true, step: "complete_confirm" });
   };
 
-  // [핵심] 신규 문서 최종 저장 시 생성된 pageId로 MinIO 업로드 파이프라인 실행
   const handleFinalSave = async (selectedMembers = []) => {
     try {
       let currentDocId = docId;
@@ -179,7 +171,7 @@ export default function DocEditorPage() {
         if (currentDocId) setDocId(currentDocId);
       }
 
-      // 2. 전체 페이지 저장 (PUT)
+      // 2. 전체 페이지 저장 (PUT) -> 서버가 실제 pageId 발급
       if (currentDocId) {
         await saveDocument(
           currentDocId,
@@ -187,7 +179,7 @@ export default function DocEditorPage() {
           buildSavePayload("최초 작성 저장"),
         );
 
-        // 3. 서버에 등록된 pageId들을 받아와 보관된 파일 MinIO 업로드 실행
+        // 3. 서버가 발급한 실제 pageId로 이미지 업로드 파이프라인 수행
         try {
           const detailRes = await getDocumentDetail(currentDocId, docVersion);
           const detailData = detailRes?.data?.data || detailRes?.data || {};
@@ -196,12 +188,13 @@ export default function DocEditorPage() {
           for (let i = 0; i < serverPages.length; i++) {
             const sPage = serverPages[i];
             const file = pendingFilesRef.current[i];
+            const dev = pages[i]?.device || "desktop";
             if (sPage?.id && file) {
-              await uploadWireframePipeline(sPage.id, file);
+              await uploadWireframePipeline(sPage.id, file, dev);
             }
           }
         } catch (imgErr) {
-          console.error("와이어프레임 이미지 MinIO 업로드 실패:", imgErr);
+          console.error("와이어프레임 MinIO 업로드 중 오류:", imgErr);
         }
       }
 
@@ -309,7 +302,6 @@ export default function DocEditorPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단 헤더 */}
         <S.HeaderWrapper>
           <DocHeader
             docName={docName}
@@ -323,7 +315,6 @@ export default function DocEditorPage() {
         </S.HeaderWrapper>
 
         <S.MainSection>
-          {/* 좌측 영역 */}
           <S.LeftColumn>
             <S.PageNavWrapper>
               <PageNavigator
@@ -382,7 +373,6 @@ export default function DocEditorPage() {
             </S.LeftBox>
           </S.LeftColumn>
 
-          {/* 우측 영역 */}
           <S.RightColumn>
             <S.RightBox>
               <RequirementSection

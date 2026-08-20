@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
@@ -11,6 +11,7 @@ import DiffRequirementSection from "./components/DiffRequirementSection";
 import {
   getDocumentDetail,
   getDocumentChanges,
+  getDocumentVersions,
   confirmChange,
 } from "../../api/documentApi";
 import * as S from "./DocCompare.styles";
@@ -53,6 +54,12 @@ export default function DocComparePage() {
   const { docId: paramDocId, documentId } = useParams();
   const docId = paramDocId || documentId;
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const passedState = location.state || {};
+  const targetVersion = passedState.version
+    ? Number(passedState.version)
+    : null;
 
   const [docInfo, setDocInfo] = useState({
     docName: "스토리보드",
@@ -76,27 +83,45 @@ export default function DocComparePage() {
     try {
       setIsLoading(true);
 
-      // 1. 현재 문서 상세 조회 (기본 최신 버전)
-      const docRes = await getDocumentDetail(docId);
-      const docData = docRes?.data || docRes;
-
-      const currentVer = docData?.version || 1;
+      // 1. 버전 결정 (state로 전달받은 버전이 없으면 버전 목록 API에서 최신 버전 확인)
+      let currentVer = targetVersion;
+      if (!currentVer) {
+        try {
+          const verRes = await getDocumentVersions(docId);
+          const verList = verRes?.data?.data || verRes?.data || [];
+          if (Array.isArray(verList) && verList.length > 0) {
+            currentVer = Number(verList[verList.length - 1].version);
+          }
+        } catch (verErr) {
+          console.warn("버전 목록 조회 실패:", verErr);
+        }
+      }
+      currentVer = currentVer || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
+      // 2. 현재 버전 문서 상세 데이터 조회 (버전 번호 포함 및 res.data.data 방어 파싱)
+      const docRes = await getDocumentDetail(docId, currentVer);
+      const docData = docRes?.data?.data || docRes?.data || {};
+
       setDocInfo({
-        docName: docData?.name || "스토리보드",
+        docName: docData?.name || docData?.title || "스토리보드",
         prevVersion: prevVer,
         currVersion: currentVer,
-        updatedAt: docData?.updatedAt || "",
+        updatedAt: docData?.updatedAt
+          ? docData.updatedAt.replace("T", " ").substring(0, 19)
+          : "",
       });
 
-      // 2. 수정사항 목록 조회
+      // 3. 수정사항 목록 조회
       let formattedSummary = [];
       try {
         const changesRes = await getDocumentChanges(docId, currentVer);
-        const changesData = changesRes?.data || changesRes;
+        const changesData = changesRes?.data?.data || changesRes?.data || {};
+        const changeList =
+          changesData?.changes ||
+          (Array.isArray(changesData) ? changesData : []);
 
-        formattedSummary = (changesData?.changes || []).map((ch) => {
+        formattedSummary = changeList.map((ch) => {
           const afterParsed = safeJsonParse(ch.afterValue);
           const beforeParsed = safeJsonParse(ch.beforeValue);
 
@@ -131,7 +156,6 @@ export default function DocComparePage() {
 
         setSummaryList(formattedSummary);
 
-        // 내가 이미 확인(confirm)한 수정사항 ID 목록 세팅
         const initialChecked = formattedSummary
           .filter((item) => item.confirmedByMe)
           .map((item) => item.id);
@@ -140,7 +164,7 @@ export default function DocComparePage() {
         console.warn("변경사항 내역 조회 실패 또는 1버전 문서:", err);
       }
 
-      // 3. 페이지 상세 정보 및 요구사항 전/후 diff 3색 분기 구조 생성
+      // 4. 페이지 상세 정보 및 요구사항 전/후 diff 구성
       if (docData?.pages && docData.pages.length > 0) {
         const mappedPages = docData.pages.map((p, pIdx) => {
           const pageChanges = formattedSummary.filter(
@@ -151,7 +175,7 @@ export default function DocComparePage() {
           const screenChange = pageChanges.find(
             (ch) => ch.changeType === "SCREEN_MODIFIED",
           );
-          const isScreenInfoModified = !!screenChange;
+          const isScreenInfoModified = !screenChange;
           const prevScreenName = isScreenInfoModified
             ? screenChange.before?.screenName || p.screenName
             : p.screenName;
@@ -167,10 +191,12 @@ export default function DocComparePage() {
               ch.changeType,
             ),
           );
-          const isImageModified = !!imgChange;
+          const isImageModified = !imgChange;
           const prevImageUrl = imgChange?.before?.imageUrl || "";
           const currImageUrl =
             p.wireframeImages?.[0]?.imageUrl ||
+            p.wireframeImageUrl ||
+            p.imageUrl ||
             imgChange?.after?.imageUrl ||
             "";
 
@@ -188,18 +214,18 @@ export default function DocComparePage() {
             }
 
             currPins.push({
-              id: pin.id,
+              id: pin.id || pin.pinNumber,
               number: pin.pinNumber,
-              x: pin.xCoordinate,
-              y: pin.yCoordinate,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
               pinType,
             });
 
             prevPins.push({
-              id: pin.id,
+              id: pin.id || pin.pinNumber,
               number: pin.pinNumber,
-              x: pin.xCoordinate,
-              y: pin.yCoordinate,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
             });
           });
 
@@ -235,7 +261,7 @@ export default function DocComparePage() {
 
               if (requirements[tab]) {
                 requirements[tab].push({
-                  id: pin.id,
+                  id: pin.id || pin.pinNumber,
                   reqId: req.id,
                   number: pin.pinNumber,
                   type,
@@ -256,7 +282,7 @@ export default function DocComparePage() {
             currScreenName,
             currScreenId,
             isScreenInfoModified,
-            device: "desktop",
+            device: p.device || "desktop",
             isImageModified,
             prevImageUrl,
             currImageUrl,
@@ -275,7 +301,7 @@ export default function DocComparePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [docId]);
+  }, [docId, targetVersion]);
 
   useEffect(() => {
     fetchCompareData();
@@ -283,7 +309,6 @@ export default function DocComparePage() {
 
   const currentPage = pages[activePageIndex] || pages[0] || {};
 
-  // 상단 수정사항 항목 클릭 시
   const handleSelectSummary = async (item) => {
     setSelectedSummaryId(item.id);
 
