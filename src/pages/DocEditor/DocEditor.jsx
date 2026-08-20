@@ -91,7 +91,6 @@ export default function DocEditorPage() {
     }
   };
 
-  // 🔥 5개 직무 탭의 핀들을 각각 tabType을 붙여 평탄화하여 서버로 전송
   const buildSavePayload = (summaryText = "최초 작성 저장") => ({
     status: "IN_PROGRESS",
     changeSummary: summaryText,
@@ -212,6 +211,7 @@ export default function DocEditorPage() {
         }
       }
 
+      // 🔥 Step 1 명세서 매핑: 한국어(ko)는 제외하고 실제 번역 대상만 추출
       const validMembers = Array.isArray(selectedMembers)
         ? selectedMembers.filter((m) => m.checked !== false)
         : [];
@@ -223,10 +223,13 @@ export default function DocEditorPage() {
             .toLowerCase()
             .trim(),
         }))
-        .filter((t) => t.userId && !isNaN(t.userId));
+        .filter(
+          (t) => t.userId && !isNaN(t.userId) && t.targetLanguage !== "ko",
+        );
 
       setModalState({ isOpen: false, step: "exit" });
 
+      // 🔥 번역 요청 후 발급된 진짜 jobId를 전달
       if (currentDocId && translations.length > 0) {
         const transRes = await requestTranslation(
           currentDocId,
@@ -235,12 +238,12 @@ export default function DocEditorPage() {
         );
         const transData =
           transRes?.data?.data || transRes?.data || transRes || {};
-        const jobId = transData.jobId || transData.id;
+        const realJobId = transData.jobId || transData.id;
 
-        if (jobId) {
+        if (realJobId) {
           navigate("/trans", {
             state: {
-              jobId,
+              jobId: realJobId,
               teamId,
               docId: currentDocId,
               version: docVersion,
@@ -263,7 +266,6 @@ export default function DocEditorPage() {
     }
   };
 
-  // 🔥 현재 활성화된 직무 탭(`activeRole`)에만 핀 추가 (1번부터 시작)
   const handleAddPin = ({ x, y }) => {
     const rolePins = currentPage.pins?.[activeRole] || [];
     const newPinId = Date.now();
@@ -389,7 +391,6 @@ export default function DocEditorPage() {
                 onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
               />
               <S.Divider />
-              {/* 🔥 현재 선택된 탭의 핀들만 와이어프레임에 노출 */}
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}

@@ -1,8 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
-
-import Test from "./pages/Test";
 import DocEditor from "./pages/DocEditor/DocEditor";
 import DocEdit from "./pages/DocEditor/DocEdit";
 import DocCompare from "./pages/DocEditor/DocCompare";
@@ -31,7 +29,6 @@ function App() {
         <Route path="/doc" element={<MainDoc />} />
         <Route path="/set" element={<MainSetting />} />
         <Route path="/trans" element={<Translation />} />
-        <Route path="/test" element={<Test />} />
 
         {/* 문서 작성 / 수정 / 비교 / 1버전 조회 */}
         <Route path="/doc-create" element={<DocEditor />} />
