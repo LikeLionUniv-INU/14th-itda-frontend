@@ -74,7 +74,6 @@ export const BannerCard = styled.div`
   position: relative;
   overflow: hidden;
 
-  /* 우측 큰 연보라색 원형 장식 */
   &::before {
     content: "";
     position: absolute;
@@ -88,7 +87,6 @@ export const BannerCard = styled.div`
     pointer-events: none;
   }
 
-  /* 우측 조금 더 진한 작은 보라색 원형 장식 */
   &::after {
     content: "";
     position: absolute;
@@ -246,11 +244,21 @@ export const Table = styled.table`
     text-align: left;
     vertical-align: middle;
 
-    &:nth-child(1) { width: 30%; } /* 문서 이름 */
-    &:nth-child(2) { width: 20%; } /* 언어 */
-    &:nth-child(3) { width: 15%; } /* 버전 */
-    &:nth-child(4) { width: 20%; } /* 최종 업데이트 */
-    &:nth-child(5) { width: 15%; } /* 수정 버튼 */
+    &:nth-child(1) {
+      width: 30%;
+    }
+    &:nth-child(2) {
+      width: 20%;
+    }
+    &:nth-child(3) {
+      width: 15%;
+    }
+    &:nth-child(4) {
+      width: 20%;
+    }
+    &:nth-child(5) {
+      width: 15%;
+    }
 
     &:first-child {
       border-top-left-radius: 8px;
@@ -267,19 +275,16 @@ export const Table = styled.table`
     height: 43px;
     transition: background-color 0.15s ease;
 
-    /* 수정된 부분: 행 전체에 마우스를 올렸을 때 기본 배경색 변화 */
     &:hover {
       background-color: #faf5ff;
     }
 
-    /* 핵심: 마우스가 관리 버튼 칸(.manage-cell) 위에 올라가 있으면 tr의 배경색 변화를 취소(투명하게) 처리 */
     &:has(.manage-cell:hover) {
-      background-color: transparent; 
+      background-color: transparent;
     }
 
-    /* 핵심: 마우스가 관리 버튼 칸(.manage-cell) 위에 올라가 있으면 tr의 배경색 변화를 취소(투명하게) 처리 */
     &:has(.manage-cell:hover) {
-      background-color: transparent; 
+      background-color: transparent;
     }
   }
 
@@ -314,7 +319,7 @@ export const TableEditButton = styled.button`
   font-size: 13px;
   font-weight: 500;
   transition: all 0.15s ease;
-  
+
   &:hover {
     background-color: #faf5ff;
   }

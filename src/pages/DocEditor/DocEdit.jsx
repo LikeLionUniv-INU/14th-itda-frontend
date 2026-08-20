@@ -159,7 +159,8 @@ export default function DocEditPage() {
             if (reqList.length > 0) {
               reqList.forEach((req) => {
                 const rawReqTab = req.tabType || targetTab;
-                const reqTab = rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
+                const reqTab =
+                  rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
                 if (reqMap[reqTab]) {
                   reqMap[reqTab].push({
                     id: pinId,
@@ -183,7 +184,6 @@ export default function DocEditPage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
           const pinNumberLookup = {};
           INITIAL_ROLES.forEach((role) => {
             pinMap[role].forEach((pin, idx) => {
@@ -321,10 +321,8 @@ export default function DocEditPage() {
           ? data.updatedAt.replace("T", " ").substring(0, 19)
           : formatCurrentTime(),
       }));
-      alert("임시저장되었습니다.");
     } catch (e) {
       console.error("임시저장 실패:", e);
-      alert(e.message || "임시저장 실패");
     }
   };
 
@@ -369,7 +367,6 @@ export default function DocEditPage() {
         console.error("새 이미지 업로드 중 오류:", imgErr);
       }
 
-      // 🔥 Step 1: 한국어(ko)는 제외하고 번역 대상자만 필터링
       const validMembers = Array.isArray(selectedMembers)
         ? selectedMembers.filter((m) => m.checked !== false)
         : [];

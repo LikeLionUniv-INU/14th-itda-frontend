@@ -181,7 +181,6 @@ export const SubmitButton = styled.button`
   }
 `;
 
-/* 3단계 스타일 */
 export const CenterContainer = styled.div`
   display: flex;
   flex-direction: column;

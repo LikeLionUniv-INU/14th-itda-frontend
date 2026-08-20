@@ -96,7 +96,6 @@ export default function DocComparePage() {
     if (!docId) return;
 
     try {
-      // 1. 현재 계정의 언어 최우선 추출 (localStorage 또는 state)
       let resolvedLang =
         localStorage.getItem("userLanguage") ||
         localStorage.getItem("language") ||
@@ -116,7 +115,6 @@ export default function DocComparePage() {
         } catch (tErr) {}
       }
 
-      // 2. 버전 결정
       let currentVer = targetVersion;
       if (!currentVer) {
         try {
@@ -130,7 +128,6 @@ export default function DocComparePage() {
       currentVer = currentVer || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
-      // 3. 번역 파라미터 전달하여 문서 조회
       const [docRes, prevDocRes] = await Promise.all([
         getDocumentDetail(docId, currentVer, resolvedLang),
         prevVer !== currentVer
@@ -365,7 +362,8 @@ export default function DocComparePage() {
             } else {
               pinReqs.forEach((req) => {
                 const rawReqTab = req.tabType || targetTab;
-                const reqTab = rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
+                const reqTab =
+                  rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
                 const prevReq = (prevPage?.pins || [])
                   .find(
                     (pp) =>
@@ -425,7 +423,6 @@ export default function DocComparePage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬
           const ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
           const prevPinLookup = {};
           ROLES.forEach((role) => {

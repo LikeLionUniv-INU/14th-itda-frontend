@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// 공통 API 설정 (기본 포트 폴백 및 10초 타임아웃 추가)
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
@@ -12,7 +11,6 @@ const api = axios.create({
   },
 });
 
-// 요청 인터셉터: 토큰 자동 주입
 api.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -24,13 +22,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// 응답 인터셉터: 데이터 언래핑 및 401 만료 시 자동 리프레시
 api.interceptors.response.use(
   (response) => response.data,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthUrl =
+      originalRequest?.url?.includes("/api/auth/login") ||
+      originalRequest?.url?.includes("/api/auth/signup") ||
+      originalRequest?.url?.includes("/api/auth/refresh");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthUrl
+    ) {
       originalRequest._retry = true;
       try {
         const refreshToken = localStorage.getItem("refreshToken");
@@ -39,16 +45,29 @@ api.interceptors.response.use(
         const res = await axios.post(
           `${api.defaults.baseURL}/api/auth/refresh`,
           { refreshToken },
+          { headers: { "Content-Type": "application/json" } },
         );
 
-        if (res.data?.success || res.data?.data?.accessToken) {
-          const accessToken =
-            res.data.data?.accessToken || res.data.accessToken;
-          localStorage.setItem("accessToken", accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        const resBody = res.data?.data || res.data || {};
+        const newAccessToken =
+          resBody.accessToken || resBody.token || res.data?.accessToken;
+
+        if (newAccessToken) {
+          localStorage.setItem("accessToken", newAccessToken);
+
+          const newRefreshToken =
+            resBody.refreshToken || res.data?.refreshToken;
+          if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+          }
+
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
+        } else {
+          throw new Error("새 토큰을 받아오지 못했습니다.");
         }
       } catch (refreshError) {
+        console.error("토큰 재발급 실패:", refreshError);
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         alert("로그인이 만료되었습니다. 다시 로그인해주세요.");

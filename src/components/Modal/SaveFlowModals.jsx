@@ -51,7 +51,6 @@ export default function SaveFlowModals({
             resData.defaultLanguage ||
             "ko";
 
-          // 백엔드 명세서 규격: userId를 정확한 숫자로 보장
           const memberId = Number(m.userId || m.id || m.memberId || index + 1);
 
           return {
@@ -97,7 +96,6 @@ export default function SaveFlowModals({
   };
 
   const handleComplete = () => {
-    // 체크된 멤버만 필터링하여 전달
     const checkedMembers = members.filter((m) => m.checked);
     onFinalSave(checkedMembers);
   };
@@ -107,7 +105,6 @@ export default function SaveFlowModals({
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} width={modalWidth}>
       <S.ContentWrapper>
-        {/* 1. 나가기 경고 모달 */}
         {currentStep === "exit" && (
           <S.ModalContent>
             <S.ModalIcon src={BangImg} alt="나가기 경고" />
@@ -122,7 +119,6 @@ export default function SaveFlowModals({
           </S.ModalContent>
         )}
 
-        {/* 2. 저장 확인 모달 */}
         {currentStep === "complete_confirm" && (
           <S.ModalContent>
             <S.ModalIcon src={CheckImg} alt="작성 완료 확인" />
@@ -142,7 +138,6 @@ export default function SaveFlowModals({
           </S.ModalContent>
         )}
 
-        {/* 3. 번역 안내 모달 */}
         {currentStep === "translate_intro" && (
           <S.ModalContent>
             <S.ModalIcon src={GlobalImg} alt="번역 안내" />
@@ -163,7 +158,6 @@ export default function SaveFlowModals({
           </S.ModalContent>
         )}
 
-        {/* 4. 팀 국적 및 언어 선택 모달 */}
         {currentStep === "language_select" && (
           <S.LangModalContent>
             <S.LangTitle>팀 국적 및 사용 언어 현황</S.LangTitle>

@@ -252,7 +252,7 @@ export const NotificationBar = styled.div`
   border: 1px solid #bed8ff;
   border-radius: 12px;
   padding: 16px 24px;
-  margin-bottom: 20px; /* 다른 섹션들과의 간격 맞춤 */
+  margin-bottom: 20px;
 `;
 
 export const NotificationLeft = styled.div`

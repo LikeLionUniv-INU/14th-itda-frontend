@@ -112,7 +112,6 @@ export const CharCount = styled.span`
   color: #828282;
 `;
 
-/* 845 x 222 규격의 테이블 영역 */
 export const TableSection = styled.div`
   width: 845px;
   margin: 16px auto 24px auto;
@@ -204,7 +203,6 @@ export const EmptyRow = styled.div`
   font-size: 0.85rem;
 `;
 
-/* 하단 버튼 영역: 460 x 42 */
 export const ButtonGroup = styled.div`
   display: flex;
   width: 460px;

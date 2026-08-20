@@ -53,7 +53,6 @@ export const TabButton = styled.button`
     `}
 `;
 
-/* 핀 개수만큼만 아래로 자연스럽게 늘어나는 단일 테이블 (최대 708px 도달 시 스크롤) */
 export const TableContainer = styled.div`
   width: 100%;
   height: fit-content;

@@ -144,7 +144,6 @@ export default function MainHome({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // 최근 문서 클릭 핸들러 (v1이면 doc-view, v2 이상이면 doc-compare)
   const handleDocumentClick = (doc) => {
     const docId = doc.id || doc.documentId;
     const teamId = doc.teamProjectId || doc.teamId || doc.projectId;
@@ -223,7 +222,6 @@ export default function MainHome({
     }
   };
 
-  // 알림 타이틀 처리 (동일 버전 내 저장 vs 새 버전 생성 구분)
   const renderNotificationTitle = (noti) => {
     if (!noti) return "";
     const { documentName, beforeVersion, afterVersion } = noti;
@@ -247,7 +245,6 @@ export default function MainHome({
     return `${documentName || "문서"}_version${afterVersion || 1}이 수정되었습니다.`;
   };
 
-  // 알림 서브 텍스트 처리 (수행자 성+이름 및 시간)
   const renderNotificationSub = (noti) => {
     if (!noti) return "";
     const firstName = noti.performedByFirstName || "";
@@ -264,8 +261,7 @@ export default function MainHome({
     ? `${userInfo.lastName || ""}${userInfo.firstName || ""}`.trim() || "사용자"
     : "사용자";
 
-  const userInitial =
-    userInfo?.initial || userInfo?.lastName?.charAt(0) || "U";
+  const userInitial = userInfo?.initial || userInfo?.lastName?.charAt(0) || "U";
 
   if (loading) {
     return <S.PageWrapper>로딩 중...</S.PageWrapper>;

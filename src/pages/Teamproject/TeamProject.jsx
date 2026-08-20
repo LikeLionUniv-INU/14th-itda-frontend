@@ -257,7 +257,6 @@ export default function TeamProject({ onNavigate }) {
 
   const rawDocs = project.documents || project.docs || [];
 
-  // 🔥 최종 업데이트 시간(최신순)으로 정렬
   const docs = [...rawDocs].sort((a, b) => {
     const aId = a.id || a.documentId;
     const bId = b.id || b.documentId;

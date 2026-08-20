@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import * as S from "./Header.styles";
 
-// 모달 컴포넌트 불러오기
 import CreateProjectModal from "./Modal/CreateProjectModal";
 import JoinProjectModal from "./Modal/JoinProjectModal";
 import { clearUserLangCache } from "../api/documentApi";
@@ -11,25 +10,22 @@ import { clearUserLangCache } from "../api/documentApi";
 export default function Header({
   type = "main",
   showNav = true,
-  userName, // 유저 이름 (props)
-  userInitial, // 유저 이니셜 (props)
+  userName,
+  userInitial,
   onCreateProject,
   onJoinProject,
   onCreateDoc,
   onExit,
-  onRefresh, // 상위 페이지에서 새로고침 함수가 전달되면 실행
+  onRefresh,
 }) {
   const navigate = useNavigate();
   const isProject = type === "project";
 
-  // 모달 열림/닫힘 상태 관리
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-  // 이니셜 계산 (props로 넘어온 userInitial 우선 -> userName의 첫 글자 -> 기본값 'U')
   const displayInitial = (
-    userInitial ||
-    (userName ? userName.charAt(0) : "U")
+    userInitial || (userName ? userName.charAt(0) : "U")
   ).toUpperCase();
 
   const handleExit = () => {
@@ -39,20 +35,16 @@ export default function Header({
     navigate("/home");
   };
 
-  // 로그아웃 핸들러 (토큰 삭제 및 로그인 페이지로 이동)
   const handleLogout = () => {
-
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userName");
     localStorage.removeItem("userLanguage");
     clearUserLangCache();
 
-    // 로그인으로 이동
     navigate("/");
   };
 
-  // 프로젝트 생성 버튼 클릭 시
   const handleOpenCreate = () => {
     setIsCreateOpen(true);
     if (onCreateProject) {
@@ -60,7 +52,6 @@ export default function Header({
     }
   };
 
-  // 프로젝트 입장 버튼 클릭 시
   const handleOpenJoin = () => {
     setIsJoinOpen(true);
     if (onJoinProject) {
@@ -68,7 +59,6 @@ export default function Header({
     }
   };
 
-  // 모달 작업 성공 시 콜백
   const handleSuccess = (result) => {
     setIsCreateOpen(false);
     setIsJoinOpen(false);
@@ -117,8 +107,7 @@ export default function Header({
                 <S.ProjectEnterButton onClick={handleOpenJoin}>
                   프로젝트 입장
                 </S.ProjectEnterButton>
-                
-                {/* 추가된 로그아웃 버튼 */}
+
                 <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
 
                 <S.Avatar title={userName}>{displayInitial}</S.Avatar>
@@ -128,14 +117,12 @@ export default function Header({
         </S.HeaderInner>
       </S.Header>
 
-      {/* 프로젝트 생성 모달 */}
       <CreateProjectModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSuccess={handleSuccess}
       />
 
-      {/* 프로젝트 참여 모달 */}
       <JoinProjectModal
         isOpen={isJoinOpen}
         onClose={() => setIsJoinOpen(false)}

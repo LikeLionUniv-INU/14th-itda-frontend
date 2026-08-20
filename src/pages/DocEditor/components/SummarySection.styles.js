@@ -1,6 +1,5 @@
 import styled from "styled-components";
 
-/* 전체 외곽 컨테이너 (1201px) */
 export const OuterContainer = styled.div`
   width: 1201px;
   background-color: #ffffff;
@@ -20,7 +19,6 @@ export const Title = styled.h2`
   margin: 0;
 `;
 
-/* 내부 테이블 영역 (1158px, 개수에 맞춰 자연스럽게 늘어남) */
 export const TableContainer = styled.div`
   width: 1158px;
   height: fit-content;
@@ -76,7 +74,6 @@ export const Row = styled.div`
   }
 `;
 
-/* 테이블 열 비율 */
 export const ColPage = styled.div`
   width: 130px;
   display: flex;
@@ -144,7 +141,6 @@ export const ColDate = styled.div`
   color: #000000;
 `;
 
-/* 수정사항이 없을 때 (높이 152px) */
 export const EmptyBox = styled.div`
   width: 1158px;
   height: 152px;

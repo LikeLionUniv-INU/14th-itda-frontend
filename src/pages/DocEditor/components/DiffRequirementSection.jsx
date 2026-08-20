@@ -39,7 +39,6 @@ export default function DiffRequirementSection({
         ))}
       </S.TabList>
 
-      {/* 2. 상단 범례 3색 동그라미 */}
       <S.LegendRow>
         <S.LegendItem>
           <S.LegendCircle color="#FFC2C2" />
@@ -55,7 +54,6 @@ export default function DiffRequirementSection({
         </S.LegendItem>
       </S.LegendRow>
 
-      {/* 3. 요구사항 테이블 */}
       <S.TableWrapper>
         <S.TableHeader>
           <S.ColNoHeader>No.</S.ColNoHeader>

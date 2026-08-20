@@ -1,5 +1,3 @@
-// src/components/Modal/CreateDocumentModal.jsx
-
 import React, { useState } from "react";
 import BaseModal from "./BaseModal";
 import LanguageSelect from "../LanguageSelect";
@@ -38,7 +36,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
     setStep(3);
   };
 
-  // 3단계 완료 버튼 클릭 시 실행
   const handleComplete = () => {
     const documentData = {
       name: docName,
@@ -47,7 +44,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
       version: version,
     };
 
-    // 상태 초기화
     setStep(1);
     setSelectedType("");
     setDocName("");
@@ -84,7 +80,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
             <S.SubTitle>생성할 문서의 유형을 선택하세요.</S.SubTitle>
 
             <S.OptionList>
-              {/* 스토리보드 (활성화) */}
               <S.OptionCard
                 active
                 onClick={() => handleSelectType("스토리보드")}
@@ -99,7 +94,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.ArrowIcon>❯</S.ArrowIcon>
               </S.OptionCard>
 
-              {/* 기능 명세서 (추후 업데이트 처리) */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -111,7 +105,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
-              {/* 화면 설계서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -121,7 +114,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
-              {/* API 명세서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -131,7 +123,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
-              {/* 서비스 소개서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>

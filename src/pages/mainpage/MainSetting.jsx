@@ -14,7 +14,6 @@ import {
 } from "../../api/user";
 import * as S from "./MainSetting.styles";
 
-// 국가 옵션 리스트 (Signup.jsx와 동일)
 const COUNTRY_OPTIONS = [
   { code: "KR", label: "대한민국" },
   { code: "US", label: "미국" },
@@ -49,7 +48,6 @@ export default function MainSetting({
     profileImageUrl: "",
   });
 
-  // 내 정보 조회
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -90,7 +88,6 @@ export default function MainSetting({
     }));
   };
 
-  // 10-1. 프로필 정보 수정
   const handleUpdateProfile = async () => {
     const nameRegex = /^[a-zA-Z]+$/;
     if (
@@ -120,27 +117,23 @@ export default function MainSetting({
     }
   };
 
-  // 10-2. 프로필 이미지 변경 (S3 Presigned URL 방식)
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     try {
-      // Step 1. Presigned URL 발급
       const res = await getPresignedUrlApi({
         fileName: file.name,
         contentType: file.type,
       });
       const { presignedUrl, fileUrl } = res.data?.data || res.data;
 
-      // Step 2. S3에 직접 업로드
       await fetch(presignedUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
         body: file,
       });
 
-      // Step 3. 이미지 URL 저장 API 호출
       await updateProfileImageApi({ profileImageUrl: fileUrl });
       alert("프로필 이미지가 변경되었습니다.");
       fetchUserData();
@@ -150,7 +143,6 @@ export default function MainSetting({
     }
   };
 
-  // 10-3. 비밀번호 변경
   const handleChangePassword = async () => {
     const currentPassword = prompt("현재 비밀번호를 입력해주세요.");
     if (!currentPassword) return;
@@ -174,7 +166,6 @@ export default function MainSetting({
     }
   };
 
-  // 10-4. 이메일 변경
   const handleChangeEmail = async () => {
     const password = prompt("비밀번호를 입력해주세요.");
     if (!password) return;
@@ -192,7 +183,6 @@ export default function MainSetting({
     }
   };
 
-  // 10-5. 회원 탈퇴
   const handleDeleteAccount = async () => {
     if (!window.confirm("정말로 탈퇴하시겠습니까? 데이터는 영구 삭제됩니다.")) {
       return;
@@ -229,12 +219,10 @@ export default function MainSetting({
 
       <S.Container>
         <S.MainContent>
-          {/* 내 정보 영역 */}
           <S.SectionCard>
             <S.SectionTitle>내 정보</S.SectionTitle>
 
             <S.ProfileFlex>
-              {/* 프로필 이미지 박스 */}
               <S.AvatarCard>
                 <S.AvatarCircle>
                   {formData.profileImageUrl ? (
@@ -269,7 +257,6 @@ export default function MainSetting({
                 </S.ChangePhotoButton>
               </S.AvatarCard>
 
-              {/* 폼 입력 레이아웃 */}
               <S.FormGrid>
                 <S.Row>
                   <S.InputGroup>
@@ -300,7 +287,6 @@ export default function MainSetting({
                 </S.Row>
 
                 <S.Row>
-                  {/* 국적 드롭다운 (COUNTRY_OPTIONS 적용) */}
                   <S.InputGroup>
                     <label>국적</label>
                     <S.Select
@@ -315,7 +301,6 @@ export default function MainSetting({
                     </S.Select>
                   </S.InputGroup>
 
-                  {/* 사용 언어 드롭다운 (LanguageSelect 적용) */}
                   <S.InputGroup>
                     <label>사용 언어</label>
                     <LanguageSelect
@@ -362,7 +347,6 @@ export default function MainSetting({
             </S.ProfileFlex>
           </S.SectionCard>
 
-          {/* 계정 관리 영역 */}
           <S.SectionCard>
             <S.SectionTitle>계정 관리</S.SectionTitle>
 

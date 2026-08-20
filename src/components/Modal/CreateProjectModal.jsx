@@ -5,9 +5,9 @@ import { createTeam } from "../../api/teamApi";
 import * as S from "./CreateProjectModal.styles";
 
 function CreateProjectModal({ isOpen, onClose, onSuccess }) {
-  const [step, setStep] = useState(1); // 1: 생성 폼, 2: 초대코드 노출
+  const [step, setStep] = useState(1);
   const [projectName, setProjectName] = useState("");
-  const [language, setLanguage] = useState("ko"); // 기본값 한국어 코드
+  const [language, setLanguage] = useState("ko");
   const [showError, setShowError] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +15,6 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  // 프로젝트 생성 버튼 클릭 핸들러 (실제 API 연동)
   const handleCreateProject = async () => {
     if (!projectName.trim()) {
       setShowError(true);
@@ -24,7 +23,7 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
 
     try {
       setIsLoading(true);
-      // 백엔드 프로젝트(팀) 생성 API 호출
+
       const response = await createTeam({
         name: projectName.trim(),
         defaultLanguage: language,
@@ -38,7 +37,7 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
 
       setCreatedTeamData(resData);
       setInviteCode(code);
-      setStep(2); // 2단계 초대코드 화면으로 이동
+      setStep(2);
     } catch (error) {
       console.error("프로젝트 생성 실패:", error);
       alert(
@@ -51,17 +50,14 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // 클립보드 복사 기능
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(inviteCode);
-      // alert("초대 코드가 클립보드에 복사되었습니다!");
     } catch (err) {
       console.error("복사 실패:", err);
     }
   };
 
-  // 모달 닫기 및 상태 초기화
   const handleCloseAll = () => {
     if (createdTeamData && onSuccess) {
       onSuccess(createdTeamData);
@@ -78,7 +74,6 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
   return (
     <BaseModal isOpen={isOpen} onClose={handleCloseAll} width="400px">
       <S.ContentWrapper>
-        {/* --- STEP 1: 새 프로젝트 생성 --- */}
         {step === 1 && (
           <div>
             <S.Title>새 프로젝트 생성</S.Title>

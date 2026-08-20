@@ -8,16 +8,14 @@ export const PageWrapper = styled.div`
 `;
 
 export const Container = styled.div`
-  max-width: 1202px; /* 1040px에서 1202px로 변경하여 다른 페이지와 너비 통일 */
-  margin: 32px auto;
-  padding: 0 24px; /* 양옆 패딩을 다른 페이지(24px)와 일치시킴 */
+  max-width: 1202px;
+  padding: 0 24px;
   box-sizing: border-box;
   display: flex;
   gap: 20px;
   align-items: flex-start;
 `;
 
-// 메인 콘텐츠
 export const MainContent = styled.main`
   flex: 1;
   display: flex;
@@ -39,7 +37,6 @@ export const SectionTitle = styled.h3`
   margin-bottom: 24px;
 `;
 
-// 프로필
 export const ProfileFlex = styled.div`
   display: flex;
   gap: 24px;
@@ -90,7 +87,6 @@ export const ChangePhotoButton = styled.button`
   }
 `;
 
-// 폼 레이아웃
 export const FormGrid = styled.div`
   flex: 1;
   display: flex;
@@ -118,7 +114,6 @@ export const InputGroup = styled.div`
   }
 `;
 
-// 입력 요소
 export const Input = styled.input`
   width: 100%;
   height: 40px;
@@ -168,7 +163,6 @@ export const Textarea = styled.textarea`
   }
 `;
 
-// 계정 관리
 export const AccountBox = styled.div`
   border: 1px solid #dcdcdc;
   border-radius: 8px;

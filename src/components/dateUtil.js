@@ -1,12 +1,9 @@
-// src/components/dateUtil.js
-
 export const getRelativeTime = (dateString) => {
   if (!dateString) return "방금 전";
 
   let str = String(dateString).trim();
   str = str.replace(" ", "T");
 
-  // 백엔드 UTC 기준 문자열에 Z 보정 (타임존 왜곡 방지)
   if (!str.endsWith("Z") && !str.includes("+") && !str.includes("-", 10)) {
     str += "Z";
   }
