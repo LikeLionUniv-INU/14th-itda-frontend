@@ -146,11 +146,10 @@ export default function DocEditPage() {
             const targetTab = pinMap[pinTab] ? pinTab : "공통";
 
             const pinId = pin.id || pin.pinNumber;
-            const pinNum = pin.pinNumber;
 
             pinMap[targetTab].push({
               id: pinId,
-              number: pinNum,
+              number: 0,
               x: Number(pin.xCoordinate) || 0,
               y: Number(pin.yCoordinate) || 0,
             });
@@ -163,7 +162,7 @@ export default function DocEditPage() {
                   reqMap[reqTab].push({
                     id: pinId,
                     reqId: req.id || null,
-                    number: pinNum,
+                    number: 0,
                     item: req.itemName || "",
                     detail: req.content || "",
                     isRequired: Boolean(req.isRequired),
@@ -174,12 +173,28 @@ export default function DocEditPage() {
               reqMap[targetTab].push({
                 id: pinId,
                 reqId: null,
-                number: pinNum,
+                number: 0,
                 item: "",
                 detail: "",
                 isRequired: false,
               });
             }
+          });
+
+          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
+          const pinNumberLookup = {};
+          INITIAL_ROLES.forEach((role) => {
+            pinMap[role].forEach((pin, idx) => {
+              pin.number = idx + 1;
+              pinNumberLookup[pin.id] = pin.number;
+            });
+          });
+          INITIAL_ROLES.forEach((role) => {
+            reqMap[role].forEach((req) => {
+              if (pinNumberLookup[req.id] !== undefined) {
+                req.number = pinNumberLookup[req.id];
+              }
+            });
           });
 
           const imgUrl =

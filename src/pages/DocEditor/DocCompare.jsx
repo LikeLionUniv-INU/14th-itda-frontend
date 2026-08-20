@@ -422,6 +422,30 @@ export default function DocComparePage() {
             }
           });
 
+          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
+          const ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
+          const prevPinLookup = {};
+          ROLES.forEach((role) => {
+            prevPinMap[role].forEach((pin, idx) => {
+              pin.number = idx + 1;
+              prevPinLookup[pin.id] = pin.number;
+            });
+          });
+          const currPinLookup = {};
+          ROLES.forEach((role) => {
+            currPinMap[role].forEach((pin, idx) => {
+              pin.number = idx + 1;
+              currPinLookup[pin.id] = pin.number;
+            });
+          });
+          ROLES.forEach((role) => {
+            requirements[role].forEach((req) => {
+              if (currPinLookup[req.id] !== undefined) {
+                req.number = currPinLookup[req.id];
+              }
+            });
+          });
+
           const imgObj = p.wireframeImages?.[0] || {};
           const prevImgObj = prevPage?.wireframeImages?.[0] || {};
 
