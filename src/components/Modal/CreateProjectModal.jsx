@@ -55,7 +55,7 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(inviteCode);
-      alert("초대 코드가 클립보드에 복사되었습니다!");
+      // alert("초대 코드가 클립보드에 복사되었습니다!");
     } catch (err) {
       console.error("복사 실패:", err);
     }
@@ -123,7 +123,6 @@ function CreateProjectModal({ isOpen, onClose, onSuccess }) {
           </div>
         )}
 
-        {/* --- STEP 2: 초대 코드 노출 --- */}
         {step === 2 && (
           <div>
             <S.Title style={{ textAlign: "center" }}>팀 초대 코드</S.Title>
