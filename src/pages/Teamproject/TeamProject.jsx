@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Header from "../../components/Header";
 import FileIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProject.styles";
@@ -83,6 +83,7 @@ const getInitial = (name) => {
 
 export default function TeamProject({ onNavigate }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { teamId } = useParams();
 
   const [project, setProject] = useState(null);
@@ -109,7 +110,6 @@ export default function TeamProject({ onNavigate }) {
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
-        // 최신 버전으로 기본값 세팅
         initialMap[doc.id] =
           doc.latestVersion ||
           (doc.versions && doc.versions[doc.versions.length - 1]) ||
@@ -151,10 +151,11 @@ export default function TeamProject({ onNavigate }) {
     }
   };
 
+  // 페이지 진입 또는 라우트 이동 복귀 시 최신 데이터 자동 조회
   useEffect(() => {
     fetchTeamData();
     fetchNotification();
-  }, [teamId]);
+  }, [teamId, location.key]);
 
   const handleDocumentSuccess = async (docData) => {
     setIsCreateDocModalOpen(false);
@@ -220,11 +221,9 @@ export default function TeamProject({ onNavigate }) {
     project.isLeader === true ||
     project.role === "LEADER";
 
-  // [핵심] 최신 버전을 가지고 이동하는 핸들러
   const handleDocClick = (docId, targetVersion) => {
     const versionToUse = targetVersion || selectedVersions[docId] || 1;
     if (isLeader) {
-      // 리더: 최신 버전 정보를 넘겨주며 수정 페이지로 이동
       navigate(`/doc-edit/${docId}`, {
         state: {
           docId,
@@ -233,7 +232,6 @@ export default function TeamProject({ onNavigate }) {
         },
       });
     } else {
-      // 멤버: 최신 버전 정보를 넘겨주며 비교/확인 페이지로 이동
       navigate(`/doc-compare/${docId}`, {
         state: {
           docId,
@@ -516,7 +514,6 @@ export default function TeamProject({ onNavigate }) {
 
                   return (
                     <S.DocItemCard key={doc.id}>
-                      {/* [핵심] 블록 클릭 시 선택된/최신 버전을 가지고 이동 */}
                       <S.DocItemLeft
                         onClick={() => handleDocClick(doc.id, targetVer)}
                       >

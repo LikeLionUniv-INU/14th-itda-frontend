@@ -1,5 +1,42 @@
 import api from "./axios";
 
+// 기획서 해상도 계산 헬퍼 (desktop: 660px 고정, mobile: 214px 고정)
+const getImageDimensions = (file, device = "desktop") => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const originalWidth =
+        img.naturalWidth || (device === "mobile" ? 214 : 660);
+      const originalHeight =
+        img.naturalHeight || (device === "mobile" ? 463 : 371);
+
+      const targetWidth = device === "mobile" ? 214 : 660;
+      const displayHeight = Math.round(
+        (originalHeight / originalWidth) * targetWidth,
+      );
+
+      resolve({
+        originalWidth,
+        originalHeight,
+        displayWidth: targetWidth,
+        displayHeight,
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({
+        originalWidth: device === "mobile" ? 214 : 660,
+        originalHeight: device === "mobile" ? 463 : 371,
+        displayWidth: device === "mobile" ? 214 : 660,
+        displayHeight: device === "mobile" ? 463 : 371,
+      });
+    };
+    img.src = url;
+  });
+};
+
 // 6-3. 문서 생성 (팀장 전용)
 export const createDocument = (
   teamId,
@@ -49,32 +86,60 @@ export const reorderPages = (documentId, version, pageIds) => {
   );
 };
 
-// 7-2. 와이어프레임 MinIO 이미지 업로드 파이프라인
-export const uploadWireframePipeline = async (pageId, file, dimensions) => {
+// 7-2. 와이어프레임 MinIO 이미지 업로드 파이프라인 (기획서 규격 일치)
+export const uploadWireframePipeline = async (
+  pageId,
+  file,
+  device = "desktop",
+) => {
+  const fileType = file.type || "image/png";
+  const fileName = file.name || `wireframe_${Date.now()}.png`;
+
+  // 1. 기획서 기준 표시 해상도 계산
+  const dimensions = await getImageDimensions(file, device);
+
   // Step 1. Presigned URL 발급
   const presignedRes = await api.post("/api/files/presigned-url", {
-    fileName: file.name,
-    contentType: file.type || "image/png",
+    fileName: fileName,
+    contentType: fileType,
     imageType: "WIREFRAME",
-    pageId,
+    pageId: Number(pageId),
   });
 
-  // axios 인터셉터로 인해 presignedRes 자체가 백엔드 응답 본문
-  const { presignedUrl, fileUrl } = presignedRes.data;
+  const resPayload = presignedRes?.data?.data || presignedRes?.data || {};
+  const { presignedUrl, fileUrl } = resPayload;
+
+  if (!presignedUrl) {
+    throw new Error("Presigned URL 발급 실패");
+  }
 
   // Step 2. MinIO 직접 업로드
-  await fetch(presignedUrl, {
+  const uploadRes = await fetch(presignedUrl, {
     method: "PUT",
-    headers: { "Content-Type": file.type || "image/png" },
+    headers: {
+      "Content-Type": fileType,
+    },
     body: file,
   });
 
+  if (!uploadRes.ok) {
+    const errorText = await uploadRes.text();
+    console.error("MinIO 업로드 실패 응답:", errorText);
+    throw new Error(`MinIO 업로드 실패: HTTP ${uploadRes.status}`);
+  }
+
   // Step 3. 메타데이터 등록
-  return api.post(`/api/pages/${pageId}/wireframe-images`, {
+  const metaRes = await api.post(`/api/pages/${pageId}/wireframe-images`, {
     imageType: "WIREFRAME",
     imageUrl: fileUrl,
-    ...dimensions,
+    originalWidth: dimensions.originalWidth,
+    originalHeight: dimensions.originalHeight,
+    displayWidth: dimensions.displayWidth,
+    displayHeight: dimensions.displayHeight,
   });
+
+  const metaData = metaRes?.data?.data || metaRes?.data || {};
+  return metaData.imageUrl || fileUrl;
 };
 
 export const deleteWireframeImage = (pageId, imageId) => {

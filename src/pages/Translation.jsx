@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Check, Sparkles, Clock, CheckCircle2 } from "lucide-react";
 import * as S from "./Translation.styles";
-import { getTranslationStatus } from "../api/translationApi";
+import { getTranslationStatus } from "../api/documentApi";
 
 // 국가/언어 국기 이미지 및 명칭 매핑
 const LANG_META = {
@@ -21,16 +21,18 @@ const LANG_META = {
   id: { name: "인도네시아어", flag: "https://flagcdn.com/w160/id.png" },
 };
 
-// 백엔드 상태값 보정 헬퍼 함수
+// 백엔드 상태값 보정 헬퍼
 const normalizeStatus = (statusStr) => {
   if (!statusStr) return "WAITING";
   const s = String(statusStr).toUpperCase();
-  if (["COMPLETED", "COMPLETE", "DONE", "FINISHED"].includes(s)) return "COMPLETED";
-  if (["IN_PROGRESS", "PROGRESS", "PROCESSING", "TRANSLATING"].includes(s)) return "IN_PROGRESS";
+  if (["COMPLETED", "COMPLETE", "DONE", "FINISHED", "SUCCESS"].includes(s))
+    return "COMPLETED";
+  if (["IN_PROGRESS", "PROGRESS", "PROCESSING", "TRANSLATING"].includes(s))
+    return "IN_PROGRESS";
   return "WAITING";
 };
 
-// 언어 코드 보정 헬퍼 함수
+// 언어 코드 보정 헬퍼
 const normalizeCode = (codeStr) => {
   if (!codeStr) return "ko";
   const c = String(codeStr).toLowerCase().trim();
@@ -51,18 +53,23 @@ export default function Translation() {
   const params = useParams();
   const location = useLocation();
 
-  const projectId =
-    params.projectId || params.teamId || location.state?.projectId || 1;
+  const passedState = location.state || {};
+  const teamId =
+    passedState.teamId ||
+    params.teamId ||
+    params.projectId ||
+    passedState.projectId ||
+    "";
+  const jobId = passedState.jobId || teamId || 1;
 
   const [languages, setLanguages] = useState([]);
   const [serverProgress, setServerProgress] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
-  
+
   const pollingRef = useRef(null);
   const hasNavigatedRef = useRef(false);
 
-  // 기획서 고정 안내 멘트
   const getStatusDesc = (langCode, status) => {
     if (langCode === "ko" && status === "COMPLETED") {
       return "기본 언어로 번역 없이 원본이 유지 됩니다.";
@@ -78,10 +85,9 @@ export default function Translation() {
 
   const fetchStatus = async () => {
     try {
-      const response = await getTranslationStatus(projectId);
+      const response = await getTranslationStatus(jobId);
       const resData = response?.data?.data || response?.data || response;
 
-      // 1. 유연한 배열 데이터 추출 (백엔드 필드명 유연화)
       const rawList =
         resData?.languages ||
         resData?.translationStatuses ||
@@ -90,7 +96,12 @@ export default function Translation() {
 
       if (Array.isArray(rawList) && rawList.length > 0) {
         const formatted = rawList.map((item, idx) => {
-          const rawCode = item.code || item.languageCode || item.targetLanguage || item.language || "ko";
+          const rawCode =
+            item.code ||
+            item.languageCode ||
+            item.targetLanguage ||
+            item.language ||
+            "ko";
           const normCode = normalizeCode(rawCode);
           const meta = LANG_META[normCode] || {
             name: item.name || item.languageName || normCode.toUpperCase(),
@@ -107,10 +118,11 @@ export default function Translation() {
         });
         setLanguages(formatted);
 
-        // 2. 전체 완료 여부 판단 및 페이지 이동
+        // 전체 완료 여부 판단 및 팀 프로젝트 메인으로 복귀
         const allCompleted =
           resData?.isAllCompleted ||
-          (formatted.length > 0 && formatted.every((l) => l.status === "COMPLETED"));
+          (formatted.length > 0 &&
+            formatted.every((l) => l.status === "COMPLETED"));
 
         if (allCompleted && !hasNavigatedRef.current) {
           hasNavigatedRef.current = true;
@@ -118,12 +130,11 @@ export default function Translation() {
           setShowToast(true);
 
           setTimeout(() => {
-            navigate(`/project/${projectId}`);
-          }, 3000);
+            navigate(teamId ? `/teamp/${teamId}` : "/home");
+          }, 2000);
         }
       }
 
-      // 3. 서버 진척도 반영
       if (typeof resData?.progressPercentage === "number") {
         setServerProgress(resData.progressPercentage);
       }
@@ -137,23 +148,23 @@ export default function Translation() {
 
     pollingRef.current = setInterval(() => {
       fetchStatus();
-    }, 3000);
+    }, 2500);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [projectId]);
+  }, [jobId]);
 
-  // 프로그레스바 퍼센티지 계산 (서버값 우선, 없을시 완료 개수 1/N 계산)
-  const completedCount = languages.filter((l) => l.status === "COMPLETED").length;
+  const completedCount = languages.filter(
+    (l) => l.status === "COMPLETED",
+  ).length;
   const progressPercentage =
     serverProgress !== null
       ? serverProgress
       : languages.length > 0
-      ? Math.round((completedCount / languages.length) * 100)
-      : 0;
+        ? Math.round((completedCount / languages.length) * 100)
+        : 0;
 
-  // 3개 초과 시 좌우 슬라이드 버튼 활성화
   const maxVisible = 3;
   const canPrev = currentIndex > 0;
   const canNext = currentIndex + maxVisible < languages.length;
@@ -174,7 +185,7 @@ export default function Translation() {
   return (
     <S.PageWrapper>
       <S.CenterContainer>
-        {/* 아이콘 */}
+        {/* 상단 반짝이 아이콘 */}
         <S.SparkleIconWrapper>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
             <path
@@ -191,7 +202,7 @@ export default function Translation() {
         <S.Title>AI 번역 진행중...</S.Title>
         <S.SubTitle>문서를 분석하고 각 언어로 번역을 진행합니다.</S.SubTitle>
 
-        {/* 실시간 프로그레스바 */}
+        {/* 프로그레스바 */}
         <S.ProgressSection>
           <S.ProgressBarTrack>
             <S.ProgressBarFill $percentage={progressPercentage} />
@@ -200,7 +211,7 @@ export default function Translation() {
         </S.ProgressSection>
 
         <S.CardsWrapper>
-          {/* 이전 버튼 */}
+          {/* 좌측 슬라이드 버튼 */}
           <S.TriangleButton
             onClick={handlePrev}
             disabled={!canPrev}
@@ -211,7 +222,7 @@ export default function Translation() {
             </svg>
           </S.TriangleButton>
 
-          {/* 언어 카드 리스트 */}
+          {/* 언어 카드 그리드 */}
           <S.CardGrid>
             {languages.length === 0 ? (
               <p style={{ color: "#888", padding: "40px 0" }}>
@@ -256,7 +267,7 @@ export default function Translation() {
             )}
           </S.CardGrid>
 
-          {/* 다음 버튼 */}
+          {/* 우측 슬라이드 버튼 */}
           <S.TriangleButton
             onClick={handleNext}
             disabled={!canNext}
@@ -268,7 +279,7 @@ export default function Translation() {
           </S.TriangleButton>
         </S.CardsWrapper>
 
-        {/* 100% 완료 토스트 메시지 */}
+        {/* 완료 안내 토스트 메시지 */}
         {showToast && (
           <S.ToastMessage>
             <CheckCircle2 size={16} color="#1CA74B" />
