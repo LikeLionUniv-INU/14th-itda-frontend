@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BaseModal from "./BaseModal";
 import LanguageSelect from "../LanguageSelect";
 import * as S from "./SaveFlowModals.styles";
@@ -7,22 +7,60 @@ import BangImg from "../../assets/image/bang.svg";
 import CheckImg from "../../assets/image/check.svg";
 import GlobalImg from "../../assets/image/Global.svg";
 
+import { getTeamDetail } from "../../api/teamApi";
+
 export default function SaveFlowModals({
   isOpen,
   currentStep,
+  teamId,
   docName = "스토리보드_Version1",
   onClose,
   onConfirmExit,
   onNextStep,
   onFinalSave,
 }) {
-  const [members, setMembers] = useState([
-    { id: 1, name: "김민수", checked: true, language: "ko" },
-    { id: 2, name: "John smith", checked: true, language: "en" },
-    { id: 3, name: "일본어 이름", checked: true, language: "ja" },
-    { id: 4, name: "중국어 이름", checked: false, language: "zh-CN" },
-    { id: 5, name: "베트남 이름", checked: false, language: "vi" },
-  ]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // 모달이 열리거나 language_select 단계일 때 실제 팀 멤버 데이터 조회
+  useEffect(() => {
+    if (!isOpen || currentStep !== "language_select") return;
+
+    const fetchMembers = async () => {
+      if (!teamId) return;
+      try {
+        setLoading(true);
+        const res = await getTeamDetail(teamId);
+        const resData = res?.data?.data || res?.data || {};
+        const memberList = resData.members || [];
+
+        // 실제 팀 멤버 데이터 매핑 (기본 선택 및 언어 바인딩)
+        const formattedMembers = memberList.map((m) => {
+          const fullName =
+            m.name ||
+            `${m.lastName || ""} ${m.firstName || ""}`.trim() ||
+            "팀원";
+          const userLang =
+            m.language || m.defaultLanguage || resData.defaultLanguage || "ko";
+
+          return {
+            id: m.id || m.userId,
+            name: fullName,
+            checked: true,
+            language: userLang,
+          };
+        });
+
+        setMembers(formattedMembers);
+      } catch (error) {
+        console.error("팀 멤버 목록 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, [isOpen, currentStep, teamId]);
 
   const isAllChecked = members.length > 0 && members.every((m) => m.checked);
 
@@ -102,7 +140,7 @@ export default function SaveFlowModals({
           </S.ModalContent>
         )}
 
-        {/* 4. 팀 국적 및 언어 선택 모달 */}
+        {/* 4. 팀 국적 및 언어 선택 모달 (실제 API 데이터 연동) */}
         {currentStep === "language_select" && (
           <S.LangModalContent>
             <S.LangTitle>팀 국적 및 사용 언어 현황</S.LangTitle>
@@ -111,33 +149,56 @@ export default function SaveFlowModals({
               스토리보드가 번역된 버전이 같이 공유됩니다.
             </S.LangDesc>
 
-            <S.ListContainer>
-              <S.ListItem isHeader onClick={handleToggleAll}>
-                <S.Checkbox
-                  type="checkbox"
-                  checked={isAllChecked}
-                  onChange={handleToggleAll}
-                />
-                <S.MemberName>전체선택</S.MemberName>
-              </S.ListItem>
-
-              {members.map((m) => (
-                <S.ListItem key={m.id}>
+            {loading ? (
+              <div
+                style={{
+                  padding: "40px 0",
+                  textAlign: "center",
+                  color: "#6b7280",
+                }}
+              >
+                팀원 목록을 불러오는 중...
+              </div>
+            ) : members.length === 0 ? (
+              <div
+                style={{
+                  padding: "30px 0",
+                  textAlign: "center",
+                  color: "#6b7280",
+                  fontSize: "14px",
+                }}
+              >
+                등록된 팀원이 없습니다.
+              </div>
+            ) : (
+              <S.ListContainer>
+                <S.ListItem isHeader onClick={handleToggleAll}>
                   <S.Checkbox
                     type="checkbox"
-                    checked={m.checked}
-                    onChange={() => handleToggleMember(m.id)}
+                    checked={isAllChecked}
+                    onChange={handleToggleAll}
                   />
-                  <S.MemberName>{m.name}</S.MemberName>
-                  <LanguageSelect
-                    width="140px"
-                    height="36px"
-                    value={m.language}
-                    onChange={(val) => handleChangeLanguage(m.id, val)}
-                  />
+                  <S.MemberName>전체선택</S.MemberName>
                 </S.ListItem>
-              ))}
-            </S.ListContainer>
+
+                {members.map((m) => (
+                  <S.ListItem key={m.id}>
+                    <S.Checkbox
+                      type="checkbox"
+                      checked={m.checked}
+                      onChange={() => handleToggleMember(m.id)}
+                    />
+                    <S.MemberName>{m.name}</S.MemberName>
+                    <LanguageSelect
+                      width="140px"
+                      height="36px"
+                      value={m.language}
+                      onChange={(val) => handleChangeLanguage(m.id, val)}
+                    />
+                  </S.ListItem>
+                ))}
+              </S.ListContainer>
+            )}
 
             <S.ButtonGroup>
               <S.CancelBtn onClick={onClose}>취소</S.CancelBtn>

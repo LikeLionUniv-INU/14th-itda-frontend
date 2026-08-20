@@ -47,12 +47,14 @@ const SummarySection = ({
                   isSelected={isSelected}
                   onClick={() => onSelectSummary?.(item)}
                 >
-                  <S.ColPage>{item.pageName}</S.ColPage>
-                  <S.ColNo>{item.number}</S.ColNo>
-                  <S.ColItem>{item.itemName || "-"}</S.ColItem>
-                  <S.ColPreview>{item.previewContent || "-"}</S.ColPreview>
-                  <S.ColAuthor>{item.author}</S.ColAuthor>
-                  <S.ColDate>{item.date}</S.ColDate>
+                  <S.ColPage>{item.pageName || "-"}</S.ColPage>
+                  <S.ColNo>{item.number || item.pinNumber || "-"}</S.ColNo>
+                  <S.ColItem>{item.itemName || item.item || "-"}</S.ColItem>
+                  <S.ColPreview>
+                    {item.previewContent || item.content || item.detail || "-"}
+                  </S.ColPreview>
+                  <S.ColAuthor>{item.author || "본인"}</S.ColAuthor>
+                  <S.ColDate>{item.date || item.updatedAt || "-"}</S.ColDate>
                 </S.Row>
               );
             })}
