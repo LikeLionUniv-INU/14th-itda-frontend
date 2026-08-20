@@ -76,9 +76,11 @@ const getRelativeTime = (dateString) => {
   return `${Math.floor(diffInMonths / 12)}년 전`;
 };
 
-const getInitial = (name) => {
-  if (!name) return "";
-  return String(name).trim().charAt(0).toUpperCase();
+// 성(lastName)이 있으면 성의 첫 글자, 없으면 name의 첫 글자를 추출하도록 수정
+const getInitial = (member) => {
+  if (!member) return "";
+  const target = member.lastName || member.name || member.firstName || "";
+  return String(target).trim().charAt(0).toUpperCase();
 };
 
 export default function TeamProject({ onNavigate }) {
@@ -272,9 +274,10 @@ export default function TeamProject({ onNavigate }) {
   const members = project.members || [];
   const inviteCode = project.inviteCode || "";
 
+  // 상단 배너 멤버 아바타 (객체 자체를 전달해 성 기준 이니셜 추출)
   const memberInitials = members
     .slice(0, 3)
-    .map((m) => getInitial(m.name || m.firstName || m.lastName));
+    .map((m) => getInitial(m));
   const extraMemberCount = members.length - 3;
 
   const hasDocs = docs.length > 0;
@@ -311,36 +314,43 @@ export default function TeamProject({ onNavigate }) {
         onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
       />
 
+      {notification && (
+        <div
+          style={{
+            width: "1202px",
+            margin: "28px auto 0 auto",
+            boxSizing: "border-box",
+          }}
+        >
+          <S.NotificationBar>
+            <S.NotificationLeft>
+              <S.NotificationIconBox>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </S.NotificationIconBox>
+              <S.NotificationTextContainer>
+                <h4>{renderNotificationTitle(notification)}</h4>
+                <p>{renderNotificationSub(notification)}</p>
+              </S.NotificationTextContainer>
+            </S.NotificationLeft>
+            <S.NotificationButton onClick={handleReadNotification}>
+              확인하기
+            </S.NotificationButton>
+          </S.NotificationBar>
+        </div>
+      )}
+
       <S.Container>
         <S.MainSection>
-          {notification && (
-            <S.NotificationBar>
-              <S.NotificationLeft>
-                <S.NotificationIconBox>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </S.NotificationIconBox>
-                <S.NotificationTextContainer>
-                  <h4>{renderNotificationTitle(notification)}</h4>
-                  <p>{renderNotificationSub(notification)}</p>
-                </S.NotificationTextContainer>
-              </S.NotificationLeft>
-              <S.NotificationButton onClick={handleReadNotification}>
-                확인하기
-              </S.NotificationButton>
-            </S.NotificationBar>
-          )}
-
-          {/* 프로젝트 배너 */}
           <S.BannerCard>
             <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
             <S.BannerMeta>
@@ -372,7 +382,6 @@ export default function TeamProject({ onNavigate }) {
             </S.BannerMeta>
           </S.BannerCard>
 
-          {/* 최근 문서 카드 */}
           <S.RecentDocsCard>
             <S.CardHeader>
               <h3>최근 문서</h3>
@@ -447,7 +456,6 @@ export default function TeamProject({ onNavigate }) {
           </S.RecentDocsCard>
 
           <S.BottomRow>
-            {/* 활동 요약 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>활동 요약</h3>
@@ -457,7 +465,11 @@ export default function TeamProject({ onNavigate }) {
                   {activities.map((act) => (
                     <S.ActivityItem key={act.id}>
                       <S.ActivityAvatar>
-                        {getInitial(act.userName || act.performedByFirstName)}
+                        {/* 활동 내역의 유저 정보(lastName 우선) */}
+                        {getInitial({
+                          lastName: act.lastName || act.performedByLastName,
+                          name: act.userName || act.performedByFirstName,
+                        })}
                       </S.ActivityAvatar>
                       <S.ActivityContent>
                         <p>
@@ -479,7 +491,6 @@ export default function TeamProject({ onNavigate }) {
               )}
             </S.HalfCard>
 
-            {/* 프로젝트 멤버 */}
             <S.HalfCard>
               <S.CardHeader>
                 <h3>프로젝트 멤버</h3>
@@ -489,7 +500,8 @@ export default function TeamProject({ onNavigate }) {
                   <S.MemberItem key={member.id}>
                     <S.MemberLeft>
                       <S.MemberAvatar>
-                        {getInitial(member.name || member.firstName)}
+                        {/* 프로젝트 멤버 목록 (lastName 우선) */}
+                        {getInitial(member)}
                       </S.MemberAvatar>
                       <S.MemberName>
                         {member.name ||
@@ -513,7 +525,6 @@ export default function TeamProject({ onNavigate }) {
                 ))}
               </S.MemberListScrollWrapper>
 
-              {/* 초대 버튼 */}
               <S.InviteButton onClick={() => setIsInviteModalOpen(true)}>
                 <span>+</span> 멤버 초대하기
               </S.InviteButton>
@@ -521,7 +532,6 @@ export default function TeamProject({ onNavigate }) {
           </S.BottomRow>
         </S.MainSection>
 
-        {/* 사이드바 - 문서 모아보기 */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -604,7 +614,6 @@ export default function TeamProject({ onNavigate }) {
         </S.SidebarSection>
       </S.Container>
 
-      {/* 1. 문서 생성 모달 */}
       <CreateDocumentModal
         isOpen={isCreateDocModalOpen}
         onClose={() => {
@@ -614,7 +623,6 @@ export default function TeamProject({ onNavigate }) {
         onSuccess={handleDocumentSuccess}
       />
 
-      {/* 2. 전용 팀 초대 코드 모달 */}
       <InviteModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}

@@ -14,7 +14,7 @@ export const PageWrapper = styled.div`
 
 export const Content = styled.div`
   width: 100%;
-  max-width: 1100px;
+  max-width: 1202px; /* 1100px에서 1202px로 수정하여 다른 페이지와 너비 통일 */
   margin: 0 auto;
   padding: 32px 24px 80px 24px;
   box-sizing: border-box;
@@ -144,10 +144,9 @@ export const DocIcon = styled.div`
   margin-bottom: 12px;
 `;
 
-
 export const NotificationBar = styled.div`
   grid-column: 1 / -1;
-  width: 1050px;
+  width: 100%; /* 1050px 고정에서 100%로 수정하여 컨테이너 폭에 맞춤 */
   box-sizing: border-box;
   display: flex;
   align-items: center;

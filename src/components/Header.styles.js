@@ -2,15 +2,26 @@ import styled from "styled-components";
 import { NavLink } from "react-router-dom";
 import DocBridge로고 from "../assets/image/DocBridge로고.svg";
 
+// 1. 헤더 전체 배경 바 (화면 전체 너비로 흰색 배경 유지)
 export const Header = styled.header`
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: ${(props) => (props.$type === "project" ? "780px" : "270px")};
-
+  width: 100%;
   height: 64px;
   background: #fff;
   border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+`;
+
+// 2. 내부 콘텐츠 영역 (본문과 동일한 max-width를 주어 양 끝 정렬)
+export const HeaderInner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 20px;
+  box-sizing: border-box;
 `;
 
 // 로고 이미지 + 카테고리바

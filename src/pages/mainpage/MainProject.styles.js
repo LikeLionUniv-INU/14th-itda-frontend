@@ -14,7 +14,7 @@ export const PageWrapper = styled.div`
 
 export const Content = styled.div`
   width: 100%;
-  max-width: 1100px;
+  max-width: 1202px; /* 1100px에서 1202px로 변경하여 다른 페이지와 너비 일치 */
   margin: 0 auto;
   padding: 32px 24px 80px 24px;
   box-sizing: border-box;
