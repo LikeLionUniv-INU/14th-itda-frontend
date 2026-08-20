@@ -22,29 +22,42 @@ export default function SaveFlowModals({
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 모달이 열리거나 language_select 단계일 때 실제 팀 멤버 데이터 조회
+  // 모달이 열리는 즉시(isOpen === true) 팀원 데이터를 사전 로드
   useEffect(() => {
-    if (!isOpen || currentStep !== "language_select") return;
+    if (!isOpen || !teamId) return;
 
     const fetchMembers = async () => {
-      if (!teamId) return;
       try {
         setLoading(true);
         const res = await getTeamDetail(teamId);
         const resData = res?.data?.data || res?.data || {};
-        const memberList = resData.members || [];
 
-        // 실제 팀 멤버 데이터 매핑 (기본 선택 및 언어 바인딩)
-        const formattedMembers = memberList.map((m) => {
+        // members 또는 teamMembers 배열 대응
+        const memberList =
+          resData.members ||
+          resData.teamMembers ||
+          (Array.isArray(resData) ? resData : []);
+
+        // 팀 멤버 데이터 매핑
+        const formattedMembers = memberList.map((m, index) => {
           const fullName =
             m.name ||
+            m.nickname ||
+            m.username ||
             `${m.lastName || ""} ${m.firstName || ""}`.trim() ||
-            "팀원";
+            `팀원 ${index + 1}`;
+
           const userLang =
-            m.language || m.defaultLanguage || resData.defaultLanguage || "ko";
+            m.language ||
+            m.targetLanguage ||
+            m.defaultLanguage ||
+            resData.defaultLanguage ||
+            "ko";
+
+          const memberId = m.userId || m.memberId || m.id || index + 1;
 
           return {
-            id: m.id || m.userId,
+            id: memberId,
             name: fullName,
             checked: true,
             language: userLang,
@@ -60,7 +73,7 @@ export default function SaveFlowModals({
     };
 
     fetchMembers();
-  }, [isOpen, currentStep, teamId]);
+  }, [isOpen, teamId]);
 
   const isAllChecked = members.length > 0 && members.every((m) => m.checked);
 
@@ -140,7 +153,7 @@ export default function SaveFlowModals({
           </S.ModalContent>
         )}
 
-        {/* 4. 팀 국적 및 언어 선택 모달 (실제 API 데이터 연동) */}
+        {/* 4. 팀 국적 및 언어 선택 모달 */}
         {currentStep === "language_select" && (
           <S.LangModalContent>
             <S.LangTitle>팀 국적 및 사용 언어 현황</S.LangTitle>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DocHeader from "./components/DocHeader";
 import SummarySection from "./components/SummarySection";
@@ -47,12 +47,17 @@ const formatCurrentTime = (dateObj = new Date()) => {
 export default function DocEditPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { docId: paramDocId } = useParams();
+  const { teamId: paramTeamId, docId: paramDocId, documentId } = useParams();
 
   const passedState = location.state || {};
-  const docId = paramDocId || passedState.docId;
+  const docId = paramDocId || documentId || passedState.docId;
   const initialVersion = passedState.version ? Number(passedState.version) : 1;
-  const teamId = passedState.teamId || "";
+  const [teamId, setTeamId] = useState(
+    paramTeamId ||
+      passedState.teamId ||
+      localStorage.getItem("currentTeamId") ||
+      "",
+  );
 
   const [documentInfo, setDocumentInfo] = useState({
     name: "스토리보드",
@@ -62,6 +67,8 @@ export default function DocEditPage() {
   const [pages, setPages] = useState([createEmptyPage(1)]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
+
+  const pendingFilesRef = useRef({});
 
   const [summaryList, setSummaryList] = useState([]);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
@@ -79,6 +86,19 @@ export default function DocEditPage() {
       const res = await getDocumentDetail(docId, currentVersion);
       const data = res?.data?.data || res?.data || res;
       if (!data) return;
+
+      // 백엔드 응답에서 teamId 추출 및 복구
+      const fetchedTeamId =
+        data.teamId ||
+        data.teamProjectId ||
+        data.team?.id ||
+        data.teamProject?.id ||
+        localStorage.getItem("currentTeamId") ||
+        "";
+
+      if (!teamId && fetchedTeamId) {
+        setTeamId(fetchedTeamId);
+      }
 
       setDocumentInfo({
         name: data.name || data.title || "스토리보드",
@@ -134,7 +154,7 @@ export default function DocEditPage() {
             "";
 
           return {
-            pageId: p.id || Date.now() + idx,
+            pageId: p.id,
             pageNumber: p.pageNumber || idx + 1,
             screenName: p.screenName || "",
             screenId: p.screenId || "",
@@ -173,7 +193,7 @@ export default function DocEditPage() {
     } catch (e) {
       console.error("문서 조회 실패:", e);
     }
-  }, [docId, currentVersion]);
+  }, [docId, currentVersion, teamId]);
 
   useEffect(() => {
     fetchDoc();
@@ -256,6 +276,24 @@ export default function DocEditPage() {
         buildSavePayload(newVersionInfo.description || "문서 수정 저장"),
       );
 
+      // 수정 후 발급된 페이지 ID로 대기 중인 파일 업로드
+      try {
+        const detailRes = await getDocumentDetail(docId, targetVersion);
+        const detailData = detailRes?.data?.data || detailRes?.data || {};
+        const serverPages = detailData.pages || [];
+
+        for (let i = 0; i < serverPages.length; i++) {
+          const sPage = serverPages[i];
+          const file = pendingFilesRef.current[i];
+          const dev = pages[i]?.device || "desktop";
+          if (sPage?.id && file) {
+            await uploadWireframePipeline(sPage.id, file, dev);
+          }
+        }
+      } catch (imgErr) {
+        console.error("수정 이미지 업로드 실패:", imgErr);
+      }
+
       const translations = (selectedMembers || [])
         .filter((m) => m.checked)
         .map((m) => ({
@@ -306,32 +344,16 @@ export default function DocEditPage() {
     );
   };
 
-  // [기획서 규격 연동] 디바이스(desktop 660px / mobile 214px) 규격 파라미터 전달
-  const handleUploadImage = async (tempUrl, rawFile) => {
+  const handleUploadImage = (tempUrl, rawFile) => {
     const fileToUpload =
       rawFile || (typeof tempUrl !== "string" ? tempUrl : null);
 
-    // 1. 화면에 즉시 미리보기
     if (tempUrl && typeof tempUrl === "string") {
       handleUpdatePage({ imageUrl: tempUrl });
     }
 
-    // 2. 기획서 해상도 규격으로 MinIO 업로드 파이프라인 수행
     if (fileToUpload) {
-      try {
-        const pageId = currentPage.pageId;
-        const currentDevice = currentPage.device || "desktop";
-        const uploadedUrl = await uploadWireframePipeline(
-          pageId,
-          fileToUpload,
-          currentDevice,
-        );
-        if (uploadedUrl) {
-          handleUpdatePage({ imageUrl: uploadedUrl });
-        }
-      } catch (err) {
-        console.error("MinIO 이미지 업로드 실패:", err);
-      }
+      pendingFilesRef.current[activePageIndex] = fileToUpload;
     }
   };
 
@@ -430,7 +452,6 @@ export default function DocEditPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단 헤더 */}
         <S.HeaderWrapper>
           <DocHeader
             docName={documentInfo.name}
@@ -443,7 +464,6 @@ export default function DocEditPage() {
           />
         </S.HeaderWrapper>
 
-        {/* 상단: 수정사항 요약 섹션 */}
         <SummarySection
           summaryList={summaryList}
           selectedSummaryId={selectedSummaryId}
@@ -456,7 +476,6 @@ export default function DocEditPage() {
         />
 
         <S.MainSection>
-          {/* 좌측 영역 */}
           <S.LeftColumn>
             <S.PageNavWrapper>
               <PageNavigator
@@ -503,7 +522,6 @@ export default function DocEditPage() {
             </S.LeftBox>
           </S.LeftColumn>
 
-          {/* 우측 영역 */}
           <S.RightColumn>
             <S.RightBox>
               <RequirementSection
@@ -518,7 +536,6 @@ export default function DocEditPage() {
         </S.MainSection>
       </S.ContentContainer>
 
-      {/* 수정 요약 작성 모달 */}
       <EditSummaryModal
         isOpen={isEditSummaryOpen}
         currentVersion={currentVersion}
@@ -534,7 +551,6 @@ export default function DocEditPage() {
         }}
       />
 
-      {/* 팀원 언어 선택 및 최종 저장 모달 */}
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
