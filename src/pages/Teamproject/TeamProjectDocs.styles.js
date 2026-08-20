@@ -161,7 +161,6 @@ export const SectionTitle = styled.h2`
   margin-bottom: 16px;
 `;
 
-/* 📌 TableContainer는 아예 쓰지 않거나, 필요하다면 단순히 패딩 없는 빈 Wrapper로 대체 */
 export const TableContainer = styled.div`
   width: 100%;
 `;
@@ -171,10 +170,9 @@ export const Table = styled.table`
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  background: transparent; /* 외부 박스 없이 투명 배경 */
-
+  background: transparent;
   thead tr {
-    background-color: #f5f3fd; /* 연보라색 헤더 배경 */
+    background-color: #f5f3fd;
     height: 48px;
   }
 
@@ -213,7 +211,7 @@ export const Table = styled.table`
     font-size: 13.5px;
     font-weight: 600;
     color: #111827;
-    border-bottom: 1px solid #f0f0f0; /* 행 사이에만 가로 선 추가 */
+    border-bottom: 1px solid #f0f0f0;
     vertical-align: middle;
 
     &:last-child {

@@ -37,7 +37,6 @@ export default function DocViewPage() {
     if (!docId) return;
 
     try {
-      // 1. 현재 계정의 언어 최우선 추출 (localStorage 또는 state)
       let resolvedLang =
         localStorage.getItem("userLanguage") ||
         localStorage.getItem("language") ||
@@ -57,7 +56,6 @@ export default function DocViewPage() {
         } catch (tErr) {}
       }
 
-      // 2. ?lang={resolvedLang} 붙여서 번역된 텍스트 조회
       const docRes = await getDocumentDetail(docId, 1, resolvedLang);
       const docData = docRes?.data?.data || docRes?.data || {};
 
@@ -107,7 +105,8 @@ export default function DocViewPage() {
             if (reqList.length > 0) {
               reqList.forEach((req) => {
                 const rawReqTab = req.tabType || targetTab;
-                const reqTab = rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
+                const reqTab =
+                  rawReqTab === "프론트엔드" ? "프론트" : rawReqTab;
                 if (reqMap[reqTab]) {
                   reqMap[reqTab].push({
                     id: pinId,
@@ -131,7 +130,6 @@ export default function DocViewPage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬
           const pinNumberLookup = {};
           INITIAL_ROLES.forEach((role) => {
             pinMap[role].forEach((pin, idx) => {

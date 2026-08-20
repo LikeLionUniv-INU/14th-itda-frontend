@@ -1,4 +1,3 @@
-// 주요 사용 언어를 상단에 배치하고, 이후 150개국 ISO 639-1 언어 목록 가나다순 정렬
 export const LANGUAGES = [
   { code: "ko", name: "한국어", label: "한국어 (Korean)" },
   { code: "en", name: "영어", label: "영어 (English)" },

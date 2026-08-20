@@ -1,6 +1,5 @@
 import api from "./axios";
 
-// 기획서 해상도 계산 헬퍼 (desktop: 660px 고정, mobile: 214px 고정)
 const getImageDimensions = (file, device = "desktop") => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -37,7 +36,6 @@ const getImageDimensions = (file, device = "desktop") => {
   });
 };
 
-// 6-3. 문서 생성 (팀장 전용)
 export const createDocument = (
   teamId,
   { name, language, version = 1, documentType = "STORYBOARD" },
@@ -50,7 +48,6 @@ export const createDocument = (
   });
 };
 
-// 사용자 언어 캐시 (API 호출 최소화)
 let _cachedUserLang = null;
 const getUserLanguage = async () => {
   if (_cachedUserLang) return _cachedUserLang;
@@ -69,12 +66,10 @@ const getUserLanguage = async () => {
   }
 };
 
-// 로그아웃 시 캐시 초기화용
 export const clearUserLangCache = () => {
   _cachedUserLang = null;
 };
 
-// 7 & 9-3. 문서 상세 조회 (버전별, 번역 파라미터 지원)
 export const getDocumentDetail = async (documentId, version = 1, lang) => {
   let effectiveLang = lang;
   if (!effectiveLang) {
@@ -90,7 +85,6 @@ export const getDocumentDetail = async (documentId, version = 1, lang) => {
   return api.get(`/api/documents/${documentId}/versions/${version}`, config);
 };
 
-// 7-1. 페이지 관리
 export const addPage = (documentId, version, { screenName, screenId }) => {
   return api.post(`/api/documents/${documentId}/versions/${version}/pages`, {
     screenName,
@@ -118,7 +112,6 @@ export const reorderPages = (documentId, version, pageIds) => {
   );
 };
 
-// 7-2. 와이어프레임 MinIO 이미지 업로드 파이프라인 (기획서 규격 일치 & 안전 가드 적용)
 export const uploadWireframePipeline = async (
   pageId,
   file,
@@ -127,10 +120,8 @@ export const uploadWireframePipeline = async (
   const fileType = file.type || "image/png";
   const fileName = file.name || `wireframe_${Date.now()}.png`;
 
-  // 1. 기획서 기준 표시 해상도 계산
   const dimensions = await getImageDimensions(file, device);
 
-  // Step 1. Presigned URL 발급
   const presignedRes = await api.post("/api/files/presigned-url", {
     fileName: fileName,
     contentType: fileType,
@@ -145,7 +136,6 @@ export const uploadWireframePipeline = async (
     throw new Error("Presigned URL 발급 실패");
   }
 
-  // Step 2. MinIO 직접 업로드 (빈 본문 및 200/204 정상 처리)
   try {
     const uploadRes = await fetch(presignedUrl, {
       method: "PUT",
@@ -165,7 +155,6 @@ export const uploadWireframePipeline = async (
     );
   }
 
-  // Step 3. 메타데이터 등록 (DB 영구 저장)
   const metaRes = await api.post(`/api/pages/${pageId}/wireframe-images`, {
     imageType: "WIREFRAME",
     imageUrl: fileUrl,
@@ -186,7 +175,6 @@ export const deleteWireframeImage = (pageId, imageId) => {
   return api.delete(`/api/pages/${pageId}/wireframe-images/${imageId}`);
 };
 
-// 7-3 & 7-4. 핀 & 요구사항
 export const addPin = (pageId, data) => {
   return api.post(`/api/pages/${pageId}/pins`, data);
 };
@@ -211,7 +199,6 @@ export const deleteRequirement = (pinId, reqId) => {
   return api.delete(`/api/pins/${pinId}/requirements/${reqId}`);
 };
 
-// 7-5. 전체 저장 & 자동 저장
 export const saveDocument = (documentId, version, data) => {
   return api.put(`/api/documents/${documentId}/versions/${version}`, data);
 };
@@ -223,7 +210,6 @@ export const autoSaveDocument = (documentId, version, data) => {
   );
 };
 
-// 7-6. 수정 확인 - diff 조회 & 확인 처리
 export const getDocumentChanges = async (documentId, version) => {
   const lang = await getUserLanguage();
   const cleanLang =
@@ -231,7 +217,10 @@ export const getDocumentChanges = async (documentId, version) => {
       ? String(lang).toLowerCase().trim()
       : undefined;
   const config = cleanLang ? { params: { lang: cleanLang } } : {};
-  return api.get(`/api/documents/${documentId}/versions/${version}/changes`, config);
+  return api.get(
+    `/api/documents/${documentId}/versions/${version}/changes`,
+    config,
+  );
 };
 
 export const confirmChange = (documentId, version, changeId) => {
@@ -246,7 +235,6 @@ export const confirmAllChanges = (documentId, version) => {
   );
 };
 
-// 8. 버전 관리
 export const getDocumentVersions = (documentId) => {
   return api.get(`/api/documents/${documentId}/versions`);
 };
@@ -261,7 +249,6 @@ export const deleteVersion = (documentId, version) => {
   return api.delete(`/api/documents/${documentId}/versions/${version}`);
 };
 
-// 9. AI 번역 요청 & 상태 폴링
 export const requestTranslation = (documentId, version, translations) => {
   return api.post(
     `/api/documents/${documentId}/versions/${version}/translate`,

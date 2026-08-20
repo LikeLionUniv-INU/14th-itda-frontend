@@ -9,7 +9,6 @@ import robot from "../assets/image/robot.svg";
 import people from "../assets/image/people.svg";
 import manage from "../assets/image/manage.svg";
 
-// 국가 옵션 리스트 (ISO-2 국가 코드)
 const COUNTRY_OPTIONS = [
   { code: "KR", label: "대한민국" },
   { code: "US", label: "미국" },
@@ -40,13 +39,11 @@ const Signup = ({ onNavigateToLogin }) => {
   const [passwordError, setPasswordError] = useState("");
   const [confirmError, setConfirmError] = useState("");
 
-  // 유효성 검사 함수들
   const isEnglishOnly = (text) => /^[A-Za-z]+$/.test(text);
   const validateEmail = (text) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text);
   const validatePassword = (text) =>
     /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/.test(text);
 
-  // 이름 검증
   const handleFirstNameBlur = () => {
     if (firstName && !isEnglishOnly(firstName)) {
       setFirstNameError("영어 이름으로 작성해주세요.");
@@ -63,7 +60,6 @@ const Signup = ({ onNavigateToLogin }) => {
     }
   };
 
-  // 이메일 검증
   const handleEmailBlur = () => {
     if (email && !validateEmail(email)) {
       setEmailError("올바른 이메일 형식이 아닙니다.");
@@ -72,7 +68,6 @@ const Signup = ({ onNavigateToLogin }) => {
     }
   };
 
-  // 비밀번호 검증 (8~16자 영문, 숫자 조합)
   const handlePasswordBlur = () => {
     if (password && !validatePassword(password)) {
       setPasswordError("8~16자의 영문, 숫자 조합으로 입력해주세요.");
@@ -81,7 +76,6 @@ const Signup = ({ onNavigateToLogin }) => {
     }
   };
 
-  // 비밀번호 확인 검증
   const handleConfirmBlur = () => {
     if (passwordConfirm && password !== passwordConfirm) {
       setConfirmError("비밀번호가 일치하지 않습니다.");
@@ -90,7 +84,6 @@ const Signup = ({ onNavigateToLogin }) => {
     }
   };
 
-  // 회원가입 버튼 활성화 조건
   const isFormValid =
     firstName.trim() !== "" &&
     lastName.trim() !== "" &&
@@ -105,7 +98,6 @@ const Signup = ({ onNavigateToLogin }) => {
     validatePassword(password) &&
     password === passwordConfirm;
 
-  // 회원가입 제출 함수 (API 연동)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
@@ -126,7 +118,6 @@ const Signup = ({ onNavigateToLogin }) => {
           "회원가입이 완료되었습니다!",
       );
 
-      // 성공 시 로그인 페이지로 이동
       if (onNavigateToLogin) {
         onNavigateToLogin();
       } else {
@@ -145,64 +136,64 @@ const Signup = ({ onNavigateToLogin }) => {
     <S.Container>
       <S.MainWrapper>
         <S.LeftSection>
-                  <S.MainTitle>
-                    언어의 경계를 넘어
-                    <br />
-                    모두의 이해를 잇다
-                    <br />
-                    <span>하나의 협업으로</span>
-                  </S.MainTitle>
-                  <S.SubDescription>
-                    하나의 문서만 작성하세요.
-                    <br />
-                    변경사항은 자동으로 동기화되고,
-                    <br />
-                    글로벌 팀은 언제나 같은 내용을 이해합니다.
-                  </S.SubDescription>
-        
-                  <S.FeatureList>
-                    <S.FeatureItem>
-                      <S.FeatureIconBox>
-                        <img src={globe} />
-                      </S.FeatureIconBox>
-                      <S.FeatureText>
-                        <strong>글로벌 협업</strong>
-                        <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
-                      </S.FeatureText>
-                    </S.FeatureItem>
-                    <S.FeatureItem>
-                      <S.FeatureIconBox>
-                        <img src={robot} />
-                      </S.FeatureIconBox>
-                      <S.FeatureText>
-                        <strong>AI 자동 동기화</strong>
-                        <span>
-                          수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
-                          유지합니다.
-                        </span>
-                      </S.FeatureText>
-                    </S.FeatureItem>
-                    <S.FeatureItem>
-                      <S.FeatureIconBox>
-                        <img src={people} />
-                      </S.FeatureIconBox>
-                      <S.FeatureText>
-                        <strong>팀 협업</strong>
-                        <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
-                      </S.FeatureText>
-                    </S.FeatureItem>
-                    <S.FeatureItem>
-                      <S.FeatureIconBox>
-                        <img src={manage} />
-                      </S.FeatureIconBox>
-                      <S.FeatureText>
-                        <strong>버전 관리</strong>
-                        <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
-                      </S.FeatureText>
-                    </S.FeatureItem>
-                  </S.FeatureList>
-                  <S.MapGraphic />
-                </S.LeftSection>
+          <S.MainTitle>
+            언어의 경계를 넘어
+            <br />
+            모두의 이해를 잇다
+            <br />
+            <span>하나의 협업으로</span>
+          </S.MainTitle>
+          <S.SubDescription>
+            하나의 문서만 작성하세요.
+            <br />
+            변경사항은 자동으로 동기화되고,
+            <br />
+            글로벌 팀은 언제나 같은 내용을 이해합니다.
+          </S.SubDescription>
+
+          <S.FeatureList>
+            <S.FeatureItem>
+              <S.FeatureIconBox>
+                <img src={globe} />
+              </S.FeatureIconBox>
+              <S.FeatureText>
+                <strong>글로벌 협업</strong>
+                <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox>
+                <img src={robot} />
+              </S.FeatureIconBox>
+              <S.FeatureText>
+                <strong>AI 자동 동기화</strong>
+                <span>
+                  수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
+                  유지합니다.
+                </span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox>
+                <img src={people} />
+              </S.FeatureIconBox>
+              <S.FeatureText>
+                <strong>팀 협업</strong>
+                <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+            <S.FeatureItem>
+              <S.FeatureIconBox>
+                <img src={manage} />
+              </S.FeatureIconBox>
+              <S.FeatureText>
+                <strong>버전 관리</strong>
+                <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
+              </S.FeatureText>
+            </S.FeatureItem>
+          </S.FeatureList>
+          <S.MapGraphic />
+        </S.LeftSection>
 
         <S.RightSection>
           <S.Card>

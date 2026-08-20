@@ -115,7 +115,6 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
 
   const rawDocs = projectInfo.documents || projectInfo.docs || [];
 
-  // 최신순(내림차순) 정렬
   const docs = [...rawDocs].sort((a, b) => {
     const aId = a.id || a.documentId;
     const bId = b.id || b.documentId;

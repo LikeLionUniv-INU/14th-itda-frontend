@@ -10,7 +10,6 @@ import {
 import * as S from "./Translation.styles";
 import { getTranslationStatus } from "../api/documentApi";
 
-// 국가/언어 국기 이미지 및 명칭 매핑
 const LANG_META = {
   ko: { name: "한국어", flag: "https://flagcdn.com/w160/kr.png" },
   en: { name: "영어", flag: "https://flagcdn.com/w160/us.png" },
@@ -23,7 +22,6 @@ const LANG_META = {
   id: { name: "인도네시아어", flag: "https://flagcdn.com/w160/id.png" },
 };
 
-// 백엔드 명세서 상태값 정규화 (PENDING, IN_PROGRESS, COMPLETED, FAILED)
 const normalizeStatus = (statusStr) => {
   if (!statusStr) return "WAITING";
   const s = String(statusStr).toUpperCase().trim();
@@ -35,7 +33,6 @@ const normalizeStatus = (statusStr) => {
   return "WAITING";
 };
 
-// 언어 코드 정규화
 const normalizeCode = (codeStr) => {
   if (!codeStr) return "ko";
   const c = String(codeStr).toLowerCase().trim();
@@ -105,7 +102,6 @@ export default function Translation() {
 
       if (!resData) return;
 
-      // 1. 🔥 FAILED(실패) 상태 감지 시 즉시 처리
       if (resData.status === "FAILED" || resData.status === "FAIL") {
         if (pollingRef.current) clearInterval(pollingRef.current);
         setErrorMessage(
@@ -119,7 +115,6 @@ export default function Translation() {
         return;
       }
 
-      // 2. 언어 목록 파싱
       const rawList =
         resData?.languages ||
         resData?.translationStatuses ||

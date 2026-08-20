@@ -147,7 +147,6 @@ export const StatusBadge = styled.div`
   font-weight: 600;
   margin-bottom: 14px;
 
-  /* 완료 상태: 연두색 */
   ${(props) =>
     props.$status === "COMPLETED" &&
     `
@@ -155,7 +154,6 @@ export const StatusBadge = styled.div`
     color: #1CA74B;
   `}
 
-  /* 번역 중 상태: 연보라색 */
   ${(props) =>
     props.$status === "IN_PROGRESS" &&
     `
@@ -163,7 +161,6 @@ export const StatusBadge = styled.div`
     color: #5243E9;
   `}
 
-  /* 대기 중 상태: 연분홍색 */
   ${(props) =>
     props.$status === "WAITING" &&
     `
@@ -201,10 +198,9 @@ export const TriangleButton = styled.button`
   }
 `;
 
-/* 하단 완료 토스트 알림바 (너비 및 레이아웃 피그마 완벽 일치) */
 export const ToastMessage = styled.div`
   width: 100%;
-  max-width: 692px; /* 언어 카드 3개 + 좌우 화살표 패딩 폭과 맞춤 */
+  max-width: 692px;
   box-sizing: border-box;
   background-color: #f2fbf4;
   border: 1px solid #d4f2dc;

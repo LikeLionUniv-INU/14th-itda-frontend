@@ -7,14 +7,13 @@ export default function BaseModal({
   width = "auto",
   children,
 }) {
-  // ESC 키 누르면 닫히는 공통 기능
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden"; // 배경 스크롤 방지
+      document.body.style.overflow = "hidden";
     }
     return () => {
       window.removeEventListener("keydown", handleKeyDown);

@@ -63,17 +63,14 @@ const Login = () => {
 
     if (!valid) return;
 
-    // 에러 상태 초기화
     setPasswordError("");
     setEmailError("");
     setIsLoading(true);
 
     try {
-      // 1. 로그인 API 호출
       const response = await loginApi(email, password);
       const resData = response?.data || response;
 
-      // 2. 토큰 추출 (다양한 백엔드 응답 구조 방어)
       const accessToken =
         resData?.accessToken ||
         resData?.token ||
@@ -88,7 +85,6 @@ const Login = () => {
           localStorage.setItem("refreshToken", refreshToken);
         }
 
-        // 사용자 언어 저장 (번역 문서 조회용)
         clearUserLangCache();
         try {
           const meRes = await api.get("/api/users/me");
@@ -99,11 +95,10 @@ const Login = () => {
         } catch (_) {}
       }
 
-      // 3. 메인 홈 화면으로 이동
       navigate("/home");
     } catch (error) {
       console.error("로그인 에러:", error);
-      // 4. 백엔드 에러 응답 처리
+
       const status = error.response?.status;
       const message = error.response?.data?.message || error.message;
 

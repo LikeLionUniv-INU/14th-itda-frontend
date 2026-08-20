@@ -57,7 +57,6 @@ export default function EditSummaryModal({
           이번 수정에서 반영한 내용을 정리하고 버전을 등록합니다.
         </S.SubTitle>
 
-        {/* 1. 버전 정보 입력 */}
         <S.FormGroup>
           <S.Label>
             버전 정보 <span className="guide-text">(필수)</span>
@@ -72,7 +71,6 @@ export default function EditSummaryModal({
           {versionError && <S.ErrorText>{versionError}</S.ErrorText>}
         </S.FormGroup>
 
-        {/* 2. 변경사항 설명 */}
         <S.FormGroup>
           <S.Label>
             변경사항 설명 <span className="guide-text">(선택)</span>
@@ -88,7 +86,6 @@ export default function EditSummaryModal({
           </S.TextareaWrapper>
         </S.FormGroup>
 
-        {/* 3. 변경사항 항목 (845 x 222 규격 전용 테이블) */}
         <S.TableSection>
           <S.TableTitle>
             변경사항 항목 <span>({summaryList.length})</span>
@@ -129,7 +126,6 @@ export default function EditSummaryModal({
           </S.TableContainer>
         </S.TableSection>
 
-        {/* 4. 하단 버튼 영역 */}
         <S.ButtonGroup>
           <S.CancelButton onClick={handleCloseAll}>취소</S.CancelButton>
           <S.SubmitButton onClick={handleSubmit} disabled={!isFormValid}>

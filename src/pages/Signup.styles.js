@@ -1,5 +1,5 @@
 import styled, { createGlobalStyle } from "styled-components";
-import DocBridge로고 from "../assets/image/DocBridge로고.svg";
+import DocBridge from "../assets/image/DocBridge.svg";
 import map from "../assets/image/map.svg";
 
 export const GlobalStyle = createGlobalStyle`
@@ -101,7 +101,7 @@ export const FeatureIconBox = styled.div`
   position: relative;
 
   img {
-    width: 30px; 
+    width: 30px;
     height: 30px;
     object-fit: contain;
   }
@@ -156,7 +156,7 @@ export const Card = styled.div`
 `;
 
 export const Logo = styled.div`
-  background-image: url(${DocBridge로고});
+  background-image: url(${DocBridge});
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

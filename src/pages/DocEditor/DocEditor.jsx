@@ -160,10 +160,8 @@ export default function DocEditorPage() {
             : formatCurrentTime(),
         );
       }
-      alert("임시저장되었습니다.");
     } catch (e) {
       console.error("임시저장 실패:", e);
-      alert(e.message || "임시저장 실패");
     }
   };
 
@@ -211,7 +209,6 @@ export default function DocEditorPage() {
         }
       }
 
-      // 🔥 Step 1 명세서 매핑: 한국어(ko)는 제외하고 실제 번역 대상만 추출
       const validMembers = Array.isArray(selectedMembers)
         ? selectedMembers.filter((m) => m.checked !== false)
         : [];
@@ -229,7 +226,6 @@ export default function DocEditorPage() {
 
       setModalState({ isOpen: false, step: "exit" });
 
-      // 🔥 번역 요청 후 발급된 진짜 jobId를 전달
       if (currentDocId && translations.length > 0) {
         const transRes = await requestTranslation(
           currentDocId,

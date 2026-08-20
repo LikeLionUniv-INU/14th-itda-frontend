@@ -9,7 +9,6 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef([]);
 
-  // 모달 오픈 시 첫 번째 칸으로 포커스
   useEffect(() => {
     if (isOpen) {
       setCode(["", "", "", "", "", ""]);
@@ -22,12 +21,10 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
     }
   }, [isOpen]);
 
-  // 입력 처리 (덮어쓰기 및 자동 다음 칸 이동)
   const handleInputChange = (e, index) => {
     const rawValue = e.target.value;
     const value = rawValue.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-    // 마지막으로 입력한 한 글자만 유지
     const char = value.slice(-1);
 
     const newCode = [...code];
@@ -35,17 +32,14 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
     setCode(newCode);
     setErrorMessage("");
 
-    // 글자가 입력되었고 마지막 칸이 아니면 다음 칸으로 포커스 이동
     if (char && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  // 백스페이스 뒤로가기 처리
   const handleKeyDown = (e, index) => {
     if (e.key === "Backspace") {
       if (!code[index] && index > 0) {
-        // 현재 칸이 비어있으면 이전 칸으로 이동하고 지움
         inputRefs.current[index - 1]?.focus();
         const newCode = [...code];
         newCode[index - 1] = "";
@@ -58,7 +52,6 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // 붙여넣기 (6자리 코드 일괄 입력)
   const handlePaste = (e) => {
     e.preventDefault();
     const pasteData = e.clipboardData
@@ -80,7 +73,6 @@ function JoinProjectModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // 팀 참여 API 연동
   const handleJoinSubmit = async (e) => {
     e?.preventDefault();
     const inviteCode = code.join("");

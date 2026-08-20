@@ -1,7 +1,6 @@
 import styled, { createGlobalStyle } from "styled-components";
-import DocBridge로고 from "../assets/image/DocBridge로고.svg";
+import DocBridge from "../assets/image/DocBridge.svg";
 import map from "../assets/image/map.svg";
-
 
 export const GlobalStyle = createGlobalStyle`
   *, *::before, *::after {
@@ -48,7 +47,6 @@ export const ContentWrapper = styled.div`
   flex-direction: column;
 `;
 
-// LeftSection: 위쪽으로 정렬되도록 align-self 및 높이 조정
 export const LeftSection = styled.div`
   flex: 1;
   padding: 0 10px 0 60px;
@@ -103,7 +101,7 @@ export const FeatureIconBox = styled.div`
   position: relative;
 
   img {
-    width: 30px; 
+    width: 30px;
     height: 30px;
     object-fit: contain;
   }
@@ -162,7 +160,7 @@ export const Card = styled.div`
 `;
 
 export const Logo = styled.div`
-  background-image: url(${DocBridge로고});
+  background-image: url(${DocBridge});
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

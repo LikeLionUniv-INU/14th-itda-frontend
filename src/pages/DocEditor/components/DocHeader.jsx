@@ -23,7 +23,6 @@ export default function DocHeader({
   };
 
   const renderTitle = () => {
-    // docName에 이미 _Version.X 또는 _versionX 가 포함되어 있다면 제거하여 중복 방지
     const cleanName =
       String(docName)
         .replace(/_?[Vv]ersion\.?\d+/gi, "")
@@ -40,7 +39,6 @@ export default function DocHeader({
 
   return (
     <S.HeaderContainer>
-      {/* 1. 좌측: 뒤로가기 + 타이틀 */}
       <S.LeftArea onClick={handleBack} style={{ cursor: "pointer" }}>
         <S.BackArrow viewBox="0 0 24 24" fill="none">
           <path
@@ -54,7 +52,6 @@ export default function DocHeader({
         <S.DocTitle>{renderTitle()}</S.DocTitle>
       </S.LeftArea>
 
-      {/* 2. 우측: 업데이트 시간 + 임시저장/저장 버튼 / 버전 뱃지 */}
       <S.RightArea>
         {/* compare (버전 비교 모드) */}
         {mode === "compare" && (
@@ -80,12 +77,10 @@ export default function DocHeader({
           </>
         )}
 
-        {/* view (버전 1 단일 조회 모드: 버튼 없이 업데이트 시간만 노출) */}
         {mode === "view" && updatedAt && (
           <S.UpdateText>업데이트 : {updatedAt}</S.UpdateText>
         )}
 
-        {/* create / edit (작성 및 수정 모드: 임시저장/저장 버튼 노출) */}
         {(mode === "create" || mode === "edit") && (
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             {updatedAt && (
