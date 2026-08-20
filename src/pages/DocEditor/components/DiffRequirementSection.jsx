@@ -59,6 +59,7 @@ export default function DiffRequirementSection({
             currentList.map((row) => {
               const isFocused = focusedPinId === row.id;
 
+              // 수정사항 (2단 Diff: 위 빨강, 아래 초록)
               if (row.type === "modified") {
                 return (
                   <S.ModifiedRowContainer
@@ -72,18 +73,18 @@ export default function DiffRequirementSection({
                     <S.RightContentWrapper>
                       <S.SubRow bgColor="#FFEAEA" isFirst>
                         <S.ColItemCell textColor="#FF0000">
-                          {row.prevItem}
+                          {row.prevItem || "-"}
                         </S.ColItemCell>
                         <S.ColDetailCell textColor="#FF0000">
-                          {row.prevDetail}
+                          {row.prevDetail || "-"}
                         </S.ColDetailCell>
                       </S.SubRow>
                       <S.SubRow bgColor="#EFFFE9">
                         <S.ColItemCell textColor="#1D6621">
-                          {row.currItem}
+                          {row.currItem || "-"}
                         </S.ColItemCell>
                         <S.ColDetailCell textColor="#1D6621">
-                          {row.currDetail}
+                          {row.currDetail || "-"}
                         </S.ColDetailCell>
                       </S.SubRow>
                     </S.RightContentWrapper>
@@ -91,6 +92,7 @@ export default function DiffRequirementSection({
                 );
               }
 
+              // 추가사항 (하늘색 배경) or 일반 항목
               const isAdded = row.type === "added";
               return (
                 <S.StandardRow
@@ -102,8 +104,12 @@ export default function DiffRequirementSection({
                   <S.ColNoCell>
                     <S.PinBadge>{row.number}</S.PinBadge>
                   </S.ColNoCell>
-                  <S.ColItemCell>{row.currItem}</S.ColItemCell>
-                  <S.ColDetailCell>{row.currDetail}</S.ColDetailCell>
+                  <S.ColItemCell textColor={isAdded ? "#0066CC" : "#000000"}>
+                    {row.currItem || "-"}
+                  </S.ColItemCell>
+                  <S.ColDetailCell textColor={isAdded ? "#0066CC" : "#000000"}>
+                    {row.currDetail || "-"}
+                  </S.ColDetailCell>
                 </S.StandardRow>
               );
             })

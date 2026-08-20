@@ -6,6 +6,7 @@ import Test from "./pages/Test";
 import DocEditor from "./pages/DocEditor/DocEditor";
 import DocEdit from "./pages/DocEditor/DocEdit";
 import DocCompare from "./pages/DocEditor/DocCompare";
+import DocView from "./pages/DocEditor/DocView";
 import MainHome from "./pages/mainpage/MainHome";
 import MainProject from "./pages/mainpage/MainProject";
 import MainDoc from "./pages/mainpage/MainDoc";
@@ -32,12 +33,16 @@ function App() {
         <Route path="/trans" element={<Translation />} />
         <Route path="/test" element={<Test />} />
 
-        {/* 문서 작성 / 수정 / 비교 (파라미터 연동 지원) */}
+        {/* 문서 작성 / 수정 / 비교 / 1버전 조회 */}
         <Route path="/doc-create" element={<DocEditor />} />
         <Route path="/doc-edit" element={<DocEdit />} />
         <Route path="/doc-edit/:docId" element={<DocEdit />} />
         <Route path="/doc-compare" element={<DocCompare />} />
         <Route path="/doc-compare/:docId" element={<DocCompare />} />
+
+        {/* 👇 Version 1 전용 조회 라우트 추가 */}
+        <Route path="/doc-view" element={<DocView />} />
+        <Route path="/doc-view/:docId" element={<DocView />} />
 
         {/* 팀 프로젝트 (파라미터 연동 지원) */}
         <Route path="/teamp/:teamId" element={<TeamProject />} />

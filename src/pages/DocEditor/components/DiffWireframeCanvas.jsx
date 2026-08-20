@@ -23,7 +23,7 @@ export default function DiffWireframeCanvas({
       <S.CanvasWrapper>
         {isImageModified ? (
           <S.DualContainer device={device}>
-            {/* 변경 전 */}
+            {/* 변경 전 (빨간 테두리 + 회색 핀) */}
             <S.FrameBox isPrev device={device}>
               <S.ScrollArea>
                 {prevImageUrl ? (
@@ -44,14 +44,12 @@ export default function DiffWireframeCanvas({
                     ))}
                   </S.ImageWrapper>
                 ) : (
-                  <S.EmptyText>
-                    변경 전 와이어프레임 이미지가 없습니다.
-                  </S.EmptyText>
+                  <S.EmptyText>변경 전 이미지가 없습니다.</S.EmptyText>
                 )}
               </S.ScrollArea>
             </S.FrameBox>
 
-            {/* 중앙 교체 아이콘 */}
+            {/* 중앙 스왑 아이콘 */}
             <S.SwapIconBadge>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path
@@ -64,7 +62,7 @@ export default function DiffWireframeCanvas({
               </svg>
             </S.SwapIconBadge>
 
-            {/* 변경 후 */}
+            {/* 변경 후 (초록 테두리 + 보라 핀) */}
             <S.FrameBox isCurr device={device}>
               <S.ScrollArea>
                 {currImageUrl ? (
@@ -87,14 +85,13 @@ export default function DiffWireframeCanvas({
                     ))}
                   </S.ImageWrapper>
                 ) : (
-                  <S.EmptyText>
-                    변경 후 와이어프레임 이미지가 없습니다.
-                  </S.EmptyText>
+                  <S.EmptyText>변경 후 이미지가 없습니다.</S.EmptyText>
                 )}
               </S.ScrollArea>
             </S.FrameBox>
           </S.DualContainer>
         ) : (
+          /* 단일 모드 */
           <S.SingleContainer device={device}>
             <S.ScrollArea>
               {currImageUrl ? (

@@ -8,6 +8,7 @@ import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
 import EditSummaryModal from "../../components/Modal/EditSummaryModal";
 import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import api from "../../api/axios";
 import {
   getDocumentDetail,
   getDocumentChanges,
@@ -87,7 +88,6 @@ export default function DocEditPage() {
       const data = res?.data?.data || res?.data || res;
       if (!data) return;
 
-      // 백엔드 응답에서 teamId 추출 및 복구
       const fetchedTeamId =
         data.teamId ||
         data.teamProjectId ||
@@ -125,23 +125,30 @@ export default function DocEditPage() {
             백엔드: [],
             디자인: [],
           };
+
           const pins = (p.pins || []).map((pin) => {
-            (pin.requirements || []).forEach((r) => {
-              const tab = r.tabType || "공통";
-              if (reqMap[tab]) {
-                reqMap[tab].push({
-                  id: pin.id || pin.pinNumber,
-                  reqId: r.id,
-                  number: pin.pinNumber,
-                  item: r.itemName || "",
-                  detail: r.content || "",
-                  isRequired: r.isRequired || false,
-                });
-              }
+            const pinId = pin.id || pin.pinNumber;
+            const pinNum = pin.pinNumber;
+
+            // 5개 모든 직무 탭에 대해 해당 핀의 요구사항 입력 슬롯 보장
+            INITIAL_ROLES.forEach((role) => {
+              const foundReq = (pin.requirements || []).find(
+                (r) => (r.tabType || "공통") === role,
+              );
+
+              reqMap[role].push({
+                id: pinId,
+                reqId: foundReq?.id || null,
+                number: pinNum,
+                item: foundReq?.itemName || "",
+                detail: foundReq?.content || "",
+                isRequired: foundReq?.isRequired || false,
+              });
             });
+
             return {
-              id: pin.id || pin.pinNumber,
-              number: pin.pinNumber,
+              id: pinId,
+              number: pinNum,
               x: Number(pin.xCoordinate) || 0,
               y: Number(pin.yCoordinate) || 0,
             };
@@ -199,10 +206,14 @@ export default function DocEditPage() {
     fetchDoc();
   }, [fetchDoc]);
 
+  // 페이지/핀 ID가 서버 발급 ID일 경우 유지하여 전송 (페이지 재생성 및 이미지 삭제 방지)
   const buildSavePayload = (summaryText) => ({
     status: "IN_PROGRESS",
     changeSummary: summaryText || "",
     pages: pages.map((p, idx) => ({
+      ...(p.pageId && typeof p.pageId === "number" && p.pageId < 1000000000000
+        ? { id: p.pageId }
+        : {}),
       pageNumber: idx + 1,
       screenName: p.screenName || "",
       screenId: p.screenId || "",
@@ -214,6 +225,7 @@ export default function DocEditPage() {
           );
           if (found && (found.item || found.detail)) {
             pinReqs.push({
+              ...(found.reqId ? { id: found.reqId } : {}),
               tabType: role,
               itemName: found.item || "",
               content: found.detail || "",
@@ -222,6 +234,9 @@ export default function DocEditPage() {
           }
         });
         return {
+          ...(pin.id && typeof pin.id === "number" && pin.id < 1000000000000
+            ? { id: pin.id }
+            : {}),
           pinNumber: pin.number,
           tabType: "공통",
           xCoordinate: Number(pin.x) || 0.0,
@@ -276,7 +291,7 @@ export default function DocEditPage() {
         buildSavePayload(newVersionInfo.description || "문서 수정 저장"),
       );
 
-      // 수정 후 발급된 페이지 ID로 대기 중인 파일 업로드
+      // 발급된 새 버전 페이지 목록 조회 및 이미지 안전 복원
       try {
         const detailRes = await getDocumentDetail(docId, targetVersion);
         const detailData = detailRes?.data?.data || detailRes?.data || {};
@@ -284,14 +299,40 @@ export default function DocEditPage() {
 
         for (let i = 0; i < serverPages.length; i++) {
           const sPage = serverPages[i];
-          const file = pendingFilesRef.current[i];
+          const newFile = pendingFilesRef.current[i];
+          const prevImgUrl = pages[i]?.imageUrl;
           const dev = pages[i]?.device || "desktop";
-          if (sPage?.id && file) {
-            await uploadWireframePipeline(sPage.id, file, dev);
+
+          if (!sPage?.id) continue;
+
+          // 1. 이번에 새 이미지를 선택한 경우 -> MinIO 업로드 파이프라인
+          if (newFile) {
+            await uploadWireframePipeline(sPage.id, newFile, dev);
+          }
+          // 2. 이미지를 바꾸지 않았는데 새 버전 페이지에 이미지가 비어있는 경우 -> 기존 이미지 메타데이터 등록
+          else if (
+            prevImgUrl &&
+            (!sPage.wireframeImages || sPage.wireframeImages.length === 0)
+          ) {
+            try {
+              await api.post(`/api/pages/${sPage.id}/wireframe-images`, {
+                imageType: "WIREFRAME",
+                imageUrl: prevImgUrl,
+                originalWidth: dev === "mobile" ? 214 : 660,
+                originalHeight: dev === "mobile" ? 463 : 371,
+                displayWidth: dev === "mobile" ? 214 : 660,
+                displayHeight: dev === "mobile" ? 463 : 371,
+              });
+            } catch (copyErr) {
+              console.warn(
+                `페이지 ${sPage.id} 이미지 메타 복사 실패:`,
+                copyErr,
+              );
+            }
           }
         }
       } catch (imgErr) {
-        console.error("수정 이미지 업로드 실패:", imgErr);
+        console.error("수정 이미지 업로드 및 복원 실패:", imgErr);
       }
 
       const translations = (selectedMembers || [])

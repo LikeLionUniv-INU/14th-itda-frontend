@@ -84,6 +84,7 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
             <S.SubTitle>생성할 문서의 유형을 선택하세요.</S.SubTitle>
 
             <S.OptionList>
+              {/* 스토리보드 (활성화) */}
               <S.OptionCard
                 active
                 onClick={() => handleSelectType("스토리보드")}
@@ -98,20 +99,19 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.ArrowIcon>❯</S.ArrowIcon>
               </S.OptionCard>
 
-              <S.OptionCard
-                active
-                onClick={() => handleSelectType("기능 명세서")}
-              >
+              {/* 기능 명세서 (추후 업데이트 처리) */}
+              <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
-                  <S.CardTitle active>기능 명세서</S.CardTitle>
+                  <S.CardTitle>기능 명세서</S.CardTitle>
                   <S.CardDesc>
                     서비스의 기능과 요구사항을 정리합니다.
                   </S.CardDesc>
                 </S.CardContent>
-                <S.ArrowIcon>❯</S.ArrowIcon>
+                <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
+              {/* 화면 설계서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -121,6 +121,7 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
+              {/* API 명세서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -130,6 +131,7 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
                 <S.DisabledBadge>추후 업데이트</S.DisabledBadge>
               </S.OptionCard>
 
+              {/* 서비스 소개서 */}
               <S.OptionCard>
                 <S.CardIconBox />
                 <S.CardContent>
@@ -220,7 +222,6 @@ function CreateDocumentModal({ isOpen, onClose, onSuccess }) {
               </S.SummaryRow>
             </S.SummaryBox>
 
-            {/* 완료 클릭 시 handleComplete 호출 */}
             <S.CompleteButton onClick={handleComplete}>완료</S.CompleteButton>
           </S.CenterContainer>
         )}
