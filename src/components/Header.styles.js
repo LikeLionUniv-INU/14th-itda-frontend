@@ -133,3 +133,15 @@ export const Avatar = styled.div`
   justify-content: center;
   font-weight: bold;
 `;
+
+// 로그아웃 버튼
+export const LogoutButton = styled.button`
+  background: #dcdcdc;
+  color: #ffffff;
+  border: 1px solid #dcdcdc;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+`;

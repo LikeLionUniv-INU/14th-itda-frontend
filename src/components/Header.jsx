@@ -38,6 +38,17 @@ export default function Header({
     navigate("/home");
   };
 
+  // 로그아웃 핸들러 (토큰 삭제 및 로그인 페이지로 이동)
+  const handleLogout = () => {
+    
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userName");
+    
+    // 로그인으로 이동
+    navigate("/");
+  };
+
   // 프로젝트 생성 버튼 클릭 시
   const handleOpenCreate = () => {
     setIsCreateOpen(true);
@@ -62,11 +73,9 @@ export default function Header({
     if (onRefresh) {
       onRefresh();
     } else if (result?.teamId || result?.projectId) {
-      // 생성/참여한 프로젝트 ID가 오면 해당 팀 프로젝트 페이지로 바로 이동
       const id = result.teamId || result.projectId;
       navigate(`/project/${id}`);
     } else {
-      // 그 외의 경우 페이지 새로고침으로 목록 갱신
       window.location.reload();
     }
   };
@@ -105,6 +114,10 @@ export default function Header({
                 <S.ProjectEnterButton onClick={handleOpenJoin}>
                   프로젝트 입장
                 </S.ProjectEnterButton>
+                
+                {/* 추가된 로그아웃 버튼 */}
+                <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+
                 <S.Avatar title={userName}>{displayInitial}</S.Avatar>
               </>
             )}
