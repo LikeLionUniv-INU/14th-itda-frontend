@@ -84,6 +84,7 @@ export default function DocEditorPage() {
     }
   };
 
+  // 🔥 device 필드를 포함하여 백엔드로 전달
   const buildSavePayload = (summaryText = "최초 작성 저장") => ({
     status: "IN_PROGRESS",
     changeSummary: summaryText,
@@ -91,6 +92,7 @@ export default function DocEditorPage() {
       pageNumber: idx + 1,
       screenName: p.screenName || "",
       screenId: p.screenId || "",
+      device: p.device || "desktop",
       pins: (p.pins || []).map((pin) => {
         const pinReqs = [];
         INITIAL_ROLES.forEach((role) => {
@@ -171,7 +173,7 @@ export default function DocEditorPage() {
         if (currentDocId) setDocId(currentDocId);
       }
 
-      // 2. 전체 페이지 저장 (PUT) -> 서버가 실제 pageId 발급
+      // 2. 전체 페이지 저장 (PUT)
       if (currentDocId) {
         await saveDocument(
           currentDocId,
@@ -179,7 +181,7 @@ export default function DocEditorPage() {
           buildSavePayload("최초 작성 저장"),
         );
 
-        // 3. 서버가 발급한 실제 pageId로 이미지 업로드 파이프라인 수행
+        // 3. 서버가 발급한 실제 pageId로 이미지 업로드
         try {
           const detailRes = await getDocumentDetail(currentDocId, docVersion);
           const detailData = detailRes?.data?.data || detailRes?.data || {};
@@ -198,16 +200,23 @@ export default function DocEditorPage() {
         }
       }
 
-      // 4. 번역 요청
-      const translations = (selectedMembers || [])
-        .filter((m) => m.checked)
+      // 4. 번역 대상 필터링 및 명세서 규격 포맷팅
+      const validMembers = Array.isArray(selectedMembers)
+        ? selectedMembers.filter((m) => m.checked !== false)
+        : [];
+
+      const translations = validMembers
         .map((m) => ({
-          userId: m.id,
-          targetLanguage: m.language,
-        }));
+          userId: Number(m.userId || m.id),
+          targetLanguage: String(m.targetLanguage || m.language || "en")
+            .toLowerCase()
+            .trim(),
+        }))
+        .filter((t) => t.userId && !isNaN(t.userId));
 
       setModalState({ isOpen: false, step: "exit" });
 
+      // 5. 번역 요청 및 /trans 이동
       if (currentDocId && translations.length > 0) {
         const transRes = await requestTranslation(
           currentDocId,
@@ -216,24 +225,31 @@ export default function DocEditorPage() {
         );
         const transData =
           transRes?.data?.data || transRes?.data || transRes || {};
-        const jobId = transData.jobId || transData.id || currentDocId;
+        const jobId = transData.jobId || transData.id;
 
-        navigate("/trans", {
-          state: {
-            jobId,
-            teamId,
-            docId: currentDocId,
-            version: docVersion,
-            docName,
-          },
-        });
-      } else {
-        alert("문서가 성공적으로 저장되었습니다!");
-        navigate(teamId ? `/teamp/${teamId}` : "/home");
+        if (jobId) {
+          navigate("/trans", {
+            state: {
+              jobId,
+              teamId,
+              docId: currentDocId,
+              version: docVersion,
+              docName,
+            },
+          });
+          return;
+        }
       }
+
+      alert("문서가 성공적으로 저장되었습니다!");
+      navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
     } catch (e) {
       console.error("저장 및 번역 실패:", e);
-      alert(e.message || "저장 또는 번역 요청에 실패했습니다.");
+      alert(
+        e.response?.data?.message ||
+          e.message ||
+          "저장 또는 번역 요청에 실패했습니다.",
+      );
     }
   };
 

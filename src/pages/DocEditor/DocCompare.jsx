@@ -225,7 +225,7 @@ export default function DocComparePage() {
           const currScreenName = p.screenName || "";
           const currScreenId = p.screenId || "";
 
-          // 와이어프레임 이미지 변경 여부 판별 (changes에 이미지 변경 내역이 있을 때만 듀얼 뷰 활성화)
+          // 와이어프레임 이미지 변경 여부 판별 (changes에 이미지 변경 내역이 명확히 있을 때만 듀얼 뷰 활성화)
           const imgChange = pageChanges.find((ch) =>
             ["IMAGE_MODIFIED", "IMAGE_ADDED", "IMAGE_DELETED"].includes(
               ch.changeType,
@@ -279,7 +279,7 @@ export default function DocComparePage() {
             };
           });
 
-          // 직무별 요구사항 Diff 구성 (3색 분기 정확 매칭)
+          // 직무별 요구사항 Diff 구성
           const requirements = {
             공통: [],
             기획: [],
@@ -337,7 +337,6 @@ export default function DocComparePage() {
               let prevItem = "";
               let prevDetail = "";
 
-              // 1. 수정사항: 이전 버전과 내용이 다르거나 changeType이 MODIFIED인 경우
               if (
                 reqChange?.changeType === "REQUIREMENT_MODIFIED" ||
                 reqChange?.changeType === "ITEM_MODIFIED" ||
@@ -350,9 +349,7 @@ export default function DocComparePage() {
                   reqChange?.before?.itemName || prevReq?.itemName || "";
                 prevDetail =
                   reqChange?.before?.content || prevReq?.content || "";
-              }
-              // 2. 추가사항: 이전 버전에 없던 핀/요구사항이거나 changeType이 ADDED인 경우
-              else if (
+              } else if (
                 reqChange?.changeType === "REQUIREMENT_ADDED" ||
                 reqChange?.changeType === "PIN_ADDED" ||
                 reqChange?.changeType === "ITEM_ADDED" ||
@@ -377,6 +374,26 @@ export default function DocComparePage() {
             });
           });
 
+          // 🔥 디바이스 정보 정확 매핑 (모바일/데스크탑 판별)
+          const imgObj = p.wireframeImages?.[0] || {};
+          const prevImgObj = prevPage?.wireframeImages?.[0] || {};
+
+          let resolvedDevice = "desktop";
+          if (p.device) {
+            resolvedDevice = p.device.toLowerCase();
+          } else if (imgObj.device) {
+            resolvedDevice = imgObj.device.toLowerCase();
+          } else if (
+            imgObj.displayWidth === 214 ||
+            imgObj.originalWidth === 214
+          ) {
+            resolvedDevice = "mobile";
+          } else if (prevPage?.device) {
+            resolvedDevice = prevPage.device.toLowerCase();
+          } else if (prevImgObj.displayWidth === 214) {
+            resolvedDevice = "mobile";
+          }
+
           return {
             pageId: p.id || Date.now() + pIdx,
             pageNumber: p.pageNumber || pIdx + 1,
@@ -386,7 +403,7 @@ export default function DocComparePage() {
             currScreenName,
             currScreenId,
             isScreenInfoModified,
-            device: p.device || "desktop",
+            device: resolvedDevice,
             isImageModified,
             prevImageUrl,
             currImageUrl: currImageUrl || prevImageUrl,

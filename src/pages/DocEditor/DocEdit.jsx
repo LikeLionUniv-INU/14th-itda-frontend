@@ -8,7 +8,6 @@ import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
 import EditSummaryModal from "../../components/Modal/EditSummaryModal";
 import SaveFlowModals from "../../components/Modal/SaveFlowModals";
-import api from "../../api/axios";
 import {
   getDocumentDetail,
   getDocumentChanges,
@@ -130,7 +129,6 @@ export default function DocEditPage() {
             const pinId = pin.id || pin.pinNumber;
             const pinNum = pin.pinNumber;
 
-            // 5개 모든 직무 탭에 대해 해당 핀의 요구사항 입력 슬롯 보장
             INITIAL_ROLES.forEach((role) => {
               const foundReq = (pin.requirements || []).find(
                 (r) => (r.tabType || "공통") === role,
@@ -160,13 +158,21 @@ export default function DocEditPage() {
             p.imageUrl ||
             "";
 
+          // 🔥 서버에 저장된 디바이스/표시 너비 값 파싱
+          const serverDevice =
+            p.device ||
+            p.deviceType ||
+            (p.wireframeImages?.[0]?.displayWidth === 214
+              ? "mobile"
+              : "desktop");
+
           return {
             pageId: p.id,
             pageNumber: p.pageNumber || idx + 1,
             screenName: p.screenName || "",
             screenId: p.screenId || "",
             imageUrl: imgUrl,
-            device: "desktop",
+            device: serverDevice,
             pins,
             requirements: reqMap,
           };
@@ -206,7 +212,6 @@ export default function DocEditPage() {
     fetchDoc();
   }, [fetchDoc]);
 
-  // 페이지/핀 ID가 서버 발급 ID일 경우 유지하여 전송 (페이지 재생성 및 이미지 삭제 방지)
   const buildSavePayload = (summaryText) => ({
     status: "IN_PROGRESS",
     changeSummary: summaryText || "",
@@ -217,6 +222,7 @@ export default function DocEditPage() {
       pageNumber: idx + 1,
       screenName: p.screenName || "",
       screenId: p.screenId || "",
+      device: p.device || "desktop",
       pins: (p.pins || []).map((pin) => {
         const pinReqs = [];
         INITIAL_ROLES.forEach((role) => {
@@ -268,7 +274,7 @@ export default function DocEditPage() {
     }
   };
 
-  const handleFinalSaveWithTranslate = async (selectedMembers) => {
+  const handleFinalSaveWithTranslate = async (selectedMembers = []) => {
     try {
       let targetVersion = currentVersion;
       const willCreateNewVer =
@@ -291,7 +297,7 @@ export default function DocEditPage() {
         buildSavePayload(newVersionInfo.description || "문서 수정 저장"),
       );
 
-      // 발급된 새 버전 페이지 목록 조회 및 이미지 안전 복원
+      // 🔥 새 이미지 파일을 직접 업로드했을 때만 MinIO 업로드 파이프라인 수행 (사진 미변경 시 재호출 방지)
       try {
         const detailRes = await getDocumentDetail(docId, targetVersion);
         const detailData = detailRes?.data?.data || detailRes?.data || {};
@@ -300,47 +306,28 @@ export default function DocEditPage() {
         for (let i = 0; i < serverPages.length; i++) {
           const sPage = serverPages[i];
           const newFile = pendingFilesRef.current[i];
-          const prevImgUrl = pages[i]?.imageUrl;
           const dev = pages[i]?.device || "desktop";
 
-          if (!sPage?.id) continue;
-
-          // 1. 이번에 새 이미지를 선택한 경우 -> MinIO 업로드 파이프라인
-          if (newFile) {
+          if (sPage?.id && newFile) {
             await uploadWireframePipeline(sPage.id, newFile, dev);
-          }
-          // 2. 이미지를 바꾸지 않았는데 새 버전 페이지에 이미지가 비어있는 경우 -> 기존 이미지 메타데이터 등록
-          else if (
-            prevImgUrl &&
-            (!sPage.wireframeImages || sPage.wireframeImages.length === 0)
-          ) {
-            try {
-              await api.post(`/api/pages/${sPage.id}/wireframe-images`, {
-                imageType: "WIREFRAME",
-                imageUrl: prevImgUrl,
-                originalWidth: dev === "mobile" ? 214 : 660,
-                originalHeight: dev === "mobile" ? 463 : 371,
-                displayWidth: dev === "mobile" ? 214 : 660,
-                displayHeight: dev === "mobile" ? 463 : 371,
-              });
-            } catch (copyErr) {
-              console.warn(
-                `페이지 ${sPage.id} 이미지 메타 복사 실패:`,
-                copyErr,
-              );
-            }
           }
         }
       } catch (imgErr) {
-        console.error("수정 이미지 업로드 및 복원 실패:", imgErr);
+        console.error("새 이미지 업로드 중 오류:", imgErr);
       }
 
-      const translations = (selectedMembers || [])
-        .filter((m) => m.checked)
+      const validMembers = Array.isArray(selectedMembers)
+        ? selectedMembers.filter((m) => m.checked !== false)
+        : [];
+
+      const translations = validMembers
         .map((m) => ({
-          userId: m.id,
-          targetLanguage: m.language,
-        }));
+          userId: Number(m.userId || m.id),
+          targetLanguage: String(m.targetLanguage || m.language || "en")
+            .toLowerCase()
+            .trim(),
+        }))
+        .filter((t) => t.userId && !isNaN(t.userId));
 
       setModalState({ isOpen: false, step: "exit" });
 
@@ -352,26 +339,33 @@ export default function DocEditPage() {
         );
         const transData =
           transRes?.data?.data || transRes?.data || transRes || {};
-        const jobId = transData.jobId || transData.id || docId;
+        const jobId = transData.jobId || transData.id;
 
-        navigate("/trans", {
-          state: {
-            jobId,
-            teamId,
-            docId,
-            version: targetVersion,
-            docName: documentInfo.name,
-          },
-        });
-      } else {
-        alert(
-          `${documentInfo.name} Version.${targetVersion} 저장이 완료되었습니다!`,
-        );
-        navigate(teamId ? `/teamp/${teamId}` : "/home");
+        if (jobId) {
+          navigate("/trans", {
+            state: {
+              jobId,
+              teamId,
+              docId,
+              version: targetVersion,
+              docName: documentInfo.name,
+            },
+          });
+          return;
+        }
       }
+
+      alert(
+        `${documentInfo.name} Version.${targetVersion} 저장이 완료되었습니다!`,
+      );
+      navigate(teamId ? `/teamp-leader/${teamId}` : "/home");
     } catch (e) {
       console.error("저장 및 번역 요청 실패:", e);
-      alert(e.message || "저장 또는 번역 요청에 실패했습니다.");
+      alert(
+        e.response?.data?.message ||
+          e.message ||
+          "저장 또는 번역 요청에 실패했습니다.",
+      );
     }
   };
 

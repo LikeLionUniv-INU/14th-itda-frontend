@@ -3,12 +3,14 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
-import DiffScreenInfo from "./components/DiffScreenInfo";
-import DiffWireframeCanvas from "./components/DiffWireframeCanvas";
-import DiffRequirementSection from "./components/DiffRequirementSection";
+import ScreenInfoForm from "./components/ScreenInfoForm";
+import WireframeCanvas from "./components/WireframeCanvas";
+import RequirementSection from "./components/RequirementSection";
 
 import { getDocumentDetail } from "../../api/documentApi";
-import * as S from "./DocCompare.styles";
+import * as S from "./DocEditor.styles";
+
+const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
 export default function DocViewPage() {
   const { docId: paramDocId, documentId } = useParams();
@@ -20,9 +22,8 @@ export default function DocViewPage() {
   const teamId =
     passedState.teamId || localStorage.getItem("currentTeamId") || "";
 
-  const [docInfo, setDocInfo] = useState({
-    docName: "스토리보드",
-    version: 1,
+  const [documentInfo, setDocumentInfo] = useState({
+    name: "스토리보드",
     updatedAt: "",
   });
 
@@ -37,25 +38,20 @@ export default function DocViewPage() {
       const docRes = await getDocumentDetail(docId, 1);
       const docData = docRes?.data?.data || docRes?.data || {};
 
-      setDocInfo({
-        docName: docData?.name || docData?.title || "스토리보드",
-        version: 1,
+      // 이름 뒤에 이미 붙은 _Version.1 제거하여 중복 방지
+      const rawName = docData?.name || docData?.title || "스토리보드";
+      const cleanName = rawName.replace(/_?[Vv]ersion\.?\d+/g, "").trim();
+
+      setDocumentInfo({
+        name: cleanName || "스토리보드",
         updatedAt: docData?.updatedAt
           ? docData.updatedAt.replace("T", " ").substring(0, 19)
           : "",
       });
 
       if (docData?.pages && docData.pages.length > 0) {
-        const mappedPages = docData.pages.map((p, pIdx) => {
-          const currPins = (p.pins || []).map((pin) => ({
-            id: pin.id || pin.pinNumber,
-            number: pin.pinNumber,
-            x: Number(pin.xCoordinate) || 0,
-            y: Number(pin.yCoordinate) || 0,
-            pinType: "normal",
-          }));
-
-          const requirements = {
+        const formattedPages = docData.pages.map((p, idx) => {
+          const reqMap = {
             공통: [],
             기획: [],
             프론트: [],
@@ -63,41 +59,51 @@ export default function DocViewPage() {
             디자인: [],
           };
 
-          (p.pins || []).forEach((pin) => {
-            (pin.requirements || []).forEach((req) => {
-              const tab = req.tabType || "공통";
-              if (requirements[tab]) {
-                requirements[tab].push({
-                  id: pin.id || pin.pinNumber,
-                  reqId: req.id,
-                  number: pin.pinNumber,
-                  type: "normal",
-                  currItem: req.itemName || "",
-                  currDetail: req.content || "",
-                });
-              }
+          const pins = (p.pins || []).map((pin) => {
+            const pinId = pin.id || pin.pinNumber;
+            const pinNum = pin.pinNumber;
+
+            INITIAL_ROLES.forEach((role) => {
+              const foundReq = (pin.requirements || []).find(
+                (r) => (r.tabType || "공통") === role,
+              );
+
+              reqMap[role].push({
+                id: pinId,
+                reqId: foundReq?.id || null,
+                number: pinNum,
+                item: foundReq?.itemName || "",
+                detail: foundReq?.content || "",
+                isRequired: foundReq?.isRequired || false,
+              });
             });
+
+            return {
+              id: pinId,
+              number: pinNum,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
+            };
           });
 
+          const imgUrl =
+            p.wireframeImages?.[0]?.imageUrl ||
+            p.wireframeImageUrl ||
+            p.imageUrl ||
+            "";
+
           return {
-            pageId: p.id || pIdx + 1,
-            pageNumber: p.pageNumber || pIdx + 1,
-            currScreenName: p.screenName || "",
-            currScreenId: p.screenId || "",
-            isScreenInfoModified: false,
+            pageId: p.id || idx + 1,
+            pageNumber: p.pageNumber || idx + 1,
+            screenName: p.screenName || "",
+            screenId: p.screenId || "",
+            imageUrl: imgUrl,
             device: p.device || "desktop",
-            isImageModified: false,
-            currImageUrl:
-              p.wireframeImages?.[0]?.imageUrl ||
-              p.wireframeImageUrl ||
-              p.imageUrl ||
-              "",
-            prevPins: currPins,
-            currPins,
-            requirements,
+            pins,
+            requirements: reqMap,
           };
         });
-        setPages(mappedPages);
+        setPages(formattedPages);
       }
     } catch (error) {
       console.error("Version 1 문서 조회 실패:", error);
@@ -112,7 +118,7 @@ export default function DocViewPage() {
 
   const handleBack = () => {
     if (teamId) {
-      navigate(`/teamp/${teamId}`);
+      navigate(`/teamp-leader/${teamId}`);
     } else {
       navigate(-1);
     }
@@ -121,16 +127,15 @@ export default function DocViewPage() {
   return (
     <S.PageLayout>
       <S.ContentContainer>
-        {/* 상단바: {문서이름}_Version.1 노출 */}
+        {/* 상단바: mode="view"로 임시저장/저장 버튼 제거 */}
         <DocHeader
-          docName={`${docInfo.docName}_Version.${docInfo.version}`}
-          currVersion={docInfo.version}
+          docName={`${documentInfo.name}_Version.1`}
+          currVersion={1}
           mode="view"
-          updatedAt={docInfo.updatedAt}
+          updatedAt={documentInfo.updatedAt}
           onBack={handleBack}
         />
 
-        {/* 수정사항 요약 섹션 없이 바로 본문 렌더링 */}
         <S.MainSection style={{ marginTop: "24px" }}>
           <S.LeftColumn>
             <S.PageNavWrapper>
@@ -141,23 +146,23 @@ export default function DocViewPage() {
                   setActivePageIndex(index);
                   setFocusedPinId(null);
                 }}
-                isReadOnly={true}
+                isReadOnly={true} // 페이지 추가 버튼 숨김
               />
             </S.PageNavWrapper>
 
             <S.LeftBox>
-              <DiffScreenInfo
-                currScreenName={currentPage.currScreenName}
-                currScreenId={currentPage.currScreenId}
-                isModified={false}
+              <ScreenInfoForm
+                screenName={currentPage.screenName}
+                screenId={currentPage.screenId}
+                isReadOnly={true}
               />
               <S.Divider />
-              <DiffWireframeCanvas
+              <WireframeCanvas
+                imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
-                isImageModified={false}
-                currImageUrl={currentPage.currImageUrl}
-                currPins={currentPage.currPins || []}
+                pins={currentPage.pins || []}
                 focusedPinId={focusedPinId}
+                isReadOnly={true} // 핀 추가/이동/삭제 불가
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
             </S.LeftBox>
@@ -165,7 +170,8 @@ export default function DocViewPage() {
 
           <S.RightColumn>
             <S.RightBox>
-              <DiffRequirementSection
+              <RequirementSection
+                mode="view" // 읽기 전용 모드
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
                 onFocusPin={(id) => setFocusedPinId(id)}
