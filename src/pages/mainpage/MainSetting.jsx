@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Lock, Mail, Trash2, ChevronRight } from "lucide-react";
 import Header from "../../components/Header";
+import LanguageSelect from "../../components/LanguageSelect";
 import {
   getMyInfoApi,
   updateProfileApi,
@@ -10,8 +11,22 @@ import {
   changePasswordApi,
   changeEmailApi,
   deleteAccountApi,
-} from "../../api/user"; // 해당 user API 함수들을 import
+} from "../../api/user";
 import * as S from "./MainSetting.styles";
+
+// 국가 옵션 리스트 (Signup.jsx와 동일)
+const COUNTRY_OPTIONS = [
+  { code: "KR", label: "대한민국" },
+  { code: "US", label: "미국" },
+  { code: "JP", label: "일본" },
+  { code: "CN", label: "중국" },
+  { code: "VN", label: "베트남" },
+  { code: "ID", label: "인도네시아" },
+  { code: "GB", label: "영국" },
+  { code: "FR", label: "프랑스" },
+  { code: "DE", label: "독일" },
+  { code: "ES", label: "스페인" },
+];
 
 export default function MainSetting({
   onNavigate,
@@ -27,8 +42,8 @@ export default function MainSetting({
     lastName: "",
     name: "",
     email: "",
-    country: "대한민국",
-    language: "Korean",
+    country: "KR",
+    language: "ko",
     bio: "",
     initial: "",
     profileImageUrl: "",
@@ -54,8 +69,8 @@ export default function MainSetting({
           lastName: userData.lastName || "",
           name: fullName,
           email: userData.email || "",
-          country: userData.country || "대한민국",
-          language: userData.language || "Korean",
+          country: userData.country || "KR",
+          language: userData.language || "ko",
           bio: userData.bio || "",
           initial: userData.initial || userData.lastName?.charAt(0) || "U",
           profileImageUrl: userData.profileImageUrl || "",
@@ -135,7 +150,7 @@ export default function MainSetting({
     }
   };
 
-  // 10-3. 비밀번호 변경 모달/프롬프트 예시
+  // 10-3. 비밀번호 변경
   const handleChangePassword = async () => {
     const currentPassword = prompt("현재 비밀번호를 입력해주세요.");
     if (!currentPassword) return;
@@ -159,7 +174,7 @@ export default function MainSetting({
     }
   };
 
-  // 10-4. 이메일 변경 모달/프롬프트 예시
+  // 10-4. 이메일 변경
   const handleChangeEmail = async () => {
     const password = prompt("비밀번호를 입력해주세요.");
     if (!password) return;
@@ -170,7 +185,6 @@ export default function MainSetting({
     try {
       await changeEmailApi({ password, newEmail });
       alert("이메일이 변경되었습니다. 다시 로그인해 주세요.");
-      // 리프레시 토큰 삭제 및 재로그인 처리
       localStorage.clear();
       navigate("/login");
     } catch (error) {
@@ -178,7 +192,7 @@ export default function MainSetting({
     }
   };
 
-  // 10-5. 회원 탈퇴 모달/프롬프트 예시
+  // 10-5. 회원 탈퇴
   const handleDeleteAccount = async () => {
     if (!window.confirm("정말로 탈퇴하시겠습니까? 데이터는 영구 삭제됩니다.")) {
       return;
@@ -286,29 +300,29 @@ export default function MainSetting({
                 </S.Row>
 
                 <S.Row>
+                  {/* 국적 드롭다운 (COUNTRY_OPTIONS 적용) */}
                   <S.InputGroup>
                     <label>국적</label>
                     <S.Select
                       value={formData.country}
                       onChange={(e) => handleChange("country", e.target.value)}
                     >
-                      <option value="대한민국">대한민국</option>
-                      <option value="미국">미국</option>
-                      <option value="일본">일본</option>
-                      <option value="중국">중국</option>
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
                     </S.Select>
                   </S.InputGroup>
+
+                  {/* 사용 언어 드롭다운 (LanguageSelect 적용) */}
                   <S.InputGroup>
                     <label>사용 언어</label>
-                    <S.Select
+                    <LanguageSelect
                       value={formData.language}
-                      onChange={(e) => handleChange("language", e.target.value)}
-                    >
-                      <option value="Korean">Korean</option>
-                      <option value="English">English</option>
-                      <option value="Japanese">Japanese</option>
-                      <option value="Chinese">Chinese</option>
-                    </S.Select>
+                      onChange={(val) => handleChange("language", val)}
+                      height="46px"
+                    />
                   </S.InputGroup>
                 </S.Row>
 
@@ -338,6 +352,7 @@ export default function MainSetting({
                       border: "none",
                       borderRadius: "6px",
                       cursor: "pointer",
+                      fontWeight: "600",
                     }}
                   >
                     프로필 저장

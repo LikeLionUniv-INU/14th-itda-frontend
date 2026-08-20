@@ -14,7 +14,7 @@ export const PageWrapper = styled.div`
 
 export const Content = styled.div`
   width: 100%;
-  max-width: 1202px; /* 1100px에서 1202px로 변경하여 다른 페이지와 너비 일치 */
+  max-width: 1202px;
   margin: 0 auto;
   padding: 32px 24px 80px 24px;
   box-sizing: border-box;
@@ -28,7 +28,6 @@ export const Banner = styled.div`
   border-radius: 12px;
   padding: 30px 40px;
   margin-bottom: 20px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -71,49 +70,68 @@ export const ProjectGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-bottom: 20px;
-  gap: 15px;
+  gap: 16px;
 `;
 
 export const ProjectCard = styled.div`
   background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px 20px;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
 
   h4 {
-    font-size: 15px;
-    margin-bottom: 6px;
+    font-family: "Pretendard-Bold", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #111111;
   }
   .langs {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 16px;
-  }
-  .time {
-    font-size: 11px;
-    color: #999;
+    font-family: "Pretendard-Regular", sans-serif;
+    font-size: 13px;
+    color: #666666;
+    margin: 0 0 20px 0;
   }
 `;
 
 export const AvatarGroup = styled.div`
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 14px;
 `;
 
 export const MiniAvatar = styled.div`
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: #f3f4f6;
-  color: #4f46e5;
-  font-size: 11px;
+  background-color: ${({ $isMore }) => ($isMore ? "#E5E7EB" : "#F0F0FF")};
+  color: ${({ $isMore }) => ($isMore ? "#4B5563" : "#462FEA")};
+  font-family: "Pretendard-Bold", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  border: 2px solid #ffffff;
+  margin-right: -4px;
+`;
+
+export const CardFooterText = styled.div`
+  font-family: "Pretendard-Regular", sans-serif;
+  font-size: 12px;
+  color: #8a8a8a;
+  margin-top: auto;
 `;
 
 export const EmptyContainer = styled.div`
@@ -161,7 +179,6 @@ export const ProjectIcon = styled.div`
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-
   width: 80px;
   height: 80px;
   margin-bottom: 12px;

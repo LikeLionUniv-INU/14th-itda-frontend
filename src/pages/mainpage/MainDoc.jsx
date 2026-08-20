@@ -4,42 +4,39 @@ import Header from "../../components/Header";
 import CreateProjectModal from "../../components/Modal/CreateProjectModal";
 import JoinProjectModal from "../../components/Modal/JoinProjectModal";
 import { getDashboardApi } from "../../api/dashboard";
-import { getTeamNotifications, markNotificationAsRead } from "../../api/teamApi";
+import {
+  getTeamNotifications,
+  markNotificationAsRead,
+} from "../../api/teamApi";
+import { getDocumentVersions } from "../../api/documentApi";
+import { getRelativeTime } from "../../components/dateUtil";
 import * as S from "./MainDoc.styles";
 
-const getRelativeTime = (dateString) => {
-  if (!dateString) return "방금 전";
-  const now = new Date();
+const getLanguageFullName = (langCode) => {
+  if (!langCode) return "-";
+  const code = String(langCode).toLowerCase().trim();
+  const langMap = {
+    ko: "한국어",
+    korean: "한국어",
+    en: "English",
+    english: "English",
+    ja: "日本語",
+    japanese: "日本語",
+    zh: "中文",
+    chinese: "中文",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    vi: "Tiếng Việt",
+  };
+  return langMap[code] || langCode;
+};
 
-  let formatted = dateString;
-  if (
-    typeof dateString === "string" &&
-    !dateString.endsWith("Z") &&
-    !dateString.includes("+")
-  ) {
-    formatted = dateString.replace(" ", "T");
+const getLanguagesDisplay = (languages, fallback) => {
+  if (Array.isArray(languages) && languages.length > 0) {
+    return languages.map(getLanguageFullName).join(", ");
   }
-
-  const past = new Date(formatted);
-  if (isNaN(past.getTime())) return "방금 전";
-
-  const diffInMinutes = Math.floor(
-    (now.getTime() - past.getTime()) / (1000 * 60),
-  );
-
-  if (diffInMinutes < 1) return "방금 전";
-  if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}시간 전`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays}일 전`;
-
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) return `${diffInMonths}달 전`;
-
-  return `${Math.floor(diffInMonths / 12)}년 전`;
+  return getLanguageFullName(fallback);
 };
 
 export default function MainDoc({
@@ -52,13 +49,13 @@ export default function MainDoc({
 
   const [userInfo, setUserInfo] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [docLatestTimes, setDocLatestTimes] = useState({});
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-  // 팀 알림 조회 API 명세서 반영
   const fetchNotificationData = async (projectsList) => {
     try {
       if (!projectsList || projectsList.length === 0) return;
@@ -83,10 +80,40 @@ export default function MainDoc({
       setLoading(true);
       const response = await getDashboardApi();
       const resData = response.data?.data || response.data || response;
-      
+
       if (resData) {
         if (resData.user) setUserInfo(resData.user);
-        if (resData.recentDocuments) setDocuments(resData.recentDocuments);
+        if (resData.recentDocuments) {
+          const recentDocs = resData.recentDocuments;
+          setDocuments(recentDocs);
+
+          if (recentDocs.length > 0) {
+            const timeMap = {};
+            await Promise.allSettled(
+              recentDocs.map(async (doc) => {
+                const dId = doc.id || doc.documentId;
+                try {
+                  const vRes = await getDocumentVersions(dId);
+                  const vList = vRes?.data?.data || vRes?.data || [];
+                  if (Array.isArray(vList) && vList.length > 0) {
+                    const latestVerObj = vList.reduce(
+                      (prev, curr) =>
+                        Number(curr.version) > Number(prev.version)
+                          ? curr
+                          : prev,
+                      vList[0],
+                    );
+                    timeMap[dId] =
+                      latestVerObj.updatedAt || latestVerObj.createdAt;
+                  }
+                } catch (err) {
+                  console.warn(`문서(${dId}) 버전 목록 조회 스킵:`, err);
+                }
+              }),
+            );
+            setDocLatestTimes(timeMap);
+          }
+        }
         if (resData.projects) {
           await fetchNotificationData(resData.projects);
         }
@@ -198,7 +225,14 @@ export default function MainDoc({
           <S.NotificationBar>
             <S.NotificationLeft>
               <S.NotificationIconBox>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
@@ -224,7 +258,11 @@ export default function MainDoc({
         <S.Banner>
           <S.BannerText>
             <h2>안녕하세요, {displayUserName}님!</h2>
-            <p>여러 언어의 문서를 하나의 기준으로 관리하고,<br />글로벌 팀과 함께 효율적으로 협업해 보세요!</p>
+            <p>
+              여러 언어의 문서를 하나의 기준으로 관리하고,
+              <br />
+              글로벌 팀과 함께 효율적으로 협업해 보세요!
+            </p>
           </S.BannerText>
           <S.Popup />
         </S.Banner>
@@ -249,38 +287,52 @@ export default function MainDoc({
               </tr>
             </thead>
             <tbody>
-              {documents.map((doc) => (
-                <tr
-                  key={doc.id}
-                  onClick={() => {
-                    if (onSelectDocument) {
-                      onSelectDocument(doc.id, doc.latestVersion);
-                    } else {
-                      navigate(`/doc-edit/${doc.id}`);
-                    }
-                  }}
-                >
-                  <td className="doc-name">{doc.name}</td>
-                  <td>{doc.teamProjectName || "-"}</td>
-                  <td>{doc.language || "-"}</td>
-                  <td>v{doc.latestVersion}</td>
-                  <td>
-                    {getRelativeTime(
-                      doc.updatedAt ||
-                        doc.lastUpdatedAt ||
-                        doc.modifiedAt ||
-                        doc.createdAt,
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {documents.map((doc) => {
+                const docId = doc.id || doc.documentId;
+                const realTime =
+                  docLatestTimes[docId] ||
+                  doc.latestVersionUpdatedAt ||
+                  doc.versionUpdatedAt ||
+                  doc.updatedAt ||
+                  doc.createdAt;
+
+                return (
+                  <tr
+                    key={docId}
+                    onClick={() => {
+                      if (onSelectDocument) {
+                        onSelectDocument(
+                          docId,
+                          doc.latestVersion || doc.version,
+                        );
+                      } else {
+                        navigate(`/doc-edit/${docId}`);
+                      }
+                    }}
+                  >
+                    <td className="doc-name">{doc.name || doc.title}</td>
+                    <td>{doc.teamProjectName || "-"}</td>
+                    <td>{getLanguagesDisplay(doc.languages, doc.language)}</td>
+                    <td>v{doc.latestVersion || doc.version || 1}</td>
+                    <td>{getRelativeTime(realTime)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </S.Table>
         )}
       </S.Content>
 
-      <CreateProjectModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSuccess={handleModalSuccess} />
-      <JoinProjectModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} onSuccess={handleModalSuccess} />
+      <CreateProjectModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
+      <JoinProjectModal
+        isOpen={isJoinOpen}
+        onClose={() => setIsJoinOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
     </S.PageWrapper>
   );
 }
