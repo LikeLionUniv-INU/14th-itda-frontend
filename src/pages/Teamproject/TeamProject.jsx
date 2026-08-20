@@ -382,6 +382,7 @@ export default function TeamProject({ onNavigate }) {
                       <th>언어</th>
                       <th>버전</th>
                       <th>최종 업데이트</th>
+                      {isLeader && <th className="manage-col"></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -420,6 +421,18 @@ export default function TeamProject({ onNavigate }) {
                           </td>
                           <td>ver.{latestVer}</td>
                           <td>{getRelativeTime(realUpdatedTime)}</td>
+                          {isLeader && (
+                            <td
+                              className="manage-cell"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <S.TableEditButton
+                                onClick={() => handleDocClick(docId, latestVer)}
+                              >
+                                수정하기
+                              </S.TableEditButton>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

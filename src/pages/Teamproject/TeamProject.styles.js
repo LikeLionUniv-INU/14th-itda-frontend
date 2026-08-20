@@ -82,10 +82,10 @@ export const BannerCard = styled.div`
     bottom: 60px;
     width: 130px;
     height: 130px;
-    background: rgba(219, 215, 255, 0.4); /* 연한 보라색 투명도 */
+    background: rgba(219, 215, 255, 0.4);
     border-radius: 50%;
     z-index: 1;
-    pointer-events: none; /* 클릭 방해 안 되도록 설정 */
+    pointer-events: none;
   }
 
   /* 우측 조금 더 진한 작은 보라색 원형 장식 */
@@ -102,7 +102,6 @@ export const BannerCard = styled.div`
     pointer-events: none;
   }
 
-  /* 카드 안의 텍스트나 내용이 원형 장식 위에 잘 보이도록 설정 */
   > * {
     position: relative;
     z-index: 2;
@@ -236,29 +235,22 @@ export const Table = styled.table`
 
   thead tr {
     background-color: #f5f3fd;
-    height: 46px; /* 피그마 지정 46px */
+    height: 46px;
   }
 
   th {
     color: #6b7280;
     font-size: 13px;
     font-weight: 600;
-    padding: 0 24px;
+    padding: 0 12px;
     text-align: left;
     vertical-align: middle;
 
-    &:nth-child(1) {
-      width: 34%;
-    }
-    &:nth-child(2) {
-      width: 22%;
-    }
-    &:nth-child(3) {
-      width: 22%;
-    }
-    &:nth-child(4) {
-      width: 22%;
-    }
+    &:nth-child(1) { width: 30%; } /* 문서 이름 */
+    &:nth-child(2) { width: 20%; } /* 언어 */
+    &:nth-child(3) { width: 15%; } /* 버전 */
+    &:nth-child(4) { width: 20%; } /* 최종 업데이트 */
+    &:nth-child(5) { width: 15%; } /* 수정 버튼 */
 
     &:first-child {
       border-top-left-radius: 8px;
@@ -280,7 +272,7 @@ export const Table = styled.table`
   }
 
   td {
-    padding: 0 24px;
+    padding: 0 12px;
     font-size: 13.5px;
     font-weight: 700;
     color: #111827;
@@ -297,6 +289,21 @@ export const Table = styled.table`
       font-weight: 700;
       text-decoration: none;
     }
+  }
+`;
+
+export const TableEditButton = styled.button`
+  padding: 6px 12px;
+  background-color: #fff;
+  border: 1px solid #4f46e5;
+  color: #4f46e5;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+
+  &:hover {
+    background-color: #f5f3ff;
   }
 `;
 
@@ -623,7 +630,7 @@ export const VersionSelect = styled.select`
 `;
 
 export const NotificationBar = styled.div`
-  grid-column: 1 / -1; /* 메인 + 사이드바 1202px 가로 폭 전체를 채움 */
+  grid-column: 1 / -1;
   width: 100%;
   box-sizing: border-box;
   display: flex;
