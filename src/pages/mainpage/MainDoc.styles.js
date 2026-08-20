@@ -3,22 +3,32 @@ import popup from "../../assets/image/popup.svg";
 import docicon from "../../assets/image/doc icon.svg";
 
 export const PageWrapper = styled.div`
-  background-color: #f8f9fa;
+  width: 100%;
   min-height: 100vh;
-  font-family: sans-serif;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
 `;
 
-export const Content = styled.main`
-  max-width: 1000px;
-  margin: 32px auto;
-  padding: 0 10px;
+export const Content = styled.div`
+  width: 100%;
+  max-width: 1202px; /* 1100px에서 1202px로 수정하여 다른 페이지와 너비 통일 */
+  margin: 0 auto;
+  padding: 32px 24px 80px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 export const Banner = styled.div`
   background: linear-gradient(135deg, #efeefe 0%, #e0e7ff 100%);
   border-radius: 12px;
   padding: 30px 40px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,7 +77,7 @@ export const Table = styled.table`
 
   th,
   td {
-    padding: 12px 16px;
+    padding: 14px 16px;
     text-align: left;
     font-size: 13px;
   }
@@ -79,13 +89,22 @@ export const Table = styled.table`
   }
 
   td {
-    border-top: 1px solid #ffffff;
-    color: #000000;
+    border-top: 1px solid #f3f4f6;
+    color: #333;
+  }
+
+  tr {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: #f9fafb;
+    }
   }
 
   .doc-name {
     font-weight: 600;
-    cursor: pointer;
+    color: #111;
   }
 `;
 
@@ -123,4 +142,72 @@ export const DocIcon = styled.div`
   width: 80px;
   height: 80px;
   margin-bottom: 12px;
+`;
+
+export const NotificationBar = styled.div`
+  grid-column: 1 / -1;
+  width: 100%; /* 1050px 고정에서 100%로 수정하여 컨테이너 폭에 맞춤 */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ebf2ff;
+  border: 1px solid #bed8ff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 4px;
+`;
+
+export const NotificationLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+export const NotificationIconBox = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #dce8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f65f6;
+  flex-shrink: 0;
+`;
+
+export const NotificationTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666666;
+  }
+`;
+
+export const NotificationButton = styled.button`
+  background-color: #2f65f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #1d4ed8;
+  }
 `;

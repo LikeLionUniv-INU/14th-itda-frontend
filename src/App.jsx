@@ -1,18 +1,19 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
+
 import Test from "./pages/Test";
 import DocEditor from "./pages/DocEditor/DocEditor";
 import DocEdit from "./pages/DocEditor/DocEdit";
 import DocCompare from "./pages/DocEditor/DocCompare";
+import DocView from "./pages/DocEditor/DocView";
 import MainHome from "./pages/mainpage/MainHome";
 import MainProject from "./pages/mainpage/MainProject";
 import MainDoc from "./pages/mainpage/MainDoc";
 import MainSetting from "./pages/mainpage/MainSetting";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import TeamProjectLeader from "./pages/Teamproject/TeamProjectLeader";
-import TeamProjectMember from "./pages/Teamproject/TeamProjectMember";
+import TeamProject from "./pages/Teamproject/TeamProject";
 import TeamProjectDocs from "./pages/Teamproject/TeamProjectDocs";
 import Translation from "./pages/Translation";
 
@@ -20,20 +21,35 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 인증 */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        {/* 메인 대시보드 */}
         <Route path="/home" element={<MainHome />} />
         <Route path="/project" element={<MainProject />} />
         <Route path="/doc" element={<MainDoc />} />
+        <Route path="/set" element={<MainSetting />} />
+        <Route path="/trans" element={<Translation />} />
         <Route path="/test" element={<Test />} />
+
+        {/* 문서 작성 / 수정 / 비교 / 1버전 조회 */}
         <Route path="/doc-create" element={<DocEditor />} />
         <Route path="/doc-edit" element={<DocEdit />} />
+        <Route path="/doc-edit/:docId" element={<DocEdit />} />
         <Route path="/doc-compare" element={<DocCompare />} />
-        <Route path="/set" element={<MainSetting />} />
-        <Route path="/teamp-leader" element={<TeamProjectLeader />} />
-        <Route path="/teamp-member" element={<TeamProjectMember />} />
+        <Route path="/doc-compare/:docId" element={<DocCompare />} />
+
+        {/* 👇 Version 1 전용 조회 라우트 추가 */}
+        <Route path="/doc-view" element={<DocView />} />
+        <Route path="/doc-view/:docId" element={<DocView />} />
+
+        {/* 팀 프로젝트 (파라미터 연동 지원) */}
+        <Route path="/teamp/:teamId" element={<TeamProject />} />
+        <Route path="/teamp-leader/:teamId" element={<TeamProject />} />
+        <Route path="/teamp-member/:teamId" element={<TeamProject />} />
         <Route path="/teamp-doc" element={<TeamProjectDocs />} />
-        <Route path="/trans" element={<Translation />} />
+        <Route path="/teamp-doc/:teamId" element={<TeamProjectDocs />} />
       </Routes>
     </BrowserRouter>
   );

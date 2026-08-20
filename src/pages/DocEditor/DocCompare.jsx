@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
@@ -9,194 +8,449 @@ import DiffScreenInfo from "./components/DiffScreenInfo";
 import DiffWireframeCanvas from "./components/DiffWireframeCanvas";
 import DiffRequirementSection from "./components/DiffRequirementSection";
 
-export default function DocComparePage() {
-  const { docId } = useParams();
-  const navigate = useNavigate();
+import {
+  getDocumentDetail,
+  getDocumentChanges,
+  getDocumentVersions,
+  confirmChange,
+} from "../../api/documentApi";
+import * as S from "./DocCompare.styles";
 
-  // 1. 서버(백엔드)에서 받아올 문서 메타 정보 상태
+const safeJsonParse = (str) => {
+  if (!str) return null;
+  try {
+    return typeof str === "string" ? JSON.parse(str) : str;
+  } catch (e) {
+    return str;
+  }
+};
+
+const createEmptyComparePage = (pageNumber = 1) => ({
+  pageId: Date.now() + Math.random(),
+  pageNumber,
+  screenName: `페이지 ${pageNumber}`,
+  prevScreenName: "",
+  prevScreenId: "",
+  currScreenName: "",
+  currScreenId: "",
+  isScreenInfoModified: false,
+  device: "desktop",
+  isImageModified: false,
+  prevImageUrl: "",
+  currImageUrl: "",
+  prevPins: [],
+  currPins: [],
+  requirements: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+});
+
+export default function DocComparePage() {
+  const { docId: paramDocId, documentId } = useParams();
+  const docId = paramDocId || documentId;
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const passedState = location.state || {};
+  const targetVersion = passedState.version
+    ? Number(passedState.version)
+    : null;
+  const teamId =
+    passedState.teamId || localStorage.getItem("currentTeamId") || "";
+
   const [docInfo, setDocInfo] = useState({
     docName: "스토리보드",
     prevVersion: 1,
-    currVersion: 2,
-    updatedAt: "2026.06.30. 20:30:37",
+    currVersion: 1,
+    updatedAt: "",
   });
 
-  // 2. 상단 수정사항 요약 리스트 상태
-  const [summaryList, setSummaryList] = useState([
-    {
-      id: "sum-1",
-      pageIndex: 0,
-      pinId: 102,
-      pageName: "회원가입",
-      number: 2,
-      itemName: "ID입력",
-      previewContent:
-        '아이디 중복검사 기능 버튼 중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-      author: "김서연",
-      date: "2026.06.20.",
-    },
-    {
-      id: "sum-2",
-      pageIndex: 0,
-      pinId: 106,
-      pageName: "회원가입",
-      number: 6,
-      itemName: "ID입력",
-      previewContent:
-        '아이디 중복검사 기능 버튼 중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-      author: "김서연",
-      date: "2026.06.20.",
-    },
-  ]);
-
-  // 팀원이 클릭하여 확인한 요약 항목 ID 배열
+  const [summaryList, setSummaryList] = useState([]);
   const [checkedIds, setCheckedIds] = useState([]);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
-
-  // 3. 페이지별 비교 데이터
-  const [pages, setPages] = useState([
-    {
-      pageId: 1,
-      // 화면 정보 비교용
-      prevScreenName: "회원가입 페이지",
-      prevScreenId: "SIGN_UP_001",
-      currScreenName: "회원가입",
-      currScreenId: "SIGN_001",
-      isScreenInfoModified: true,
-
-      // 와이어프레임 비교용
-      device: "desktop",
-      isImageModified: false,
-      prevImageUrl: "",
-      currImageUrl: "",
-      prevPins: [
-        { id: 101, number: 1, x: 180, y: 120 },
-        { id: 102, number: 2, x: 180, y: 220 },
-      ],
-      currPins: [
-        { id: 101, number: 1, x: 180, y: 120, pinType: "curr" },
-        { id: 102, number: 2, x: 180, y: 220, pinType: "curr" },
-        { id: 106, number: 6, x: 180, y: 320, pinType: "added" },
-      ],
-
-      // 요구사항 비교용 (3색 데이터)
-      requirements: {
-        공통: [
-          {
-            id: 101,
-            number: 1,
-            type: "normal",
-            currItem: "ID 입력",
-            currDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-          },
-          {
-            id: 102,
-            number: 2,
-            type: "modified",
-            prevItem: "ID 입력",
-            prevDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            currItem: "이메일 입력",
-            currDetail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시\n메일 형식이 아닐 경우 => "올바른 이메일 형식이 아닙니다"',
-          },
-          {
-            id: 103,
-            number: 2,
-            type: "normal",
-            currItem: "ID 입력",
-            currDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-          },
-          {
-            id: 104,
-            number: 3,
-            type: "normal",
-            currItem: "ID 입력",
-            currDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-          },
-          {
-            id: 105,
-            number: 4,
-            type: "normal",
-            currItem: "ID 입력",
-            currDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-          },
-          {
-            id: 106,
-            number: 6,
-            type: "added",
-            currItem: "ID 입력",
-            currDetail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-          },
-        ],
-        기획: [],
-        프론트: [],
-        백엔드: [],
-        디자인: [],
-      },
-    },
-    {
-      pageId: 2,
-      prevScreenName: "로그인",
-      prevScreenId: "SIGN_IN_001",
-      currScreenName: "로그인",
-      currScreenId: "SIGN_IN_001",
-      isScreenInfoModified: false,
-      device: "desktop",
-      isImageModified: false,
-      prevImageUrl: "",
-      currImageUrl: "",
-      prevPins: [],
-      currPins: [],
-      requirements: {
-        공통: [],
-        기획: [],
-        프론트: [],
-        백엔드: [],
-        디자인: [],
-      },
-    },
-  ]);
-
+  const [pages, setPages] = useState([createEmptyComparePage(1)]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
 
-  const currentPage = pages[activePageIndex] || {};
+  const fetchCompareData = useCallback(async () => {
+    if (!docId) return;
 
-  const handleSelectSummary = (item) => {
+    try {
+      // 1. 버전 번호 결정
+      let currentVer = targetVersion;
+      if (!currentVer) {
+        try {
+          const verRes = await getDocumentVersions(docId);
+          const verList = verRes?.data?.data || verRes?.data || [];
+          if (Array.isArray(verList) && verList.length > 0) {
+            currentVer = Number(verList[verList.length - 1].version);
+          }
+        } catch (verErr) {
+          console.warn("버전 목록 조회 실패:", verErr);
+        }
+      }
+      currentVer = currentVer || 1;
+      const prevVer = currentVer > 1 ? currentVer - 1 : 1;
+
+      // 2. 현재 버전 & 이전 버전 문서 상세 동시 조회
+      const [docRes, prevDocRes] = await Promise.all([
+        getDocumentDetail(docId, currentVer),
+        prevVer !== currentVer
+          ? getDocumentDetail(docId, prevVer).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const docData = docRes?.data?.data || docRes?.data || {};
+      const prevDocData = prevDocRes?.data?.data || prevDocRes?.data || null;
+
+      setDocInfo({
+        docName: docData?.name || docData?.title || "스토리보드",
+        prevVersion: prevVer,
+        currVersion: currentVer,
+        updatedAt: docData?.updatedAt
+          ? docData.updatedAt.replace("T", " ").substring(0, 19)
+          : "",
+      });
+
+      // 3. 수정사항 목록 조회
+      let formattedSummary = [];
+      try {
+        const changesRes = await getDocumentChanges(docId, currentVer);
+        const resData = changesRes?.data?.data || changesRes?.data || {};
+        const changeList =
+          resData.changes ||
+          resData.changeList ||
+          (Array.isArray(resData) ? resData : []);
+
+        formattedSummary = changeList.map((ch, idx) => {
+          const afterParsed = safeJsonParse(ch.afterValue);
+          const beforeParsed = safeJsonParse(ch.beforeValue);
+
+          const rawPageNum =
+            ch.pageNumber ||
+            afterParsed?.pageNumber ||
+            beforeParsed?.pageNumber ||
+            1;
+          const rawPinNum =
+            ch.pinNumber ||
+            ch.pinId ||
+            afterParsed?.pinNumber ||
+            beforeParsed?.pinNumber ||
+            1;
+
+          return {
+            id: ch.id || idx + 1,
+            pageIndex: Math.max(0, Number(rawPageNum) - 1),
+            pageNumber: Number(rawPageNum),
+            pinNumber: Number(rawPinNum),
+            tabType:
+              ch.tabType ||
+              afterParsed?.tabType ||
+              beforeParsed?.tabType ||
+              "공통",
+            pageName:
+              ch.screenName ||
+              afterParsed?.screenName ||
+              `페이지 ${rawPageNum}`,
+            number: Number(rawPinNum),
+            changeType: ch.changeType,
+            itemName:
+              ch.itemDescription ||
+              ch.itemName ||
+              afterParsed?.itemName ||
+              beforeParsed?.itemName ||
+              (ch.changeType?.includes("IMAGE") ? "와이어프레임 이미지" : "-"),
+            previewContent:
+              ch.previewContent ||
+              ch.content ||
+              afterParsed?.content ||
+              beforeParsed?.content ||
+              afterParsed?.imageUrl ||
+              "-",
+            author:
+              ch.author ||
+              ch.authorName ||
+              `${ch.modifiedByLastName || ""} ${ch.modifiedByFirstName || ""}`.trim() ||
+              "작성자",
+            date: ch.createdAt
+              ? ch.createdAt.substring(0, 10).replace(/-/g, ".") + "."
+              : ch.date || "",
+            confirmedByMe: Boolean(ch.confirmedByMe),
+            before: beforeParsed,
+            after: afterParsed,
+          };
+        });
+
+        setSummaryList(formattedSummary);
+
+        const initialChecked = formattedSummary
+          .filter((item) => item.confirmedByMe)
+          .map((item) => item.id);
+        setCheckedIds(initialChecked);
+      } catch (err) {
+        console.warn("변경사항 내역 조회 실패:", err);
+      }
+
+      // 4. 페이지 상세 정보 및 요구사항 구성
+      if (docData?.pages && docData.pages.length > 0) {
+        const mappedPages = docData.pages.map((p, pIdx) => {
+          const prevPage = prevDocData?.pages?.[pIdx] || null;
+          const pageChanges = formattedSummary.filter(
+            (ch) => ch.pageIndex === pIdx,
+          );
+
+          // 화면 정보 Diff
+          const screenChange = pageChanges.find(
+            (ch) => ch.changeType === "SCREEN_MODIFIED",
+          );
+          const isScreenInfoModified =
+            Boolean(screenChange) ||
+            (prevPage &&
+              (prevPage.screenName !== p.screenName ||
+                prevPage.screenId !== p.screenId));
+          const prevScreenName =
+            prevPage?.screenName ||
+            screenChange?.before?.screenName ||
+            p.screenName ||
+            "";
+          const prevScreenId =
+            prevPage?.screenId ||
+            screenChange?.before?.screenId ||
+            p.screenId ||
+            "";
+          const currScreenName = p.screenName || "";
+          const currScreenId = p.screenId || "";
+
+          // 와이어프레임 이미지 변경 여부 판별 (changes에 이미지 변경 내역이 있을 때만 듀얼 뷰 활성화)
+          const imgChange = pageChanges.find((ch) =>
+            ["IMAGE_MODIFIED", "IMAGE_ADDED", "IMAGE_DELETED"].includes(
+              ch.changeType,
+            ),
+          );
+          const isImageModified = Boolean(imgChange);
+
+          const prevImageUrl =
+            imgChange?.before?.imageUrl ||
+            prevPage?.wireframeImages?.[0]?.imageUrl ||
+            prevPage?.wireframeImageUrl ||
+            prevPage?.imageUrl ||
+            "";
+
+          const currImageUrl =
+            p.wireframeImages?.[0]?.imageUrl ||
+            p.wireframeImageUrl ||
+            p.imageUrl ||
+            imgChange?.after?.imageUrl ||
+            (!isImageModified ? prevImageUrl : "");
+
+          // 핀 목록 구성
+          const prevPins = (prevPage?.pins || []).map((pin) => ({
+            id: pin.id || pin.pinNumber,
+            number: pin.pinNumber,
+            x: Number(pin.xCoordinate) || 0,
+            y: Number(pin.yCoordinate) || 0,
+          }));
+
+          const currPins = (p.pins || []).map((pin) => {
+            const pinChange = pageChanges.find(
+              (ch) =>
+                ch.pinId === pin.pinNumber || ch.pinNumber === pin.pinNumber,
+            );
+            let pinType = "curr";
+            if (
+              pinChange?.changeType === "REQUIREMENT_ADDED" ||
+              pinChange?.changeType === "PIN_ADDED" ||
+              !(prevPage?.pins || []).some(
+                (pp) => pp.pinNumber === pin.pinNumber,
+              )
+            ) {
+              pinType = "added";
+            }
+            return {
+              id: pin.id || pin.pinNumber,
+              number: pin.pinNumber,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
+              pinType,
+            };
+          });
+
+          // 직무별 요구사항 Diff 구성 (3색 분기 정확 매칭)
+          const requirements = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
+
+          (p.pins || []).forEach((pin) => {
+            const pinReqs = pin.requirements || [];
+            const prevPin = (prevPage?.pins || []).find(
+              (pp) => pp.pinNumber === pin.pinNumber || pp.id === pin.id,
+            );
+
+            const pinChanges = pageChanges.filter(
+              (ch) =>
+                ch.pinNumber === pin.pinNumber ||
+                ch.pinId === pin.id ||
+                ch.pinId === pin.pinNumber,
+            );
+
+            if (pinReqs.length === 0) {
+              const tab = pin.tabType || "공통";
+              if (requirements[tab]) {
+                requirements[tab].push({
+                  id: pin.id || pin.pinNumber,
+                  reqId: null,
+                  number: pin.pinNumber,
+                  type: !prevPin ? "added" : "normal",
+                  prevItem: "",
+                  prevDetail: "",
+                  currItem: "-",
+                  currDetail: "-",
+                });
+              }
+              return;
+            }
+
+            pinReqs.forEach((req) => {
+              const tab = req.tabType || "공통";
+              const prevReq = (prevPin?.requirements || []).find(
+                (pr) => (pr.tabType || "공통") === tab,
+              );
+
+              const reqChange = pinChanges.find(
+                (ch) =>
+                  ch.tabType === tab ||
+                  ch.itemName === req.itemName ||
+                  ch.after?.itemName === req.itemName ||
+                  ch.itemDescription === req.itemName ||
+                  !ch.after?.itemName,
+              );
+
+              let type = "normal";
+              let prevItem = "";
+              let prevDetail = "";
+
+              // 1. 수정사항: 이전 버전과 내용이 다르거나 changeType이 MODIFIED인 경우
+              if (
+                reqChange?.changeType === "REQUIREMENT_MODIFIED" ||
+                reqChange?.changeType === "ITEM_MODIFIED" ||
+                (prevReq &&
+                  (prevReq.itemName !== req.itemName ||
+                    prevReq.content !== req.content))
+              ) {
+                type = "modified";
+                prevItem =
+                  reqChange?.before?.itemName || prevReq?.itemName || "";
+                prevDetail =
+                  reqChange?.before?.content || prevReq?.content || "";
+              }
+              // 2. 추가사항: 이전 버전에 없던 핀/요구사항이거나 changeType이 ADDED인 경우
+              else if (
+                reqChange?.changeType === "REQUIREMENT_ADDED" ||
+                reqChange?.changeType === "PIN_ADDED" ||
+                reqChange?.changeType === "ITEM_ADDED" ||
+                !prevPin ||
+                !prevReq
+              ) {
+                type = "added";
+              }
+
+              if (requirements[tab]) {
+                requirements[tab].push({
+                  id: pin.id || pin.pinNumber,
+                  reqId: req.id,
+                  number: pin.pinNumber,
+                  type,
+                  prevItem,
+                  prevDetail,
+                  currItem: req.itemName || "",
+                  currDetail: req.content || "",
+                });
+              }
+            });
+          });
+
+          return {
+            pageId: p.id || Date.now() + pIdx,
+            pageNumber: p.pageNumber || pIdx + 1,
+            screenName: currScreenName || p.screenName || `페이지 ${pIdx + 1}`,
+            prevScreenName,
+            prevScreenId,
+            currScreenName,
+            currScreenId,
+            isScreenInfoModified,
+            device: p.device || "desktop",
+            isImageModified,
+            prevImageUrl,
+            currImageUrl: currImageUrl || prevImageUrl,
+            prevPins: prevPins.length > 0 ? prevPins : currPins,
+            currPins,
+            requirements,
+          };
+        });
+
+        setPages(mappedPages);
+      } else {
+        setPages([createEmptyComparePage(1)]);
+      }
+    } catch (error) {
+      console.error("비교 데이터 로드 실패:", error);
+    }
+  }, [docId, targetVersion]);
+
+  useEffect(() => {
+    fetchCompareData();
+  }, [fetchCompareData]);
+
+  const currentPage = pages[activePageIndex] || pages[0] || {};
+
+  const handleSelectSummary = async (item) => {
     setSelectedSummaryId(item.id);
 
     if (!checkedIds.includes(item.id)) {
       setCheckedIds((prev) => [...prev, item.id]);
+      try {
+        await confirmChange(docId, docInfo.currVersion, item.id);
+      } catch (e) {
+        console.warn("확인 처리 완료 또는 오류:", e.message);
+      }
     }
 
-    if (item.pageIndex !== undefined && item.pageIndex !== activePageIndex) {
+    if (item.pageIndex !== undefined && !isNaN(item.pageIndex)) {
       setActivePageIndex(item.pageIndex);
     }
-    if (item.pinId) {
-      setFocusedPinId(item.pinId);
+    if (item.pinNumber) {
+      setFocusedPinId(item.pinNumber);
+    }
+  };
+
+  const handleBack = () => {
+    if (teamId) {
+      navigate(`/teamp/${teamId}`);
+    } else {
+      navigate(-1);
     }
   };
 
   return (
-    <PageLayout>
-      <ContentContainer>
-        {/* 1. 상단바 */}
+    <S.PageLayout>
+      <S.ContentContainer>
         <DocHeader
           docName={docInfo.docName}
-          version={docInfo.currVersion}
+          currVersion={docInfo.currVersion}
           prevVersion={docInfo.prevVersion}
           mode="compare"
           updatedAt={docInfo.updatedAt}
-          onBack={() => navigate("/team-project-main")}
+          onBack={handleBack}
         />
 
-        {/* 2. 상단 수정사항 요약 섹션 */}
         <DiffSummarySection
           summaryList={summaryList}
           checkedIds={checkedIds}
@@ -204,11 +458,9 @@ export default function DocComparePage() {
           onSelectSummary={handleSelectSummary}
         />
 
-        {/* 3. 본문 2단 영역 */}
-        <MainSection>
-          {/* 좌측 영역 */}
-          <LeftColumn>
-            <PageNavWrapper>
+        <S.MainSection>
+          <S.LeftColumn>
+            <S.PageNavWrapper>
               <PageNavigator
                 pages={pages}
                 activePageIndex={activePageIndex}
@@ -217,13 +469,11 @@ export default function DocComparePage() {
                   setFocusedPinId(null);
                   setSelectedSummaryId(null);
                 }}
-                onAddPage={() =>
-                  alert("비교 모드에서는 페이지를 추가할 수 없습니다.")
-                }
+                isReadOnly={true}
               />
-            </PageNavWrapper>
+            </S.PageNavWrapper>
 
-            <LeftBox>
+            <S.LeftBox>
               <DiffScreenInfo
                 prevScreenName={currentPage.prevScreenName}
                 prevScreenId={currentPage.prevScreenId}
@@ -231,9 +481,7 @@ export default function DocComparePage() {
                 currScreenId={currentPage.currScreenId}
                 isModified={currentPage.isScreenInfoModified}
               />
-
-              <Divider />
-
+              <S.Divider />
               <DiffWireframeCanvas
                 device={currentPage.device}
                 isImageModified={currentPage.isImageModified}
@@ -247,12 +495,11 @@ export default function DocComparePage() {
                   setSelectedSummaryId(null);
                 }}
               />
-            </LeftBox>
-          </LeftColumn>
+            </S.LeftBox>
+          </S.LeftColumn>
 
-          {/* 우측 영역 */}
-          <RightColumn>
-            <RightBox>
+          <S.RightColumn>
+            <S.RightBox>
               <DiffRequirementSection
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
@@ -261,88 +508,10 @@ export default function DocComparePage() {
                   setSelectedSummaryId(null);
                 }}
               />
-            </RightBox>
-          </RightColumn>
-        </MainSection>
-      </ContentContainer>
-    </PageLayout>
+            </S.RightBox>
+          </S.RightColumn>
+        </S.MainSection>
+      </S.ContentContainer>
+    </S.PageLayout>
   );
 }
-
-const PageLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff !important;
-  padding: 40px 0 80px 0;
-  box-sizing: border-box;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-  width: 1200px;
-`;
-
-const MainSection = styled.div`
-  display: flex;
-  width: 1200px;
-  justify-content: space-between;
-  align-items: flex-end;
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 712px;
-`;
-
-const PageNavWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-`;
-
-const LeftBox = styled.div`
-  width: 712px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const Divider = styled.hr`
-  width: 100%;
-  height: 1px;
-  border: none;
-  background-color: #eaeaea;
-  margin: 0;
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 468px;
-`;
-
-const RightBox = styled.div`
-  width: 468px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-`;

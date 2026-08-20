@@ -1,20 +1,42 @@
 import React from "react";
-import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import * as S from "./DocHeader.styles";
 
-export default function DiffHeader({
+export default function DocHeader({
   docName = "스토리보드",
   prevVersion = 1,
-  currVersion = 2,
-  updatedAt = "2026.06.30. 20:30:37",
+  currVersion = 1,
+  mode = "create", // 'create' | 'edit' | 'compare'
+  updatedAt,
+  onBack,
+  onTempSave,
+  onSave,
 }) {
   const navigate = useNavigate();
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const renderTitle = () => {
+    if (mode === "edit") {
+      return `${docName} Version.${currVersion} 수정`;
+    }
+    if (mode === "compare") {
+      return `${docName} Version.${currVersion}`;
+    }
+    return `${docName}_Version.${currVersion}`;
+  };
+
   return (
-    <HeaderContainer>
-      {/* [<-] 버튼 클릭 시 '팀 프로젝트 메인화면'으로 이동 */}
-      <LeftArea onClick={() => navigate("/team-project-main")}>
-        <BackArrow viewBox="0 0 24 24" fill="none">
+    <S.HeaderContainer>
+      {/* 1. 좌측: 뒤로가기 + 타이틀 */}
+      <S.LeftArea onClick={handleBack} style={{ cursor: "pointer" }}>
+        <S.BackArrow viewBox="0 0 24 24" fill="none">
           <path
             d="M19 12H5M5 12L12 19M5 12L12 5"
             stroke="#000000"
@@ -22,109 +44,80 @@ export default function DiffHeader({
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        </BackArrow>
-        <DocTitle>
-          {docName} Version.{currVersion}
-        </DocTitle>
-      </LeftArea>
+        </S.BackArrow>
+        <S.DocTitle>{renderTitle()}</S.DocTitle>
+      </S.LeftArea>
 
-      {/* 우측: 최근 업데이트 시간 및 {이전 버전} -> {수정 후 버전} 동적 표시 */}
-      <RightArea>
-        {updatedAt && <UpdateText>업데이트 : {updatedAt}</UpdateText>}
-        <VersionBadgeGroup>
-          {prevVersion !== undefined && (
-            <>
-              <PrevVersionBadge>Version.{prevVersion}</PrevVersionBadge>
-              <ArrowIcon viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M5 12H19M19 12L12 5M19 12L12 19"
-                  stroke="#000000"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </ArrowIcon>
-            </>
-          )}
-          <CurrVersionBadge>Version.{currVersion}</CurrVersionBadge>
-        </VersionBadgeGroup>
-      </RightArea>
-    </HeaderContainer>
+      {/* 2. 우측: 업데이트 시간 + 임시저장/저장 버튼 */}
+      <S.RightArea>
+        {mode === "compare" && (
+          <>
+            {updatedAt && <S.UpdateText>업데이트 : {updatedAt}</S.UpdateText>}
+            <S.VersionBadgeGroup>
+              {prevVersion !== undefined && (
+                <>
+                  <S.PrevVersionBadge>Version.{prevVersion}</S.PrevVersionBadge>
+                  <S.ArrowIcon viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12H19M19 12L12 5M19 12L12 19"
+                      stroke="#000000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </S.ArrowIcon>
+                </>
+              )}
+              <S.CurrVersionBadge>Version.{currVersion}</S.CurrVersionBadge>
+            </S.VersionBadgeGroup>
+          </>
+        )}
+
+        {(mode === "create" || mode === "edit") && (
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {/* 임시저장 시 업데이트 시간 노출 */}
+            {updatedAt && (
+              <S.UpdateText style={{ marginRight: "6px" }}>
+                업데이트 : {updatedAt}
+              </S.UpdateText>
+            )}
+            <button
+              type="button"
+              onClick={onTempSave}
+              style={{
+                height: "38px",
+                padding: "0 18px",
+                backgroundColor: "#f3f4f6",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#4b5563",
+                cursor: "pointer",
+              }}
+            >
+              임시저장
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              style={{
+                height: "38px",
+                padding: "0 22px",
+                backgroundColor: "#462fea",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#ffffff",
+                cursor: "pointer",
+              }}
+            >
+              저장
+            </button>
+          </div>
+        )}
+      </S.RightArea>
+    </S.HeaderContainer>
   );
 }
-
-const HeaderContainer = styled.div`
-  width: 1200px;
-  height: 61px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-sizing: border-box;
-`;
-
-const LeftArea = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  cursor: pointer;
-`;
-
-const BackArrow = styled.svg`
-  width: 24px;
-  height: 24px;
-`;
-
-const DocTitle = styled.h1`
-  font-family: "Pretendard-Bold", sans-serif;
-  font-size: 22px;
-  color: #000000;
-  margin: 0;
-`;
-
-const RightArea = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 20px;
-`;
-
-const UpdateText = styled.span`
-  font-family: "Pretendard-Regular", sans-serif;
-  font-size: 13px;
-  color: #666666;
-`;
-
-const VersionBadgeGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const PrevVersionBadge = styled.div`
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 6px;
-  border: 1px solid #d6d6d6;
-  background-color: #ffffff;
-  font-family: "Pretendard-Medium", sans-serif;
-  font-size: 13px;
-  color: #555555;
-  display: flex;
-  align-items: center;
-`;
-
-const ArrowIcon = styled.svg`
-  width: 16px;
-  height: 16px;
-`;
-
-const CurrVersionBadge = styled.div`
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 6px;
-  background-color: #462fea;
-  font-family: "Pretendard-Bold", sans-serif;
-  font-size: 13px;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-`;

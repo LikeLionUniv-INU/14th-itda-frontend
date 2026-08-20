@@ -1,18 +1,42 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import DocHeader from "./components/DocHeader";
 import PageNavigator from "./components/PageNavigator";
 import ScreenInfoForm from "./components/ScreenInfoForm";
 import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
-import SaveFlowModals from "./components/SaveFlowModals";
+import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import {
+  createDocument,
+  saveDocument,
+  autoSaveDocument,
+  requestTranslation,
+  uploadWireframePipeline,
+  getDocumentDetail,
+} from "../../api/documentApi";
+import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
+const formatCurrentTime = (dateObj = new Date()) => {
+  const d = new Date(dateObj);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}. ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
 export default function DocEditorPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { teamId: paramTeamId, docId: paramDocId } = useParams();
+
+  const passedState = location.state || {};
+  const teamId = paramTeamId || passedState.teamId;
+  const [docId, setDocId] = useState(paramDocId || passedState.docId || null);
+  const docName = passedState.name || "스토리보드";
+  const docVersion = passedState.version ? Number(passedState.version) : 1;
+
+  const [updatedAt, setUpdatedAt] = useState("");
 
   const [pages, setPages] = useState([
     {
@@ -32,15 +56,12 @@ export default function DocEditorPage() {
     },
   ]);
 
+  const pendingFilesRef = useRef({});
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
+  const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
 
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    step: "exit",
-  });
-
-  const currentPage = pages[activePageIndex] || {};
+  const currentPage = pages[activePageIndex] || pages[0] || {};
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
@@ -50,25 +71,188 @@ export default function DocEditorPage() {
     );
   };
 
+  const handleUploadImage = (tempUrl, rawFile) => {
+    const fileToUpload =
+      rawFile || (typeof tempUrl !== "string" ? tempUrl : null);
+
+    if (tempUrl && typeof tempUrl === "string") {
+      handleUpdatePage({ imageUrl: tempUrl });
+    }
+
+    if (fileToUpload) {
+      pendingFilesRef.current[activePageIndex] = fileToUpload;
+    }
+  };
+
+  const buildSavePayload = (summaryText = "최초 작성 저장") => ({
+    status: "IN_PROGRESS",
+    changeSummary: summaryText,
+    pages: pages.map((p, idx) => ({
+      pageNumber: idx + 1,
+      screenName: p.screenName || "",
+      screenId: p.screenId || "",
+      pins: (p.pins || []).map((pin) => {
+        const pinReqs = [];
+        INITIAL_ROLES.forEach((role) => {
+          const found = (p.requirements?.[role] || []).find(
+            (r) => r.id === pin.id,
+          );
+          if (found && (found.item || found.detail)) {
+            pinReqs.push({
+              tabType: role,
+              itemName: found.item || "",
+              content: found.detail || "",
+              isRequired: Boolean(found.isRequired),
+            });
+          }
+        });
+        return {
+          pinNumber: pin.number,
+          tabType: "공통",
+          xCoordinate: Number(pin.x) || 0.0,
+          yCoordinate: Number(pin.y) || 0.0,
+          requirements: pinReqs,
+        };
+      }),
+    })),
+  });
+
+  const handleTempSave = async () => {
+    try {
+      let currentDocId = docId;
+      if (!currentDocId && teamId) {
+        const res = await createDocument(teamId, {
+          name: docName,
+          language: passedState.language || "ko",
+          version: docVersion,
+        });
+        const data = res?.data?.data || res?.data || res;
+        currentDocId = data?.documentId || data?.id;
+        if (currentDocId) setDocId(currentDocId);
+      }
+
+      if (currentDocId) {
+        const res = await autoSaveDocument(
+          currentDocId,
+          docVersion,
+          buildSavePayload("임시저장"),
+        );
+        const data = res?.data || res;
+        setUpdatedAt(
+          data?.updatedAt
+            ? formatCurrentTime(data.updatedAt)
+            : formatCurrentTime(),
+        );
+      }
+      alert("임시저장되었습니다.");
+    } catch (e) {
+      console.error("임시저장 실패:", e);
+      alert(e.message || "임시저장 실패");
+    }
+  };
+
+  const handleSaveClick = () => {
+    setModalState({ isOpen: true, step: "complete_confirm" });
+  };
+
+  const handleFinalSave = async (selectedMembers = []) => {
+    try {
+      let currentDocId = docId;
+
+      // 1. 문서 생성
+      if (!currentDocId && teamId) {
+        const createRes = await createDocument(teamId, {
+          name: docName,
+          language: passedState.language || "ko",
+          version: docVersion,
+        });
+        const cData = createRes?.data?.data || createRes?.data || createRes;
+        currentDocId = cData?.documentId || cData?.id;
+        if (currentDocId) setDocId(currentDocId);
+      }
+
+      // 2. 전체 페이지 저장 (PUT) -> 서버가 실제 pageId 발급
+      if (currentDocId) {
+        await saveDocument(
+          currentDocId,
+          docVersion,
+          buildSavePayload("최초 작성 저장"),
+        );
+
+        // 3. 서버가 발급한 실제 pageId로 이미지 업로드 파이프라인 수행
+        try {
+          const detailRes = await getDocumentDetail(currentDocId, docVersion);
+          const detailData = detailRes?.data?.data || detailRes?.data || {};
+          const serverPages = detailData.pages || [];
+
+          for (let i = 0; i < serverPages.length; i++) {
+            const sPage = serverPages[i];
+            const file = pendingFilesRef.current[i];
+            const dev = pages[i]?.device || "desktop";
+            if (sPage?.id && file) {
+              await uploadWireframePipeline(sPage.id, file, dev);
+            }
+          }
+        } catch (imgErr) {
+          console.error("와이어프레임 MinIO 업로드 중 오류:", imgErr);
+        }
+      }
+
+      // 4. 번역 요청
+      const translations = (selectedMembers || [])
+        .filter((m) => m.checked)
+        .map((m) => ({
+          userId: m.id,
+          targetLanguage: m.language,
+        }));
+
+      setModalState({ isOpen: false, step: "exit" });
+
+      if (currentDocId && translations.length > 0) {
+        const transRes = await requestTranslation(
+          currentDocId,
+          docVersion,
+          translations,
+        );
+        const transData =
+          transRes?.data?.data || transRes?.data || transRes || {};
+        const jobId = transData.jobId || transData.id || currentDocId;
+
+        navigate("/trans", {
+          state: {
+            jobId,
+            teamId,
+            docId: currentDocId,
+            version: docVersion,
+            docName,
+          },
+        });
+      } else {
+        alert("문서가 성공적으로 저장되었습니다!");
+        navigate(teamId ? `/teamp/${teamId}` : "/home");
+      }
+    } catch (e) {
+      console.error("저장 및 번역 실패:", e);
+      alert(e.message || "저장 또는 번역 요청에 실패했습니다.");
+    }
+  };
+
   const handleAddPin = ({ x, y }) => {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
     const newPinNumber = currentPins.length + 1;
-
     const newPin = { id: newPinId, number: newPinNumber, x, y };
-    const newReqItem = {
-      id: newPinId,
-      number: newPinNumber,
-      item: "",
-      detail: "",
-      isModified: false,
-    };
 
     const updatedRequirements = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
       updatedRequirements[role] = [
         ...(updatedRequirements[role] || []),
-        { ...newReqItem },
+        {
+          id: newPinId,
+          number: newPinNumber,
+          item: "",
+          detail: "",
+        },
       ];
     });
 
@@ -98,73 +282,41 @@ export default function DocEditorPage() {
         .map((r, idx) => ({ ...r, number: idx + 1 }));
     });
 
-    handleUpdatePage({
-      pins: filteredPins,
-      requirements: updatedRequirements,
-    });
+    handleUpdatePage({ pins: filteredPins, requirements: updatedRequirements });
     setFocusedPinId(null);
   };
 
-  const handleUpdateRequirement = (
-    role,
-    reqId,
-    field,
-    value,
-    syncAll = false,
-  ) => {
+  const handleUpdateRequirement = (role, reqId, field, value) => {
     const updatedRequirements = { ...(currentPage.requirements || {}) };
-    const targetRoles = syncAll ? INITIAL_ROLES : [role];
+    const list = updatedRequirements[role] || [];
 
-    targetRoles.forEach((r) => {
-      const list = updatedRequirements[r] || [];
-      const exists = list.some((item) => item.id === reqId);
-
-      if (exists) {
-        updatedRequirements[r] = list.map((item) => {
-          if (item.id !== reqId) return item;
-          if (field === "all") return { ...item, ...value };
-          return { ...item, [field]: value };
-        });
-      } else {
-        const targetPin = (currentPage.pins || []).find((p) => p.id === reqId);
-        const newNumber = targetPin ? targetPin.number : list.length + 1;
-        const newItem =
-          field === "all"
-            ? { id: reqId, number: newNumber, ...value }
-            : {
-                id: reqId,
-                number: newNumber,
-                item: "",
-                detail: "",
-                [field]: value,
-              };
-        updatedRequirements[r] = [...list, newItem];
-      }
+    updatedRequirements[role] = list.map((item) => {
+      if (item.id !== reqId) return item;
+      if (field === "all") return { ...item, ...value };
+      return { ...item, [field]: value };
     });
 
     handleUpdatePage({ requirements: updatedRequirements });
   };
 
   return (
-    <PageLayout>
-      <ContentContainer>
-        <HeaderWrapper>
+    <S.PageLayout>
+      <S.ContentContainer>
+        <S.HeaderWrapper>
           <DocHeader
-            docName="스토리보드"
-            version={1}
+            docName={docName}
+            currVersion={docVersion}
             mode="create"
+            updatedAt={updatedAt}
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
-            onTempSave={() => alert("임시저장되었습니다.")}
-            onSave={() =>
-              setModalState({ isOpen: true, step: "complete_confirm" })
-            }
+            onTempSave={handleTempSave}
+            onSave={handleSaveClick}
           />
-        </HeaderWrapper>
+        </S.HeaderWrapper>
 
-        <MainSection>
-          {/* 좌측 (712px × 854px) */}
-          <LeftColumn>
-            <PageNavWrapper>
+        <S.MainSection>
+          <S.LeftColumn>
+            <S.PageNavWrapper>
               <PageNavigator
                 pages={pages}
                 activePageIndex={activePageIndex}
@@ -194,9 +346,9 @@ export default function DocEditorPage() {
                   setActivePageIndex(pages.length);
                 }}
               />
-            </PageNavWrapper>
+            </S.PageNavWrapper>
 
-            <LeftBox>
+            <S.LeftBox>
               <ScreenInfoForm
                 screenName={currentPage.screenName}
                 screenId={currentPage.screenId}
@@ -205,24 +357,24 @@ export default function DocEditorPage() {
                 }
                 onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
               />
+              <S.Divider />
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
                 pins={currentPage.pins}
                 focusedPinId={focusedPinId}
                 onChangeDevice={(device) => handleUpdatePage({ device })}
-                onUploadImage={(imageUrl) => handleUpdatePage({ imageUrl })}
+                onUploadImage={handleUploadImage}
                 onAddPin={handleAddPin}
                 onUpdatePinPos={handleUpdatePinPos}
                 onFocusPin={(id) => setFocusedPinId(id)}
                 onDeletePin={handleDeletePin}
               />
-            </LeftBox>
-          </LeftColumn>
+            </S.LeftBox>
+          </S.LeftColumn>
 
-          {/* 우측 (468px × 854px) */}
-          <RightColumn>
-            <RightBox>
+          <S.RightColumn>
+            <S.RightBox>
               <RequirementSection
                 mode="create"
                 requirements={currentPage.requirements || {}}
@@ -230,15 +382,16 @@ export default function DocEditorPage() {
                 onUpdateRequirement={handleUpdateRequirement}
                 onFocusPin={(id) => setFocusedPinId(id)}
               />
-            </RightBox>
-          </RightColumn>
-        </MainSection>
-      </ContentContainer>
+            </S.RightBox>
+          </S.RightColumn>
+        </S.MainSection>
+      </S.ContentContainer>
 
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
-        docName="스토리보드_Version1"
+        teamId={teamId}
+        docName={`${docName}_Version.${docVersion}`}
         onClose={() => setModalState({ isOpen: false, step: "exit" })}
         onConfirmExit={() => {
           setModalState({ isOpen: false, step: "exit" });
@@ -247,90 +400,8 @@ export default function DocEditorPage() {
         onNextStep={(nextStep) =>
           setModalState({ isOpen: true, step: nextStep })
         }
-        onFinalSave={() => {
-          setModalState({ isOpen: false, step: "exit" });
-          alert("스토리보드가 성공적으로 저장되었습니다!");
-        }}
+        onFinalSave={handleFinalSave}
       />
-    </PageLayout>
+    </S.PageLayout>
   );
 }
-
-const PageLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff;
-  padding: 40px 0 80px 0;
-  box-sizing: border-box;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-  width: 1200px;
-`;
-
-const HeaderWrapper = styled.div`
-  width: 1200px;
-  height: 61px;
-  display: flex;
-  align-items: center;
-`;
-
-const MainSection = styled.div`
-  display: flex;
-  width: 1200px;
-  justify-content: space-between;
-  align-items: flex-end;
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 712px;
-`;
-
-const PageNavWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-`;
-
-/* 712px × 854px 고정 박스 */
-const LeftBox = styled.div`
-  width: 712px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 468px;
-`;
-
-/* 468px × 854px 고정 박스 */
-const RightBox = styled.div`
-  width: 468px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-`;

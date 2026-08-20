@@ -1,16 +1,38 @@
 import React, { useState } from "react";
-import { Mail, Lock, Globe, Languages, User } from "lucide-react";
+import { Mail, Lock, Globe, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { signupApi } from "../api/auth";
+import LanguageSelect from "../components/LanguageSelect";
 import * as S from "./Signup.styles";
+import globe from "../assets/image/globe.svg";
+import robot from "../assets/image/robot.svg";
+import people from "../assets/image/people.svg";
+import manage from "../assets/image/manage.svg";
+
+// 국가 옵션 리스트 (ISO-2 국가 코드)
+const COUNTRY_OPTIONS = [
+  { code: "KR", label: "대한민국" },
+  { code: "US", label: "미국" },
+  { code: "JP", label: "일본" },
+  { code: "CN", label: "중국" },
+  { code: "VN", label: "베트남" },
+  { code: "ID", label: "인도네시아" },
+  { code: "GB", label: "영국" },
+  { code: "FR", label: "프랑스" },
+  { code: "DE", label: "독일" },
+  { code: "ES", label: "스페인" },
+];
 
 const Signup = ({ onNavigateToLogin }) => {
+  const navigate = useNavigate();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [country, setCountry] = useState("");
-  const [language, setLanguage] = useState("");
+  const [country, setCountry] = useState("KR");
+  const [language, setLanguage] = useState("ko");
 
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
@@ -83,75 +105,104 @@ const Signup = ({ onNavigateToLogin }) => {
     validatePassword(password) &&
     password === passwordConfirm;
 
-  const handleSubmit = (e) => {
+  // 회원가입 제출 함수 (API 연동)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
 
-    alert("회원가입이 완료되었습니다!");
-    if (onNavigateToLogin) {
-      onNavigateToLogin();
+    try {
+      const response = await signupApi({
+        firstName,
+        lastName,
+        email,
+        password,
+        country,
+        language,
+      });
+
+      alert(
+        response.data?.message ||
+          response.message ||
+          "회원가입이 완료되었습니다!",
+      );
+
+      // 성공 시 로그인 페이지로 이동
+      if (onNavigateToLogin) {
+        onNavigateToLogin();
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "회원가입 처리 중 오류가 발생했습니다.";
+      alert(errorMessage);
     }
   };
-
-  const navigate = useNavigate();
 
   return (
     <S.Container>
       <S.MainWrapper>
         <S.LeftSection>
-          <S.ContentWrapper>
-            <S.MainTitle>
-              언어의 경계를 넘어
-              <br />
-              모두의 이해를 잇다
-              <br />
-              <span>하나의 협업으로</span>
-            </S.MainTitle>
-            <S.SubDescription>
-              하나의 문서만 작성하세요.
-              <br />
-              변경사항은 자동으로 동기화되고,
-              <br />
-              글로벌 팀은 언제나 같은 내용을 이해합니다.
-            </S.SubDescription>
-          </S.ContentWrapper>
-
-          <S.FeatureList>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>글로벌 협업</strong>
-                <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>AI 자동 동기화</strong>
-                <span>
-                  수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
-                  유지합니다.
-                </span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>팀 협업</strong>
-                <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-            <S.FeatureItem>
-              <S.FeatureIconBox />
-              <S.FeatureText>
-                <strong>버전 관리</strong>
-                <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
-              </S.FeatureText>
-            </S.FeatureItem>
-          </S.FeatureList>
-
-          <S.MapGraphic />
-        </S.LeftSection>
+                  <S.MainTitle>
+                    언어의 경계를 넘어
+                    <br />
+                    모두의 이해를 잇다
+                    <br />
+                    <span>하나의 협업으로</span>
+                  </S.MainTitle>
+                  <S.SubDescription>
+                    하나의 문서만 작성하세요.
+                    <br />
+                    변경사항은 자동으로 동기화되고,
+                    <br />
+                    글로벌 팀은 언제나 같은 내용을 이해합니다.
+                  </S.SubDescription>
+        
+                  <S.FeatureList>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={globe} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>글로벌 협업</strong>
+                        <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={robot} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>AI 자동 동기화</strong>
+                        <span>
+                          수정된 내용만 번역하여 모든 언어 문서를 최신 상태로
+                          유지합니다.
+                        </span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={people} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>팀 협업</strong>
+                        <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                    <S.FeatureItem>
+                      <S.FeatureIconBox>
+                        <img src={manage} />
+                      </S.FeatureIconBox>
+                      <S.FeatureText>
+                        <strong>버전 관리</strong>
+                        <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
+                      </S.FeatureText>
+                    </S.FeatureItem>
+                  </S.FeatureList>
+                  <S.MapGraphic />
+                </S.LeftSection>
 
         <S.RightSection>
           <S.Card>
@@ -174,8 +225,8 @@ const Signup = ({ onNavigateToLogin }) => {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         onBlur={handleFirstNameBlur}
-                        hasError={!!firstNameError}
-                        hasIcon
+                        $hasError={!!firstNameError}
+                        $hasIcon
                       />
                     </S.InputWrapper>
                     {firstNameError && (
@@ -191,8 +242,8 @@ const Signup = ({ onNavigateToLogin }) => {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         onBlur={handleLastNameBlur}
-                        hasError={!!lastNameError}
-                        hasIcon
+                        $hasError={!!lastNameError}
+                        $hasIcon
                       />
                     </S.InputWrapper>
                     {lastNameError && (
@@ -212,8 +263,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={handleEmailBlur}
-                    hasError={!!emailError}
-                    hasIcon
+                    $hasError={!!emailError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {emailError && <S.ErrorText>{emailError}</S.ErrorText>}
@@ -229,8 +280,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onBlur={handlePasswordBlur}
-                    hasError={!!passwordError}
-                    hasIcon
+                    $hasError={!!passwordError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {passwordError && <S.ErrorText>{passwordError}</S.ErrorText>}
@@ -246,8 +297,8 @@ const Signup = ({ onNavigateToLogin }) => {
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     onBlur={handleConfirmBlur}
-                    hasError={!!confirmError}
-                    hasIcon
+                    $hasError={!!confirmError}
+                    $hasIcon
                   />
                 </S.InputWrapper>
                 {confirmError && <S.ErrorText>{confirmError}</S.ErrorText>}
@@ -261,37 +312,24 @@ const Signup = ({ onNavigateToLogin }) => {
                     <S.Select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      hasIcon
+                      $hasIcon
                     >
-                      <option value="" disabled hidden>
-                        국적을 선택해 주세요
-                      </option>
-                      <option value="KR">대한민국</option>
-                      <option value="US">미국</option>
-                      <option value="JP">일본</option>
-                      <option value="CN">중국</option>
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
                     </S.Select>
                   </S.InputWrapper>
                 </S.InputGroup>
 
                 <S.InputGroup>
                   <label>사용 언어</label>
-                  <S.InputWrapper>
-                    <Languages size={18} />
-                    <S.Select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      hasIcon
-                    >
-                      <option value="" disabled hidden>
-                        사용 언어를 선택해 주세요
-                      </option>
-                      <option value="ko">한국어</option>
-                      <option value="en">English</option>
-                      <option value="ja">日本語</option>
-                      <option value="zh">中文</option>
-                    </S.Select>
-                  </S.InputWrapper>
+                  <LanguageSelect
+                    value={language}
+                    onChange={(val) => setLanguage(val)}
+                    height="46px"
+                  />
                 </S.InputGroup>
               </S.RowGroup>
 

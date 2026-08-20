@@ -1,64 +1,216 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Header from "../../components/Header";
+import DocIcon from "../../assets/image/file.svg";
+import { getTeamDetail } from "../../api/teamApi";
+import { getDocumentVersions } from "../../api/documentApi";
+import { getRelativeTime } from "../../components/dateUtil";
 import * as S from "./TeamProjectDocs.styles";
 
-export default function TeamProjectDocs({
-  projectInfo = {
-    title: "AI 서비스 플랫폼",
-    defaultLang: "한국어",
-    members: ["J", "K", "B", "+2"],
-    createdDate: "2026.06.30",
-  },
-  documents = [],
-  onSelectDocument,
-}) {
+const getLanguageFullName = (langCode) => {
+  if (!langCode) return "-";
+  const code = String(langCode).toLowerCase().trim();
+  const langMap = {
+    ko: "한국어",
+    korean: "한국어",
+    en: "English",
+    english: "English",
+    ja: "日本語",
+    japanese: "日本語",
+    zh: "中文",
+    chinese: "中文",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    vi: "Tiếng Việt",
+  };
+  return langMap[code] || langCode;
+};
+
+const getLanguagesDisplay = (languages, fallback) => {
+  if (Array.isArray(languages) && languages.length > 0) {
+    return languages.map(getLanguageFullName).join(", ");
+  }
+  return getLanguageFullName(fallback);
+};
+
+const getInitial = (name) => {
+  if (!name) return "";
+  return String(name).trim().charAt(0).toUpperCase();
+};
+
+export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
   const navigate = useNavigate();
+  const { teamId } = useParams();
+
+  const [projectData, setProjectData] = useState(null);
+  const [docLatestTimes, setDocLatestTimes] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDocsData = async () => {
+      if (!teamId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await getTeamDetail(teamId);
+        const resData = res?.data;
+        if (resData) {
+          const pData = resData.data || resData;
+          setProjectData(pData);
+
+          const docs = pData.documents || pData.docs || [];
+          if (docs.length > 0) {
+            const timeMap = {};
+            await Promise.allSettled(
+              docs.map(async (doc) => {
+                const dId = doc.id || doc.documentId;
+                try {
+                  const vRes = await getDocumentVersions(dId);
+                  const vList = vRes?.data?.data || vRes?.data || [];
+                  if (Array.isArray(vList) && vList.length > 0) {
+                    const latestVerObj = vList.reduce(
+                      (prev, curr) =>
+                        Number(curr.version) > Number(prev.version)
+                          ? curr
+                          : prev,
+                      vList[0],
+                    );
+                    timeMap[dId] =
+                      latestVerObj.updatedAt || latestVerObj.createdAt;
+                  }
+                } catch (err) {
+                  console.warn(`문서(${dId}) 버전 목록 조회 스킵:`, err);
+                }
+              }),
+            );
+            setDocLatestTimes(timeMap);
+          }
+        }
+      } catch (error) {
+        console.error("팀 문서 목록 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocsData();
+  }, [teamId]);
+
+  if (loading) return <div>로딩 중...</div>;
+
+  const projectInfo = projectData || {
+    name: "프로젝트",
+    defaultLanguage: "ko",
+    createdAt: "",
+    members: [],
+    documents: [],
+  };
+
+  const isLeader =
+    projectInfo.myRole === "LEADER" ||
+    projectInfo.isLeader === true ||
+    projectInfo.role === "LEADER";
+
+  const docs = projectInfo.documents || projectInfo.docs || [];
+  const members = projectInfo.members || [];
+
+  const memberInitials = members
+    .slice(0, 3)
+    .map((m) => getInitial(m.name || m.firstName || m.nickname));
+  const extraMemberCount = members.length - 3;
+
+  const handleDocClick = (doc) => {
+    const targetId = doc.id || doc.documentId;
+    const docVersion = Number(
+      doc.latestVersion || doc.currentVersion || doc.version || 1,
+    );
+
+    if (onSelectDocument) {
+      onSelectDocument(targetId, isLeader, docVersion);
+      return;
+    }
+
+    if (isLeader) {
+      if (onNavigate) {
+        onNavigate("docEdit", targetId);
+      } else {
+        navigate(`/doc-edit/${targetId}`, {
+          state: { teamId, version: docVersion, docId: targetId },
+        });
+      }
+    } else {
+      if (docVersion === 1) {
+        if (onNavigate) {
+          onNavigate("docView", targetId);
+        } else {
+          navigate(`/doc-view/${targetId}`, {
+            state: { teamId, version: 1, docId: targetId },
+          });
+        }
+      } else {
+        if (onNavigate) {
+          onNavigate("docDetail", targetId);
+        } else {
+          navigate(`/doc-compare/${targetId}`, {
+            state: { teamId, version: docVersion, docId: targetId },
+          });
+        }
+      }
+    }
+  };
 
   return (
     <S.PageWrapper>
-      <S.TopHeader>
-        <S.BackButton onClick={() => navigate(-1)} aria-label="뒤로가기">
-          <svg viewBox="0 0 24 24">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
-          </svg>
-        </S.BackButton>
-      </S.TopHeader>
+      <Header
+        type="project"
+        isLeader={isLeader}
+        onCreateDoc={null}
+        onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
+      />
 
       <S.Content>
-        <S.ProjectSummaryCard>
-          <S.ProjectTitle>{projectInfo.title}</S.ProjectTitle>
-          <S.ProjectMetaInfo>
+        <S.BannerCard>
+          <S.BannerTitle>{projectInfo.name || projectInfo.title}</S.BannerTitle>
+          <S.BannerMeta>
             <S.MetaItem>
               <span className="label">기본 언어</span>
-              <span className="value">{projectInfo.defaultLang}</span>
+              <span className="value">
+                {getLanguageFullName(
+                  projectInfo.defaultLanguage || projectInfo.language,
+                )}
+              </span>
             </S.MetaItem>
 
             <S.MetaItem>
               <span className="label">멤버</span>
               <S.AvatarGroup>
-                {projectInfo.members.map((m, idx) => (
-                  <S.MiniAvatar
-                    key={idx}
-                    className={m.startsWith("+") ? "more" : ""}
-                  >
-                    {m}
-                  </S.MiniAvatar>
+                {memberInitials.map((initial, idx) => (
+                  <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
                 ))}
+                {extraMemberCount > 0 && (
+                  <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
+                )}
               </S.AvatarGroup>
             </S.MetaItem>
 
             <S.MetaItem>
               <span className="label">생성일</span>
-              <span className="value">{projectInfo.createdDate}</span>
+              <span className="value">
+                {projectInfo.createdAt?.split("T")[0] ||
+                  projectInfo.createdAt ||
+                  "-"}
+              </span>
             </S.MetaItem>
-          </S.ProjectMetaInfo>
-        </S.ProjectSummaryCard>
+          </S.BannerMeta>
+        </S.BannerCard>
 
-        <S.SectionTitle>최근 문서</S.SectionTitle>
+        <S.SectionTitle>전체 문서 목록</S.SectionTitle>
 
-        {documents.length === 0 ? (
+        {docs.length === 0 ? (
           <S.EmptyContainer>
-            <S.DocIcon />
+            <img src={DocIcon} alt="문서 아이콘" width="48" height="48" />
             <h4>작성한 문서가 아직 없어요</h4>
             <p>새로운 문서를 작성하고 콘텐츠를 관리해보세요.</p>
           </S.EmptyContainer>
@@ -75,21 +227,42 @@ export default function TeamProjectDocs({
                 </tr>
               </thead>
               <tbody>
-                {documents.map((doc) => (
-                  <tr
-                    key={doc.id}
-                    onClick={() => {
-                      if (onSelectDocument) onSelectDocument(doc.id);
-                      else navigate(`/doc/${doc.id}`);
-                    }}
-                  >
-                    <td className="doc-name">{doc.name}</td>
-                    <td>{doc.project}</td>
-                    <td>{doc.lang}</td>
-                    <td>{doc.version}</td>
-                    <td>{doc.updated}</td>
-                  </tr>
-                ))}
+                {docs.map((doc) => {
+                  const docId = doc.id || doc.documentId;
+                  const realTime =
+                    docLatestTimes[docId] ||
+                    doc.latestVersionUpdatedAt ||
+                    doc.versionUpdatedAt ||
+                    doc.updatedAt ||
+                    doc.createdAt;
+
+                  return (
+                    <tr
+                      key={docId}
+                      onClick={() => handleDocClick(doc)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td className="doc-name">{doc.name || doc.title}</td>
+                      <td>
+                        {projectInfo.name || doc.projectName || doc.project}
+                      </td>
+                      <td>
+                        {getLanguagesDisplay(
+                          doc.languages,
+                          doc.language || doc.selectedLang,
+                        )}
+                      </td>
+                      <td>
+                        ver.{" "}
+                        {doc.latestVersion ||
+                          doc.currentVersion ||
+                          doc.version ||
+                          1}
+                      </td>
+                      <td>{getRelativeTime(realTime)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </S.Table>
           </S.TableContainer>

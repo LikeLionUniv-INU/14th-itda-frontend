@@ -4,15 +4,24 @@ import projecticon from "../../assets/image/project icon.svg";
 import docicon from "../../assets/image/doc icon.svg";
 
 export const PageWrapper = styled.div`
-  background-color: #f8f9fa;
+  width: 100%;
   min-height: 100vh;
-  font-family: sans-serif;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
 `;
 
-export const Content = styled.main`
-  max-width: 1000px;
-  margin: 32px auto;
-  padding: 0 10px;
+export const Content = styled.div`
+  width: 100%;
+  max-width: 1202px;
+  margin: 0 auto;
+  padding: 32px 24px 80px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 export const Banner = styled.div`
@@ -20,7 +29,6 @@ export const Banner = styled.div`
   border-radius: 12px;
   padding: 30px 40px;
   margin-bottom: 40px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -77,50 +85,69 @@ export const MoreLink = styled.a`
 export const ProjectGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   margin-bottom: 20px;
 `;
 
 export const ProjectCard = styled.div`
   background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 20px;
-
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px 20px;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
 
   h4 {
-    font-size: 15px;
-    margin-bottom: 6px;
+    font-family: "Pretendard-Bold", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #111111;
   }
   .langs {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 16px;
-  }
-  .time {
-    font-size: 11px;
-    color: #999;
+    font-family: "Pretendard-Regular", sans-serif;
+    font-size: 13px;
+    color: #666666;
+    margin: 0 0 20px 0;
   }
 `;
 
 export const AvatarGroup = styled.div`
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 14px;
 `;
 
 export const MiniAvatar = styled.div`
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: #f3f4f6;
-  color: #4f46e5;
-  font-size: 11px;
+  background-color: ${({ $isMore }) => ($isMore ? "#E5E7EB" : "#F0F0FF")};
+  color: ${({ $isMore }) => ($isMore ? "#4B5563" : "#462FEA")};
+  font-family: "Pretendard-Bold", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  border: 2px solid #ffffff;
+  margin-right: -4px;
+`;
+
+export const CardFooterText = styled.div`
+  font-family: "Pretendard-Regular", sans-serif;
+  font-size: 12px;
+  color: #8a8a8a;
+  margin-top: auto;
 `;
 
 export const Table = styled.table`
@@ -200,7 +227,6 @@ export const ProjectIcon = styled.div`
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-
   width: 80px;
   height: 80px;
   margin-bottom: 12px;
@@ -211,8 +237,75 @@ export const DocIcon = styled.div`
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-
   width: 80px;
   height: 80px;
   margin-bottom: 12px;
+`;
+
+export const NotificationBar = styled.div`
+  grid-column: 1 / -1;
+  width: 1050px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ebf2ff;
+  border: 1px solid #bed8ff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 4px;
+`;
+
+export const NotificationLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+export const NotificationIconBox = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #dce8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f65f6;
+  flex-shrink: 0;
+`;
+
+export const NotificationTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666666;
+  }
+`;
+
+export const NotificationButton = styled.button`
+  background-color: #2f65f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #1d4ed8;
+  }
 `;

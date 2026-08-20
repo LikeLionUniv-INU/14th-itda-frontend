@@ -1,530 +1,610 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import { useNavigate, useParams } from "react-router-dom";
-
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DocHeader from "./components/DocHeader";
 import SummarySection from "./components/SummarySection";
 import PageNavigator from "./components/PageNavigator";
 import ScreenInfoForm from "./components/ScreenInfoForm";
 import WireframeCanvas from "./components/WireframeCanvas";
 import RequirementSection from "./components/RequirementSection";
-import SaveFlowModals from "./components/SaveFlowModals";
+import EditSummaryModal from "../../components/Modal/EditSummaryModal";
+import SaveFlowModals from "../../components/Modal/SaveFlowModals";
+import api from "../../api/axios";
+import {
+  getDocumentDetail,
+  getDocumentChanges,
+  saveDocument,
+  autoSaveDocument,
+  createNewVersion,
+  requestTranslation,
+  uploadWireframePipeline,
+} from "../../api/documentApi";
+import * as S from "./DocEditor.styles";
 
 const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
 
-const getTodayFormatted = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}.${month}.${day}.`;
+const createEmptyPage = (pageNumber = 1) => ({
+  pageId: Date.now() + Math.random(),
+  pageNumber,
+  screenName: "",
+  screenId: "",
+  imageUrl: "",
+  device: "desktop",
+  pins: [],
+  requirements: {
+    공통: [],
+    기획: [],
+    프론트: [],
+    백엔드: [],
+    디자인: [],
+  },
+});
+
+const formatCurrentTime = (dateObj = new Date()) => {
+  const d = new Date(dateObj);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 };
 
 export default function DocEditPage() {
   const navigate = useNavigate();
-  const { docId } = useParams();
+  const location = useLocation();
+  const { teamId: paramTeamId, docId: paramDocId, documentId } = useParams();
 
-  // 기존 Version.1 문서를 불러온 상태의 기본 데이터
-  const [currentVersion, setCurrentVersion] = useState(1);
-  const [pages, setPages] = useState([
-    {
-      pageId: 1,
-      screenName: "회원가입 페이지",
-      screenId: "SIGN_UP_001",
-      imageUrl: "",
-      device: "desktop",
-      pins: [
-        { id: 101, number: 1, x: 180, y: 120 },
-        { id: 102, number: 2, x: 180, y: 220 },
-      ],
-      requirements: {
-        공통: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        기획: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        프론트: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        백엔드: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-        디자인: [
-          {
-            id: 101,
-            number: 1,
-            item: "ID 입력",
-            detail:
-              '아이디 중복검사 기능 버튼\n중복 발생 시 - "해당 아이디는 사용할 수 없습니다." 메시지',
-            isModified: false,
-          },
-          {
-            id: 102,
-            number: 2,
-            item: "이메일 입력",
-            detail:
-              '메일을 입력하지 않고 [Enter] or [로그인] 버튼을 누르면 => "이메일을 입력해주세요." 안내 문구 표시',
-            isModified: false,
-          },
-        ],
-      },
-    },
-    {
-      pageId: 2,
-      screenName: "로그인 페이지",
-      screenId: "SIGN_IN_001",
-      imageUrl: "",
-      device: "desktop",
-      pins: [],
-      requirements: {
-        공통: [],
-        기획: [],
-        프론트: [],
-        백엔드: [],
-        디자인: [],
-      },
-    },
-  ]);
+  const passedState = location.state || {};
+  const docId = paramDocId || documentId || passedState.docId;
+  const initialVersion = passedState.version ? Number(passedState.version) : 1;
+  const [teamId, setTeamId] = useState(
+    paramTeamId ||
+      passedState.teamId ||
+      localStorage.getItem("currentTeamId") ||
+      "",
+  );
 
+  const [documentInfo, setDocumentInfo] = useState({
+    name: "스토리보드",
+    updatedAt: "",
+  });
+  const [currentVersion, setCurrentVersion] = useState(initialVersion);
+  const [pages, setPages] = useState([createEmptyPage(1)]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [focusedPinId, setFocusedPinId] = useState(null);
+
+  const pendingFilesRef = useRef({});
+
+  const [summaryList, setSummaryList] = useState([]);
   const [selectedSummaryId, setSelectedSummaryId] = useState(null);
 
-  // 상단 수정사항 요약 리스트
-  const [summaryList, setSummaryList] = useState([]);
-
-  // 모달 상태 관리
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    step: "exit",
+  const [isEditSummaryOpen, setIsEditSummaryOpen] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, step: "exit" });
+  const [newVersionInfo, setNewVersionInfo] = useState({
+    version: initialVersion + 1,
+    description: "",
   });
 
-  const currentPage = pages[activePageIndex] || {};
+  const fetchDoc = useCallback(async () => {
+    if (!docId) return;
+    try {
+      const res = await getDocumentDetail(docId, currentVersion);
+      const data = res?.data?.data || res?.data || res;
+      if (!data) return;
+
+      const fetchedTeamId =
+        data.teamId ||
+        data.teamProjectId ||
+        data.team?.id ||
+        data.teamProject?.id ||
+        localStorage.getItem("currentTeamId") ||
+        "";
+
+      if (!teamId && fetchedTeamId) {
+        setTeamId(fetchedTeamId);
+      }
+
+      setDocumentInfo({
+        name: data.name || data.title || "스토리보드",
+        updatedAt: data.updatedAt
+          ? data.updatedAt.replace("T", " ").substring(0, 19)
+          : "",
+      });
+
+      const fetchedVersion = data.version
+        ? Number(data.version)
+        : currentVersion;
+      setCurrentVersion(fetchedVersion);
+      setNewVersionInfo({
+        version: fetchedVersion + 1,
+        description: "",
+      });
+
+      if (data.pages && data.pages.length > 0) {
+        const formattedPages = data.pages.map((p, idx) => {
+          const reqMap = {
+            공통: [],
+            기획: [],
+            프론트: [],
+            백엔드: [],
+            디자인: [],
+          };
+
+          const pins = (p.pins || []).map((pin) => {
+            const pinId = pin.id || pin.pinNumber;
+            const pinNum = pin.pinNumber;
+
+            // 5개 모든 직무 탭에 대해 해당 핀의 요구사항 입력 슬롯 보장
+            INITIAL_ROLES.forEach((role) => {
+              const foundReq = (pin.requirements || []).find(
+                (r) => (r.tabType || "공통") === role,
+              );
+
+              reqMap[role].push({
+                id: pinId,
+                reqId: foundReq?.id || null,
+                number: pinNum,
+                item: foundReq?.itemName || "",
+                detail: foundReq?.content || "",
+                isRequired: foundReq?.isRequired || false,
+              });
+            });
+
+            return {
+              id: pinId,
+              number: pinNum,
+              x: Number(pin.xCoordinate) || 0,
+              y: Number(pin.yCoordinate) || 0,
+            };
+          });
+
+          const imgUrl =
+            p.wireframeImages?.[0]?.imageUrl ||
+            p.wireframeImageUrl ||
+            p.imageUrl ||
+            "";
+
+          return {
+            pageId: p.id,
+            pageNumber: p.pageNumber || idx + 1,
+            screenName: p.screenName || "",
+            screenId: p.screenId || "",
+            imageUrl: imgUrl,
+            device: "desktop",
+            pins,
+            requirements: reqMap,
+          };
+        });
+        setPages(formattedPages);
+      } else {
+        setPages([createEmptyPage(1)]);
+      }
+
+      try {
+        const changeRes = await getDocumentChanges(docId, currentVersion);
+        const changeData = changeRes?.data?.data || changeRes?.data || [];
+        if (Array.isArray(changeData) && changeData.length > 0) {
+          const formattedSummary = changeData.map((c, i) => ({
+            id: c.id || i + 1,
+            pageIndex: (c.pageNumber || 1) - 1,
+            pageName: c.screenName || `페이지 ${c.pageNumber || 1}`,
+            number: c.pinNumber || 1,
+            pinNumber: c.pinNumber || 1,
+            pinId: c.pinId,
+            itemName: c.itemName || c.item || "-",
+            previewContent: c.content || c.changeContent || c.detail || "-",
+            author: c.authorName || c.modifiedBy || "작성자",
+            date: c.updatedAt
+              ? c.updatedAt.split("T")[0].replace(/-/g, ".")
+              : formatCurrentTime(),
+          }));
+          setSummaryList(formattedSummary);
+        }
+      } catch (err) {}
+    } catch (e) {
+      console.error("문서 조회 실패:", e);
+    }
+  }, [docId, currentVersion, teamId]);
+
+  useEffect(() => {
+    fetchDoc();
+  }, [fetchDoc]);
+
+  // 페이지/핀 ID가 서버 발급 ID일 경우 유지하여 전송 (페이지 재생성 및 이미지 삭제 방지)
+  const buildSavePayload = (summaryText) => ({
+    status: "IN_PROGRESS",
+    changeSummary: summaryText || "",
+    pages: pages.map((p, idx) => ({
+      ...(p.pageId && typeof p.pageId === "number" && p.pageId < 1000000000000
+        ? { id: p.pageId }
+        : {}),
+      pageNumber: idx + 1,
+      screenName: p.screenName || "",
+      screenId: p.screenId || "",
+      pins: (p.pins || []).map((pin) => {
+        const pinReqs = [];
+        INITIAL_ROLES.forEach((role) => {
+          const found = (p.requirements?.[role] || []).find(
+            (r) => r.id === pin.id,
+          );
+          if (found && (found.item || found.detail)) {
+            pinReqs.push({
+              ...(found.reqId ? { id: found.reqId } : {}),
+              tabType: role,
+              itemName: found.item || "",
+              content: found.detail || "",
+              isRequired: Boolean(found.isRequired),
+            });
+          }
+        });
+        return {
+          ...(pin.id && typeof pin.id === "number" && pin.id < 1000000000000
+            ? { id: pin.id }
+            : {}),
+          pinNumber: pin.number,
+          tabType: "공통",
+          xCoordinate: Number(pin.x) || 0.0,
+          yCoordinate: Number(pin.y) || 0.0,
+          requirements: pinReqs,
+        };
+      }),
+    })),
+  });
+
+  const handleTempSave = async () => {
+    try {
+      const res = await autoSaveDocument(
+        docId,
+        currentVersion,
+        buildSavePayload("임시저장"),
+      );
+      const data = res?.data || res;
+      setDocumentInfo((prev) => ({
+        ...prev,
+        updatedAt: data?.updatedAt
+          ? data.updatedAt.replace("T", " ").substring(0, 19)
+          : formatCurrentTime(),
+      }));
+      alert("임시저장되었습니다.");
+    } catch (e) {
+      console.error("임시저장 실패:", e);
+      alert(e.message || "임시저장 실패");
+    }
+  };
+
+  const handleFinalSaveWithTranslate = async (selectedMembers) => {
+    try {
+      let targetVersion = currentVersion;
+      const willCreateNewVer =
+        newVersionInfo.version &&
+        Number(newVersionInfo.version) > currentVersion;
+
+      if (willCreateNewVer) {
+        try {
+          const newVerRes = await createNewVersion(docId, currentVersion);
+          const verData = newVerRes?.data?.data || newVerRes?.data || {};
+          targetVersion = verData.version || Number(newVersionInfo.version);
+        } catch (verErr) {
+          targetVersion = Number(newVersionInfo.version) || currentVersion;
+        }
+      }
+
+      await saveDocument(
+        docId,
+        targetVersion,
+        buildSavePayload(newVersionInfo.description || "문서 수정 저장"),
+      );
+
+      // 발급된 새 버전 페이지 목록 조회 및 이미지 안전 복원
+      try {
+        const detailRes = await getDocumentDetail(docId, targetVersion);
+        const detailData = detailRes?.data?.data || detailRes?.data || {};
+        const serverPages = detailData.pages || [];
+
+        for (let i = 0; i < serverPages.length; i++) {
+          const sPage = serverPages[i];
+          const newFile = pendingFilesRef.current[i];
+          const prevImgUrl = pages[i]?.imageUrl;
+          const dev = pages[i]?.device || "desktop";
+
+          if (!sPage?.id) continue;
+
+          // 1. 이번에 새 이미지를 선택한 경우 -> MinIO 업로드 파이프라인
+          if (newFile) {
+            await uploadWireframePipeline(sPage.id, newFile, dev);
+          }
+          // 2. 이미지를 바꾸지 않았는데 새 버전 페이지에 이미지가 비어있는 경우 -> 기존 이미지 메타데이터 등록
+          else if (
+            prevImgUrl &&
+            (!sPage.wireframeImages || sPage.wireframeImages.length === 0)
+          ) {
+            try {
+              await api.post(`/api/pages/${sPage.id}/wireframe-images`, {
+                imageType: "WIREFRAME",
+                imageUrl: prevImgUrl,
+                originalWidth: dev === "mobile" ? 214 : 660,
+                originalHeight: dev === "mobile" ? 463 : 371,
+                displayWidth: dev === "mobile" ? 214 : 660,
+                displayHeight: dev === "mobile" ? 463 : 371,
+              });
+            } catch (copyErr) {
+              console.warn(
+                `페이지 ${sPage.id} 이미지 메타 복사 실패:`,
+                copyErr,
+              );
+            }
+          }
+        }
+      } catch (imgErr) {
+        console.error("수정 이미지 업로드 및 복원 실패:", imgErr);
+      }
+
+      const translations = (selectedMembers || [])
+        .filter((m) => m.checked)
+        .map((m) => ({
+          userId: m.id,
+          targetLanguage: m.language,
+        }));
+
+      setModalState({ isOpen: false, step: "exit" });
+
+      if (translations.length > 0) {
+        const transRes = await requestTranslation(
+          docId,
+          targetVersion,
+          translations,
+        );
+        const transData =
+          transRes?.data?.data || transRes?.data || transRes || {};
+        const jobId = transData.jobId || transData.id || docId;
+
+        navigate("/trans", {
+          state: {
+            jobId,
+            teamId,
+            docId,
+            version: targetVersion,
+            docName: documentInfo.name,
+          },
+        });
+      } else {
+        alert(
+          `${documentInfo.name} Version.${targetVersion} 저장이 완료되었습니다!`,
+        );
+        navigate(teamId ? `/teamp/${teamId}` : "/home");
+      }
+    } catch (e) {
+      console.error("저장 및 번역 요청 실패:", e);
+      alert(e.message || "저장 또는 번역 요청에 실패했습니다.");
+    }
+  };
+
+  const currentPage = pages[activePageIndex] || pages[0] || {};
 
   const handleUpdatePage = (updatedField) => {
     setPages((prev) =>
-      prev.map((p, idx) =>
-        idx === activePageIndex ? { ...p, ...updatedField } : p,
+      prev.map((p, i) =>
+        i === activePageIndex ? { ...p, ...updatedField } : p,
       ),
     );
   };
 
-  // 1. 핀 추가
+  const handleUploadImage = (tempUrl, rawFile) => {
+    const fileToUpload =
+      rawFile || (typeof tempUrl !== "string" ? tempUrl : null);
+
+    if (tempUrl && typeof tempUrl === "string") {
+      handleUpdatePage({ imageUrl: tempUrl });
+    }
+
+    if (fileToUpload) {
+      pendingFilesRef.current[activePageIndex] = fileToUpload;
+    }
+  };
+
   const handleAddPin = ({ x, y }) => {
     const currentPins = currentPage.pins || [];
     const newPinId = Date.now();
     const newPinNumber = currentPins.length + 1;
-
     const newPin = { id: newPinId, number: newPinNumber, x, y };
-    const newReqItem = {
-      id: newPinId,
-      number: newPinNumber,
-      item: "",
-      detail: "",
-      isModified: false,
-    };
-
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
+    const updatedReqs = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = [
-        ...(updatedRequirements[role] || []),
-        { ...newReqItem },
+      updatedReqs[role] = [
+        ...(updatedReqs[role] || []),
+        {
+          id: newPinId,
+          number: newPinNumber,
+          item: "",
+          detail: "",
+          isRequired: false,
+        },
       ];
     });
-
     handleUpdatePage({
       pins: [...currentPins, newPin],
-      requirements: updatedRequirements,
+      requirements: updatedReqs,
     });
     setFocusedPinId(newPin.id);
   };
 
-  // 2. 핀 이동
-  const handleUpdatePinPos = (pinId, { x, y }) => {
-    const updatedPins = (currentPage.pins || []).map((p) =>
-      p.id === pinId ? { ...p, x, y } : p,
-    );
-    handleUpdatePage({ pins: updatedPins });
-  };
-
-  // 3. 핀 삭제
   const handleDeletePin = (pinId) => {
     const filteredPins = (currentPage.pins || [])
       .filter((p) => p.id !== pinId)
-      .map((p, idx) => ({ ...p, number: idx + 1 }));
-
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
+      .map((p, i) => ({ ...p, number: i + 1 }));
+    const updatedReqs = { ...(currentPage.requirements || {}) };
     INITIAL_ROLES.forEach((role) => {
-      updatedRequirements[role] = (updatedRequirements[role] || [])
+      updatedReqs[role] = (updatedReqs[role] || [])
         .filter((r) => r.id !== pinId)
-        .map((r, idx) => ({ ...r, number: idx + 1 }));
+        .map((r, i) => ({ ...r, number: i + 1 }));
     });
-
-    handleUpdatePage({
-      pins: filteredPins,
-      requirements: updatedRequirements,
-    });
-
-    // 요약 테이블에서도 삭제된 핀 내역 제거
+    handleUpdatePage({ pins: filteredPins, requirements: updatedReqs });
     setSummaryList((prev) => prev.filter((s) => s.pinId !== pinId));
     setFocusedPinId(null);
   };
 
-  // 4. 요구사항 수정 및 상단 요약 섹션 실시간 자동 등록
-  const handleUpdateRequirement = (
-    role,
-    reqId,
-    field,
-    value,
-    syncAll = false,
-  ) => {
-    const updatedRequirements = { ...(currentPage.requirements || {}) };
-    const targetRoles = syncAll ? INITIAL_ROLES : [role];
+  const handleUpdateRequirement = (role, reqId, field, value) => {
+    const updatedReqs = { ...(currentPage.requirements || {}) };
+    const list = updatedReqs[role] || [];
+    let updatedItem = null;
 
-    targetRoles.forEach((r) => {
-      const list = updatedRequirements[r] || [];
-      const exists = list.some((item) => item.id === reqId);
-
-      if (exists) {
-        updatedRequirements[r] = list.map((item) => {
-          if (item.id !== reqId) return item;
-          if (field === "all") return { ...item, ...value };
-          return { ...item, [field]: value };
-        });
-      } else {
-        const targetPin = (currentPage.pins || []).find((p) => p.id === reqId);
-        const newNumber = targetPin ? targetPin.number : list.length + 1;
-        const newItem =
-          field === "all"
-            ? { id: reqId, number: newNumber, ...value }
-            : {
-                id: reqId,
-                number: newNumber,
-                item: "",
-                detail: "",
-                [field]: value,
-              };
-        updatedRequirements[r] = [...list, newItem];
-      }
+    updatedReqs[role] = list.map((item) => {
+      if (item.id !== reqId) return item;
+      const nextItem =
+        field === "all" ? { ...item, ...value } : { ...item, [field]: value };
+      updatedItem = nextItem;
+      return nextItem;
     });
 
-    handleUpdatePage({ requirements: updatedRequirements });
+    handleUpdatePage({ requirements: updatedReqs });
 
-    // 수정완료 시 요약 리스트 추가/업데이트
-    if (field === "all" && value.isModified) {
-      const targetReq = (updatedRequirements[role] || []).find(
-        (r) => r.id === reqId,
-      );
+    if (field === "all" && updatedItem) {
+      const pinObj = (currentPage.pins || []).find((p) => p.id === reqId);
+      const pinNumber = updatedItem.number || (pinObj ? pinObj.number : 1);
       const pageName =
         currentPage.screenName || `페이지 ${activePageIndex + 1}`;
 
       setSummaryList((prev) => {
-        const filtered = prev.filter(
-          (s) => !(s.pageIndex === activePageIndex && s.pinId === reqId),
+        const existingIdx = prev.findIndex(
+          (s) => s.pinId === reqId && s.role === role,
         );
-        return [
-          ...filtered,
-          {
-            id: `sum-${activePageIndex}-${reqId}`,
-            pageIndex: activePageIndex,
-            pinId: reqId,
-            pageName: pageName,
-            number: targetReq?.number || 1,
-            itemName: value.item || "-",
-            previewContent: value.detail || "-",
-            author: "김서연",
-            date: getTodayFormatted(),
-          },
-        ];
+        const summaryEntry = {
+          id: reqId + "_" + role,
+          role,
+          pinId: reqId,
+          pageIndex: activePageIndex,
+          pageName: pageName,
+          number: pinNumber,
+          pinNumber: pinNumber,
+          itemName: updatedItem.item || "-",
+          item: updatedItem.item || "-",
+          previewContent: updatedItem.detail || "-",
+          content: updatedItem.detail || "-",
+          author: "본인",
+          date: formatCurrentTime(),
+          updatedAt: formatCurrentTime(),
+        };
+
+        if (existingIdx >= 0) {
+          const next = [...prev];
+          next[existingIdx] = summaryEntry;
+          return next;
+        }
+        return [summaryEntry, ...prev];
       });
     }
   };
 
-  // 5. 상단 요약 항목 클릭 시 포커스 이동
-  const handleSelectSummary = (item) => {
-    setSelectedSummaryId(item.id);
-    if (item.pageIndex !== undefined && item.pageIndex !== activePageIndex) {
-      setActivePageIndex(item.pageIndex);
-    }
-    if (item.pinId) {
-      setFocusedPinId(item.pinId);
-    }
-  };
-
   return (
-    <PageLayout>
-      <ContentContainer>
-        {/* 상단 네비바 (수정 모드: updatedAt 및 버전 표기) */}
-        <HeaderWrapper>
+    <S.PageLayout>
+      <S.ContentContainer>
+        <S.HeaderWrapper>
           <DocHeader
-            docName="스토리보드"
-            version={currentVersion}
+            docName={documentInfo.name}
+            currVersion={currentVersion}
             mode="edit"
-            updatedAt="2026.06.30. 20:30:37"
+            updatedAt={documentInfo.updatedAt}
             onBack={() => setModalState({ isOpen: true, step: "exit" })}
-            onTempSave={() => alert("임시저장되었습니다.")}
-            onSave={() =>
-              setModalState({ isOpen: true, step: "complete_confirm" })
-            }
+            onTempSave={handleTempSave}
+            onSave={() => setIsEditSummaryOpen(true)}
           />
-        </HeaderWrapper>
+        </S.HeaderWrapper>
 
-        {/* 상단 수정사항 요약 박스 (1200px) */}
         <SummarySection
           summaryList={summaryList}
           selectedSummaryId={selectedSummaryId}
-          onSelectSummary={handleSelectSummary}
+          onSelectSummary={(item) => {
+            setSelectedSummaryId(item.id);
+            if (item.pageIndex !== undefined)
+              setActivePageIndex(item.pageIndex);
+            if (item.pinId) setFocusedPinId(item.pinId);
+          }}
         />
 
-        {/* 본문 2단 영역 */}
-        <MainSection>
-          {/* 좌측 (712px × 854px) */}
-          <LeftColumn>
-            <PageNavWrapper>
+        <S.MainSection>
+          <S.LeftColumn>
+            <S.PageNavWrapper>
               <PageNavigator
                 pages={pages}
                 activePageIndex={activePageIndex}
-                onSelectPage={(index) => {
-                  setActivePageIndex(index);
+                onSelectPage={(i) => {
+                  setActivePageIndex(i);
                   setFocusedPinId(null);
-                  setSelectedSummaryId(null);
                 }}
                 onAddPage={() => {
-                  setPages([
-                    ...pages,
-                    {
-                      pageId: Date.now(),
-                      screenName: "",
-                      screenId: "",
-                      imageUrl: "",
-                      device: "desktop",
-                      pins: [],
-                      requirements: {
-                        공통: [],
-                        기획: [],
-                        프론트: [],
-                        백엔드: [],
-                        디자인: [],
-                      },
-                    },
-                  ]);
+                  setPages([...pages, createEmptyPage(pages.length + 1)]);
                   setActivePageIndex(pages.length);
                 }}
               />
-            </PageNavWrapper>
+            </S.PageNavWrapper>
 
-            <LeftBox>
+            <S.LeftBox>
               <ScreenInfoForm
                 screenName={currentPage.screenName}
                 screenId={currentPage.screenId}
-                onChangeScreenName={(name) =>
-                  handleUpdatePage({ screenName: name })
+                onChangeScreenName={(screenName) =>
+                  handleUpdatePage({ screenName })
                 }
-                onChangeScreenId={(id) => handleUpdatePage({ screenId: id })}
+                onChangeScreenId={(screenId) => handleUpdatePage({ screenId })}
               />
-              <Divider />
+              <S.Divider />
               <WireframeCanvas
                 imageUrl={currentPage.imageUrl}
                 device={currentPage.device}
                 pins={currentPage.pins}
                 focusedPinId={focusedPinId}
                 onChangeDevice={(device) => handleUpdatePage({ device })}
-                onUploadImage={(imageUrl) => handleUpdatePage({ imageUrl })}
+                onUploadImage={handleUploadImage}
                 onAddPin={handleAddPin}
-                onUpdatePinPos={handleUpdatePinPos}
-                onFocusPin={(id) => {
-                  setFocusedPinId(id);
-                  setSelectedSummaryId(null);
+                onUpdatePinPos={(pinId, pos) => {
+                  const updatedPins = (currentPage.pins || []).map((p) =>
+                    p.id === pinId ? { ...p, ...pos } : p,
+                  );
+                  handleUpdatePage({ pins: updatedPins });
                 }}
+                onFocusPin={(id) => setFocusedPinId(id)}
                 onDeletePin={handleDeletePin}
               />
-            </LeftBox>
-          </LeftColumn>
+            </S.LeftBox>
+          </S.LeftColumn>
 
-          {/* 우측 (468px × 854px, mode="edit") */}
-          <RightColumn>
-            <RightBox>
+          <S.RightColumn>
+            <S.RightBox>
               <RequirementSection
                 mode="edit"
                 requirements={currentPage.requirements || {}}
                 focusedPinId={focusedPinId}
                 onUpdateRequirement={handleUpdateRequirement}
-                onFocusPin={(id) => {
-                  setFocusedPinId(id);
-                  setSelectedSummaryId(null);
-                }}
+                onFocusPin={(id) => setFocusedPinId(id)}
               />
-            </RightBox>
-          </RightColumn>
-        </MainSection>
-      </ContentContainer>
+            </S.RightBox>
+          </S.RightColumn>
+        </S.MainSection>
+      </S.ContentContainer>
 
-      {/* 저장 및 이탈 모달 일체 (다음 버전으로 저장 안내) */}
+      <EditSummaryModal
+        isOpen={isEditSummaryOpen}
+        currentVersion={currentVersion}
+        summaryList={summaryList}
+        onClose={() => setIsEditSummaryOpen(false)}
+        onSubmit={({ version, description }) => {
+          setNewVersionInfo({
+            version: Number(version) || currentVersion + 1,
+            description,
+          });
+          setIsEditSummaryOpen(false);
+          setModalState({ isOpen: true, step: "language_select" });
+        }}
+      />
+
       <SaveFlowModals
         isOpen={modalState.isOpen}
         currentStep={modalState.step}
-        docName={`스토리보드_Version${currentVersion + 1}`}
+        teamId={teamId}
+        docName={`${documentInfo.name} Version.${newVersionInfo.version || currentVersion + 1}`}
         onClose={() => setModalState({ isOpen: false, step: "exit" })}
         onConfirmExit={() => {
           setModalState({ isOpen: false, step: "exit" });
           navigate(-1);
         }}
-        onNextStep={(nextStep) =>
-          setModalState({ isOpen: true, step: nextStep })
-        }
-        onFinalSave={() => {
-          setModalState({ isOpen: false, step: "exit" });
-          alert(
-            `스토리보드 Version.${currentVersion + 1} 저장이 완료되었습니다!`,
-          );
-        }}
+        onNextStep={(step) => setModalState({ isOpen: true, step })}
+        onFinalSave={handleFinalSaveWithTranslate}
       />
-    </PageLayout>
+    </S.PageLayout>
   );
 }
-
-const PageLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff !important;
-  padding: 40px 0 80px 0;
-  box-sizing: border-box;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-  width: 1200px;
-`;
-
-const HeaderWrapper = styled.div`
-  width: 1200px;
-  height: 61px;
-  display: flex;
-  align-items: center;
-`;
-
-const MainSection = styled.div`
-  display: flex;
-  width: 1200px;
-  justify-content: space-between;
-  align-items: flex-end;
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 712px;
-`;
-
-const PageNavWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-`;
-
-const LeftBox = styled.div`
-  width: 712px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const Divider = styled.hr`
-  width: 100%;
-  height: 1px;
-  border: none;
-  background-color: #eaeaea;
-  margin: 0;
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 468px;
-`;
-
-const RightBox = styled.div`
-  width: 468px;
-  height: 854px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #b6b6b6;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-`;

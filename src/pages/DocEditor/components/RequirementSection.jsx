@@ -25,8 +25,9 @@ const RequirementSection = ({
     setEditingId(null);
   };
 
+  // 공통 포함 5개 탭 모두 독립적 수정 (activeRole만 개별 업데이트)
   const handleInputChange = (id, field, value) => {
-    onUpdateRequirement?.(activeRole, id, field, value, activeRole === "공통");
+    onUpdateRequirement?.(activeRole, id, field, value);
   };
 
   const handleStartEdit = (req) => {
@@ -43,17 +44,11 @@ const RequirementSection = ({
   };
 
   const handleCompleteEdit = (req) => {
-    onUpdateRequirement?.(
-      activeRole,
-      req.id,
-      "all",
-      {
-        item: editForm.item,
-        detail: editForm.detail,
-        isModified: true,
-      },
-      activeRole === "공통",
-    );
+    onUpdateRequirement?.(activeRole, req.id, "all", {
+      item: editForm.item,
+      detail: editForm.detail,
+      isModified: true,
+    });
     setEditingId(null);
   };
 

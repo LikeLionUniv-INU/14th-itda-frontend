@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
+import { loginApi } from "../api/auth";
 import * as S from "./Login.styles";
+import globe from "../assets/image/globe.svg";
+import robot from "../assets/image/robot.svg";
+import people from "../assets/image/people.svg";
+import manage from "../assets/image/manage.svg";
 
-const Login = ({ onNavigateToSignup }) => {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,7 +41,7 @@ const Login = ({ onNavigateToSignup }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     let valid = true;
@@ -53,18 +61,53 @@ const Login = ({ onNavigateToSignup }) => {
 
     if (!valid) return;
 
-    const isPasswordCorrect = true;
-    if (!isPasswordCorrect) {
-      setPasswordError("알맞은 비밀번호를 입력해주세요.");
-      return;
-    }
+    // 에러 상태 초기화
+    setPasswordError("");
+    setEmailError("");
+    setIsLoading(true);
 
-    alert("로그인 성공!");
+    try {
+      // 1. 로그인 API 호출
+      const response = await loginApi(email, password);
+      const resData = response?.data || response;
+
+      // 2. 토큰 추출 (다양한 백엔드 응답 구조 방어)
+      const accessToken =
+        resData?.accessToken ||
+        resData?.token ||
+        resData?.data?.accessToken ||
+        resData?.data?.token;
+
+      const refreshToken = resData?.refreshToken || resData?.data?.refreshToken;
+
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        }
+      }
+
+      // 3. 메인 홈 화면으로 이동
+      navigate("/home");
+    } catch (error) {
+      console.error("로그인 에러:", error);
+      // 4. 백엔드 에러 응답 처리
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
+
+      if (status === 401) {
+        setPasswordError(message || "알맞은 비밀번호를 입력해주세요.");
+      } else if (message) {
+        alert(message);
+      } else {
+        alert("로그인 처리 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isFormValid = email.trim() !== "" && password.trim() !== "";
-
-  const navigate = useNavigate();
 
   return (
     <S.Container>
@@ -87,14 +130,18 @@ const Login = ({ onNavigateToSignup }) => {
 
           <S.FeatureList>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={globe} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>글로벌 협업</strong>
                 <span>팀원의 언어에 맞춰 동일한 문서를 제공합니다.</span>
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={robot} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>AI 자동 동기화</strong>
                 <span>
@@ -104,14 +151,18 @@ const Login = ({ onNavigateToSignup }) => {
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={people} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>팀 협업</strong>
                 <span>모든 팀원이 자신의 언어로 같은 내용을 이해합니다.</span>
               </S.FeatureText>
             </S.FeatureItem>
             <S.FeatureItem>
-              <S.FeatureIconBox />
+              <S.FeatureIconBox>
+                <img src={manage} />
+              </S.FeatureIconBox>
               <S.FeatureText>
                 <strong>버전 관리</strong>
                 <span>추가·수정된 내용을 한눈에 비교하고 관리합니다.</span>
@@ -169,8 +220,11 @@ const Login = ({ onNavigateToSignup }) => {
                 </button>
               </S.FooterLink>
 
-              <S.SubmitButton type="submit" disabled={!isFormValid}>
-                로그인
+              <S.SubmitButton
+                type="submit"
+                disabled={!isFormValid || isLoading}
+              >
+                {isLoading ? "로그인 중..." : "로그인"}
               </S.SubmitButton>
             </S.Form>
           </S.Card>

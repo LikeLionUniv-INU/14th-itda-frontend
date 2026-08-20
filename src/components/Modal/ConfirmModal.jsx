@@ -1,4 +1,5 @@
 import React from "react";
+import BaseModal from "./BaseModal";
 import * as S from "./ConfirmModal.styles";
 
 const ConfirmModal = ({
@@ -10,13 +11,11 @@ const ConfirmModal = ({
   confirmText = "확인",
   onClose,
   onConfirm,
-  width,
+  width = "440px",
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <S.ModalOverlay onClick={onClose}>
-      <S.ModalContainer width={width} onClick={(e) => e.stopPropagation()}>
+    <BaseModal isOpen={isOpen} onClose={onClose} width={width}>
+      <S.ContentWrapper>
         {imageSrc && <S.IconImage src={imageSrc} alt="모달 아이콘" />}
         {title && <S.Title>{title}</S.Title>}
         {description && <S.Description>{description}</S.Description>}
@@ -39,8 +38,8 @@ const ConfirmModal = ({
             </S.MainButton>
           )}
         </S.ButtonGroup>
-      </S.ModalContainer>
-    </S.ModalOverlay>
+      </S.ContentWrapper>
+    </BaseModal>
   );
 };
 
