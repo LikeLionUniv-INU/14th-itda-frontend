@@ -146,7 +146,7 @@ export const DocIcon = styled.div`
 
 export const NotificationBar = styled.div`
   grid-column: 1 / -1;
-  width: 100%; /* 1050px 고정에서 100%로 수정하여 컨테이너 폭에 맞춤 */
+  width: 100%;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -155,7 +155,7 @@ export const NotificationBar = styled.div`
   border: 1px solid #bed8ff;
   border-radius: 12px;
   padding: 16px 24px;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 `;
 
 export const NotificationLeft = styled.div`

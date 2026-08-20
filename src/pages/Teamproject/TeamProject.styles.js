@@ -276,6 +276,11 @@ export const Table = styled.table`
     &:has(.manage-cell:hover) {
       background-color: transparent; 
     }
+
+    /* 핵심: 마우스가 관리 버튼 칸(.manage-cell) 위에 올라가 있으면 tr의 배경색 변화를 취소(투명하게) 처리 */
+    &:has(.manage-cell:hover) {
+      background-color: transparent; 
+    }
   }
 
   td {
@@ -308,9 +313,10 @@ export const TableEditButton = styled.button`
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-
+  transition: all 0.15s ease;
+  
   &:hover {
-    background-color: #f5f3ff;
+    background-color: #faf5ff;
   }
 `;
 

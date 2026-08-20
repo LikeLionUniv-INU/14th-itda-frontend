@@ -144,7 +144,7 @@ export default function MainHome({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // 🔥 최근 문서 클릭 핸들러 (v1이면 doc-view, v2 이상이면 doc-compare)
+  // 최근 문서 클릭 핸들러 (v1이면 doc-view, v2 이상이면 doc-compare)
   const handleDocumentClick = (doc) => {
     const docId = doc.id || doc.documentId;
     const teamId = doc.teamProjectId || doc.teamId || doc.projectId;
@@ -223,11 +223,49 @@ export default function MainHome({
     }
   };
 
+  // 알림 타이틀 처리 (동일 버전 내 저장 vs 새 버전 생성 구분)
+  const renderNotificationTitle = (noti) => {
+    if (!noti) return "";
+    const { documentName, beforeVersion, afterVersion } = noti;
+
+    if (
+      beforeVersion !== undefined &&
+      beforeVersion !== null &&
+      beforeVersion === afterVersion
+    ) {
+      return `${documentName || "문서"}_version${afterVersion}이 수정되었습니다.`;
+    }
+
+    if (
+      beforeVersion !== undefined &&
+      beforeVersion !== null &&
+      beforeVersion !== afterVersion
+    ) {
+      return `${documentName || "문서"}_version${beforeVersion}이 수정되어 version${afterVersion}가 업로드 되었습니다.`;
+    }
+
+    return `${documentName || "문서"}_version${afterVersion || 1}이 수정되었습니다.`;
+  };
+
+  // 알림 서브 텍스트 처리 (수행자 성+이름 및 시간)
+  const renderNotificationSub = (noti) => {
+    if (!noti) return "";
+    const firstName = noti.performedByFirstName || "";
+    const lastName = noti.performedByLastName || "";
+    const author =
+      `${lastName} ${firstName}`.trim() || `${firstName} ${lastName}`.trim();
+
+    const time = noti.createdAt ? getRelativeTime(noti.createdAt) : "";
+
+    return `${author ? `${author} 님께서 업로드 하셨어요. ` : ""}${time}`;
+  };
+
   const displayUserName = userInfo
     ? `${userInfo.lastName || ""}${userInfo.firstName || ""}`.trim() || "사용자"
     : "사용자";
 
-  const userInitial = userInfo?.initial || userInfo?.lastName?.charAt(0) || "U";
+  const userInitial =
+    userInfo?.initial || userInfo?.lastName?.charAt(0) || "U";
 
   if (loading) {
     return <S.PageWrapper>로딩 중...</S.PageWrapper>;
@@ -248,50 +286,30 @@ export default function MainHome({
 
       <S.Content>
         {notification && (
-          <div
-            style={{
-              width: "1202px",
-              margin: "28px auto 0 auto",
-              boxSizing: "border-box",
-            }}
-          >
-            <S.NotificationBar>
-              <S.NotificationLeft>
-                <S.NotificationIconBox>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </S.NotificationIconBox>
-                <S.NotificationTextContainer>
-                  <h4>
-                    {notification.title ||
-                      `${notification.documentName || "문서"}가 수정되었습니다.`}
-                  </h4>
-                  <p>
-                    {notification.sender
-                      ? `${notification.sender} 님께서 업로드 하셨어요.`
-                      : ""}
-                    {notification.createdAt && (
-                      <span style={{ marginLeft: "12px", color: "#8a8a8a" }}>
-                        {getRelativeTime(notification.createdAt)}
-                      </span>
-                    )}
-                  </p>
-                </S.NotificationTextContainer>
-              </S.NotificationLeft>
-              <S.NotificationButton onClick={handleReadNotification}>
-                확인하기
-              </S.NotificationButton>
-            </S.NotificationBar>
-          </div>
+          <S.NotificationBar>
+            <S.NotificationLeft>
+              <S.NotificationIconBox>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </S.NotificationIconBox>
+              <S.NotificationTextContainer>
+                <h4>{renderNotificationTitle(notification)}</h4>
+                <p>{renderNotificationSub(notification)}</p>
+              </S.NotificationTextContainer>
+            </S.NotificationLeft>
+            <S.NotificationButton onClick={handleReadNotification}>
+              확인하기
+            </S.NotificationButton>
+          </S.NotificationBar>
         )}
 
         <S.Banner>
@@ -357,7 +375,9 @@ export default function MainHome({
                         key={idx}
                         title={
                           typeof m === "object"
-                            ? `${m.lastName || ""} ${m.firstName || m.name || ""}`.trim()
+                            ? `${m.lastName || ""} ${
+                                m.firstName || m.name || ""
+                              }`.trim()
                             : String(m)
                         }
                       >
