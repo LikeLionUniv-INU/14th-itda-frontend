@@ -22,9 +22,19 @@ export default function DocHeader({
     }
   };
 
+  const renderTitle = () => {
+    if (mode === "edit") {
+      return `${docName} Version.${currVersion} 수정`;
+    }
+    if (mode === "compare") {
+      return `${docName} Version.${currVersion}`;
+    }
+    return `${docName}_Version.${currVersion}`;
+  };
+
   return (
     <S.HeaderContainer>
-      {/* 1. 좌측: 뒤로가기 버튼 + 문서 타이틀 */}
+      {/* 1. 좌측: 뒤로가기 + 타이틀 */}
       <S.LeftArea onClick={handleBack} style={{ cursor: "pointer" }}>
         <S.BackArrow viewBox="0 0 24 24" fill="none">
           <path
@@ -35,12 +45,10 @@ export default function DocHeader({
             strokeLinejoin="round"
           />
         </S.BackArrow>
-        <S.DocTitle>
-          {docName}_Version.{currVersion}
-        </S.DocTitle>
+        <S.DocTitle>{renderTitle()}</S.DocTitle>
       </S.LeftArea>
 
-      {/* 2. 우측: 작성/수정/비교 모드별 분기 */}
+      {/* 2. 우측: 업데이트 시간 + 임시저장/저장 버튼 */}
       <S.RightArea>
         {mode === "compare" && (
           <>
@@ -67,8 +75,9 @@ export default function DocHeader({
 
         {(mode === "create" || mode === "edit") && (
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            {updatedAt && mode === "edit" && (
-              <S.UpdateText style={{ marginRight: "8px" }}>
+            {/* 임시저장 시 업데이트 시간 노출 */}
+            {updatedAt && (
+              <S.UpdateText style={{ marginRight: "6px" }}>
                 업데이트 : {updatedAt}
               </S.UpdateText>
             )}

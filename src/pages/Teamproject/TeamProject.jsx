@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Header from "../../components/Header";
 import FileIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProject.styles";
@@ -83,6 +83,7 @@ const getInitial = (name) => {
 
 export default function TeamProject({ onNavigate }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { teamId } = useParams();
 
   const [project, setProject] = useState(null);
@@ -162,10 +163,11 @@ export default function TeamProject({ onNavigate }) {
     }
   };
 
+  // 페이지 진입 또는 라우트 이동 복귀 시 최신 데이터 자동 조회
   useEffect(() => {
     fetchTeamData();
     fetchNotification();
-  }, [teamId]);
+  }, [teamId, location.key]);
 
   const handleDocumentSuccess = async (docData) => {
     setIsCreateDocModalOpen(false);

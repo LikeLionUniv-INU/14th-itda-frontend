@@ -97,8 +97,8 @@ export const ScrollViewport = styled.div`
   overflow-x: hidden;
   box-sizing: border-box;
 
-  ${({ device }) =>
-    device === "desktop"
+  ${({ $device }) =>
+    $device === "desktop"
       ? css`
           width: 660px;
           height: 371px;
@@ -112,7 +112,7 @@ export const ScrollViewport = styled.div`
 export const ImageWrapper = styled.div`
   position: relative;
   width: 100%;
-  cursor: ${({ isAddingPin }) => (isAddingPin ? "crosshair" : "default")};
+  cursor: ${({ $isAddingPin }) => ($isAddingPin ? "crosshair" : "default")};
 
   img {
     width: 100%;
@@ -141,8 +141,8 @@ export const PinSticker = styled.div`
   cursor: grab;
   user-select: none;
   z-index: 10;
-  box-shadow: ${({ isFocused }) =>
-    isFocused
+  box-shadow: ${({ $isFocused }) =>
+    $isFocused
       ? "0 0 0 2px #52C41A, 2px 2px 4px rgba(0, 0, 0, 0.25)"
       : "1px 1px 3px rgba(0, 0, 0, 0.2)"};
 
@@ -197,8 +197,8 @@ export const AddPinButton = styled.button`
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease-in-out;
 
-  ${({ isAddingPin }) =>
-    isAddingPin &&
+  ${({ $isAddingPin }) =>
+    $isAddingPin &&
     css`
       background-color: #1c57d7;
       color: #ffffff;
