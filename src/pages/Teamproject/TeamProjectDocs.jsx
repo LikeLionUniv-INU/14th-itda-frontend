@@ -5,7 +5,7 @@ import DocIcon from "../../assets/image/file.svg";
 import * as S from "./TeamProjectDocs.styles";
 import { getTeamDetail } from "../../api/teamApi";
 
-// 언어 코드를 표기명으로 변환하는 함수 (TeamProject.jsx와 동일)
+// 언어 코드를 표기명으로 변환하는 함수
 const getLanguageFullName = (langCode) => {
   if (!langCode) return "-";
   const code = String(langCode).toLowerCase().trim();
@@ -50,7 +50,9 @@ const getRelativeTime = (dateString) => {
   const past = new Date(formatted);
   if (isNaN(past.getTime())) return "방금 전";
 
-  const diffInMinutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60));
+  const diffInMinutes = Math.floor(
+    (now.getTime() - past.getTime()) / (1000 * 60),
+  );
   if (diffInMinutes < 1) return "방금 전";
   if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
 
@@ -118,6 +120,51 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
     .map((m) => getInitial(m.name || m.firstName || m.nickname));
   const extraMemberCount = members.length - 3;
 
+  // 전체 문서 목록 클릭 분기 핸들러
+  const handleDocClick = (doc) => {
+    const targetId = doc.id || doc.documentId;
+    const docVersion = Number(
+      doc.latestVersion || doc.currentVersion || doc.version || 1,
+    );
+
+    if (onSelectDocument) {
+      onSelectDocument(targetId, isLeader, docVersion);
+      return;
+    }
+
+    if (isLeader) {
+      // 1. 팀장 -> 문서 수정 화면
+      if (onNavigate) {
+        onNavigate("docEdit", targetId);
+      } else {
+        navigate(`/doc-edit/${targetId}`, {
+          state: { teamId, version: docVersion, docId: targetId },
+        });
+      }
+    } else {
+      // 2. 팀원
+      if (docVersion === 1) {
+        // Version 1 -> 수정 요약 없는 순수 작성 문서 확인 뷰어
+        if (onNavigate) {
+          onNavigate("docView", targetId);
+        } else {
+          navigate(`/doc-view/${targetId}`, {
+            state: { teamId, version: 1, docId: targetId },
+          });
+        }
+      } else {
+        // Version 2 이상 -> 수정 문서 확인 (비교 및 요약)
+        if (onNavigate) {
+          onNavigate("docDetail", targetId);
+        } else {
+          navigate(`/doc-compare/${targetId}`, {
+            state: { teamId, version: docVersion, docId: targetId },
+          });
+        }
+      }
+    }
+  };
+
   return (
     <S.PageWrapper>
       <Header
@@ -130,15 +177,13 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
       <S.Content>
         {/* 프로젝트 배너 */}
         <S.BannerCard>
-          <S.BannerTitle>
-            {projectInfo.name || projectInfo.title}
-          </S.BannerTitle>
+          <S.BannerTitle>{projectInfo.name || projectInfo.title}</S.BannerTitle>
           <S.BannerMeta>
             <S.MetaItem>
               <span className="label">기본 언어</span>
               <span className="value">
                 {getLanguageFullName(
-                  projectInfo.defaultLanguage || projectInfo.language
+                  projectInfo.defaultLanguage || projectInfo.language,
                 )}
               </span>
             </S.MetaItem>
@@ -150,9 +195,7 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                   <S.MiniAvatar key={idx}>{initial}</S.MiniAvatar>
                 ))}
                 {extraMemberCount > 0 && (
-                  <S.MiniAvatar $isMore>
-                    +{extraMemberCount}
-                  </S.MiniAvatar>
+                  <S.MiniAvatar $isMore>+{extraMemberCount}</S.MiniAvatar>
                 )}
               </S.AvatarGroup>
             </S.MetaItem>
@@ -160,7 +203,9 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
             <S.MetaItem>
               <span className="label">생성일</span>
               <span className="value">
-                {projectInfo.createdAt?.split("T")[0] || projectInfo.createdAt || "-"}
+                {projectInfo.createdAt?.split("T")[0] ||
+                  projectInfo.createdAt ||
+                  "-"}
               </span>
             </S.MetaItem>
           </S.BannerMeta>
@@ -190,23 +235,17 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                 {docs.map((doc) => (
                   <tr
                     key={doc.id || doc.documentId}
-                    onClick={() => {
-                      const targetId = doc.id || doc.documentId;
-                      if (onSelectDocument) {
-                        onSelectDocument(targetId);
-                      } else if (onNavigate) {
-                        onNavigate("docDetail", targetId);
-                      } else {
-                        navigate(`/doc-edit/${targetId}`);
-                      }
-                    }}
+                    onClick={() => handleDocClick(doc)}
+                    style={{ cursor: "pointer" }}
                   >
                     <td className="doc-name">{doc.name || doc.title}</td>
-                    <td>{projectInfo.name || doc.projectName || doc.project}</td>
+                    <td>
+                      {projectInfo.name || doc.projectName || doc.project}
+                    </td>
                     <td>
                       {getLanguagesDisplay(
                         doc.languages,
-                        doc.language || doc.selectedLang
+                        doc.language || doc.selectedLang,
                       )}
                     </td>
                     <td>
@@ -218,7 +257,10 @@ export default function TeamProjectDocs({ onNavigate, onSelectDocument }) {
                     </td>
                     <td>
                       {getRelativeTime(
-                        doc.updatedAt || doc.updated || doc.lastUpdatedAt || doc.createdAt
+                        doc.updatedAt ||
+                          doc.updated ||
+                          doc.lastUpdatedAt ||
+                          doc.createdAt,
                       )}
                     </td>
                   </tr>

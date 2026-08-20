@@ -105,12 +105,22 @@ export default function EditSummaryModal({
                 <S.EmptyRow>수정된 변경사항이 없습니다.</S.EmptyRow>
               ) : (
                 summaryList.map((item, idx) => (
-                  <S.TableRow key={idx}>
-                    <span className="col-page">{item.page || "회원가입"}</span>
-                    <span className="col-no">{item.no || "1"}</span>
-                    <span className="col-sec">{item.section || "ID입력"}</span>
+                  <S.TableRow key={item.id || idx}>
+                    <span className="col-page">
+                      {item.pageName || item.page || "-"}
+                    </span>
+                    <span className="col-no">
+                      {item.number || item.pinNumber || item.no || "-"}
+                    </span>
+                    <span className="col-sec">
+                      {item.itemName || item.item || item.section || "-"}
+                    </span>
                     <span className="col-desc">
-                      {item.previewText || item.text}
+                      {item.previewContent ||
+                        item.content ||
+                        item.previewText ||
+                        item.text ||
+                        "-"}
                     </span>
                   </S.TableRow>
                 ))
@@ -119,7 +129,7 @@ export default function EditSummaryModal({
           </S.TableContainer>
         </S.TableSection>
 
-        {/* 4. 하단 버튼 영역 (460 x 42) */}
+        {/* 4. 하단 버튼 영역 */}
         <S.ButtonGroup>
           <S.CancelButton onClick={handleCloseAll}>취소</S.CancelButton>
           <S.SubmitButton onClick={handleSubmit} disabled={!isFormValid}>

@@ -150,24 +150,12 @@ export default function TeamProject({ onNavigate }) {
 
   const handleReadNotification = async () => {
     if (!notification) return;
-
-    const docId = notification.documentId || notification.docId;
-    const versionToUse =
-      notification.afterVersion ||
-      notification.version ||
-      selectedVersions[docId] ||
-      1;
-
     try {
       await markNotificationAsRead(teamId, notification.id);
+      setNotification(null);
     } catch (error) {
       console.error("알림 읽음 처리 실패:", error);
-    } finally {
       setNotification(null);
-
-      if (docId) {
-        handleDocClick(docId, versionToUse);
-      }
     }
   };
 
@@ -240,11 +228,13 @@ export default function TeamProject({ onNavigate }) {
     project.isLeader === true ||
     project.role === "LEADER";
 
+  // 문서 클릭 이동 분기 핸들러 (리더: docEdit / 팀원: Ver.1은 docView, Ver.2 이상은 docCompare)
   const handleDocClick = (docId, targetVersion) => {
-    const versionToUse = targetVersion || selectedVersions[docId] || 1;
+    const versionToUse = Number(targetVersion || selectedVersions[docId] || 1);
     localStorage.setItem("currentTeamId", String(teamId));
 
     if (isLeader) {
+      // 1. 팀장 -> 문서 수정 페이지
       navigate(`/doc-edit/${docId}`, {
         state: {
           docId,
@@ -253,13 +243,26 @@ export default function TeamProject({ onNavigate }) {
         },
       });
     } else {
-      navigate(`/doc-compare/${docId}`, {
-        state: {
-          docId,
-          teamId,
-          version: versionToUse,
-        },
-      });
+      // 2. 팀원
+      if (versionToUse === 1) {
+        // Version 1 -> 수정 요약 없는 순수 작성 문서 확인 뷰어
+        navigate(`/doc-view/${docId}`, {
+          state: {
+            docId,
+            teamId,
+            version: 1,
+          },
+        });
+      } else {
+        // Version 2 이상 -> 수정 문서 확인 (비교 및 요약)
+        navigate(`/doc-compare/${docId}`, {
+          state: {
+            docId,
+            teamId,
+            version: versionToUse,
+          },
+        });
+      }
     }
   };
 

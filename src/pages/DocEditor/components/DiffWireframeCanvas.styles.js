@@ -39,6 +39,7 @@ export const CanvasWrapper = styled.div`
   align-items: center;
 `;
 
+/* 단일 모드 (데스크탑 371px / 모바일 463px) */
 export const SingleContainer = styled.div`
   width: ${({ device }) => (device === "desktop" ? "660px" : "214px")};
   height: ${({ device }) => (device === "desktop" ? "371px" : "463px")};
@@ -49,23 +50,29 @@ export const SingleContainer = styled.div`
   position: relative;
 `;
 
+/* 듀얼 모드 (데스크탑 상하, 모바일 좌우) */
 export const DualContainer = styled.div`
   display: flex;
   flex-direction: ${({ device }) => (device === "mobile" ? "row" : "column")};
-  gap: 14px;
+  gap: ${({ device }) => (device === "mobile" ? "20px" : "16px")};
   align-items: center;
+  justify-content: center;
   position: relative;
+  width: 100%;
 `;
 
+/* 내부 사진 상자 (데스크탑 듀얼 시 240px로 콤팩트하게 줄임) */
 export const FrameBox = styled.div`
   width: ${({ device }) => (device === "desktop" ? "660px" : "214px")};
-  height: ${({ device }) => (device === "desktop" ? "320px" : "463px")};
+  height: ${({ device }) => (device === "desktop" ? "240px" : "463px")};
   border-radius: 12px;
   border: 2px solid
-    ${({ isPrev, isCurr }) => (isPrev ? "#FF0000" : isCurr ? "#50BB5E" : "#D6D6D6")};
+    ${({ isPrev, isCurr }) =>
+      isPrev ? "#FF0000" : isCurr ? "#50BB5E" : "#D6D6D6"};
   background-color: #fafafa;
   overflow: hidden;
   position: relative;
+  flex-shrink: 0;
 `;
 
 export const ScrollArea = styled.div`
@@ -98,17 +105,22 @@ export const EmptyText = styled.div`
   color: #999999;
 `;
 
+/* 초록 스왑 아이콘: 위아래 상자 사이 정중앙에 정확히 걸치도록 배치 */
 export const SwapIconBadge = styled.div`
   position: absolute;
-  z-index: 20;
-  width: 34px;
-  height: 34px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: #50bb5e;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
 `;
 
 export const Pin = styled.div`
@@ -127,7 +139,8 @@ export const Pin = styled.div`
   cursor: pointer;
   z-index: 10;
 
-  background-color: ${({ pinType }) => (pinType === "prev" ? "#8E8E93" : "#462FEA")};
+  background-color: ${({ pinType }) =>
+    pinType === "prev" ? "#8E8E93" : "#462FEA"};
   color: #ffffff;
   border: 2px solid
     ${({ pinType }) =>
