@@ -96,12 +96,12 @@ export default function DocComparePage() {
     if (!docId) return;
 
     try {
-      // 1. 현재 계정의 언어 자동 추출 (en, ja 등)
+      // 1. 현재 계정의 언어 최우선 추출 (localStorage 또는 state)
       let resolvedLang =
-        passedState.language ||
-        passedState.lang ||
         localStorage.getItem("userLanguage") ||
         localStorage.getItem("language") ||
+        passedState.language ||
+        passedState.lang ||
         "";
 
       if (!resolvedLang && teamId) {
@@ -130,7 +130,7 @@ export default function DocComparePage() {
       currentVer = currentVer || 1;
       const prevVer = currentVer > 1 ? currentVer - 1 : 1;
 
-      // 🔥 Step 3: resolvedLang이 있을 때 ?lang=en 을 붙여서 번역된 문서 조회
+      // 3. 번역 파라미터 전달하여 문서 조회
       const [docRes, prevDocRes] = await Promise.all([
         getDocumentDetail(docId, currentVer, resolvedLang),
         prevVer !== currentVer
@@ -425,7 +425,7 @@ export default function DocComparePage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
+          // 탭별 핀 번호 재정렬
           const ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
           const prevPinLookup = {};
           ROLES.forEach((role) => {
@@ -494,7 +494,7 @@ export default function DocComparePage() {
     } catch (error) {
       console.error("비교 데이터 로드 실패:", error);
     }
-  }, [docId, targetVersion, teamId]);
+  }, [docId, targetVersion, teamId, passedState]);
 
   useEffect(() => {
     fetchCompareData();

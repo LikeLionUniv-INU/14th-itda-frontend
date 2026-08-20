@@ -37,12 +37,12 @@ export default function DocViewPage() {
     if (!docId) return;
 
     try {
-      // 1. 현재 계정의 언어 자동 추출 (en, ja 등)
+      // 1. 현재 계정의 언어 최우선 추출 (localStorage 또는 state)
       let resolvedLang =
-        passedState.language ||
-        passedState.lang ||
         localStorage.getItem("userLanguage") ||
         localStorage.getItem("language") ||
+        passedState.language ||
+        passedState.lang ||
         "";
 
       if (!resolvedLang && teamId) {
@@ -131,7 +131,7 @@ export default function DocViewPage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
+          // 탭별 핀 번호 재정렬
           const pinNumberLookup = {};
           INITIAL_ROLES.forEach((role) => {
             pinMap[role].forEach((pin, idx) => {
