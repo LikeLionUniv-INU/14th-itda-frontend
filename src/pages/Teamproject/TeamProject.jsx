@@ -255,7 +255,21 @@ export default function TeamProject({ onNavigate }) {
     });
   };
 
-  const docs = project.documents || project.docs || [];
+  const rawDocs = project.documents || project.docs || [];
+
+  // 🔥 최종 업데이트 시간(최신순)으로 정렬
+  const docs = [...rawDocs].sort((a, b) => {
+    const aId = a.id || a.documentId;
+    const bId = b.id || b.documentId;
+    const timeA = new Date(
+      docLatestTimes[aId] || a.updatedAt || a.createdAt || 0,
+    ).getTime();
+    const timeB = new Date(
+      docLatestTimes[bId] || b.updatedAt || b.createdAt || 0,
+    ).getTime();
+    return timeB - timeA;
+  });
+
   const activities = (project.activityLogs || project.activities || []).slice(
     0,
     4,
