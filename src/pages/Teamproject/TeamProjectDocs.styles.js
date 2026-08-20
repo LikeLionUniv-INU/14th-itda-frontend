@@ -201,7 +201,7 @@ export const Table = styled.table`
     cursor: pointer;
     height: 52px;
     transition: background-color 0.15s ease;
-    background-color: #ffffff; /* 각 행은 흰색 배경 유지 */
+    background-color: #ffffff;
 
     &:hover {
       background-color: #faf5ff;
