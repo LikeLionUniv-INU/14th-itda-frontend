@@ -269,7 +269,12 @@ export const Table = styled.table`
 
     /* 수정된 부분: 행 전체에 마우스를 올렸을 때 기본 배경색 변화 */
     &:hover {
-      background-color: #faf5ff;
+      background-color: #f1f1f1;
+    }
+
+    /* 핵심: 마우스가 관리 버튼 칸(.manage-cell) 위에 올라가 있으면 tr의 배경색 변화를 취소(투명하게) 처리 */
+    &:has(.manage-cell:hover) {
+      background-color: transparent; 
     }
 
     /* 핵심: 마우스가 관리 버튼 칸(.manage-cell) 위에 올라가 있으면 tr의 배경색 변화를 취소(투명하게) 처리 */
