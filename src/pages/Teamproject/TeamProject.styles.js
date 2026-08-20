@@ -55,7 +55,6 @@ export const SidebarSection = styled.div`
   }
 `;
 
-// [1. 프로젝트 배너: 791px × 135px]
 export const BannerCard = styled.div`
   width: 791px;
   height: 135px;
@@ -70,6 +69,43 @@ export const BannerCard = styled.div`
 
   @media (max-width: 1240px) {
     width: 100%;
+  }
+
+  position: relative;
+  overflow: hidden;
+
+  /* 우측 큰 연보라색 원형 장식 */
+  &::before {
+    content: "";
+    position: absolute;
+    right: -60px;
+    bottom: 60px;
+    width: 130px;
+    height: 130px;
+    background: rgba(219, 215, 255, 0.4); /* 연한 보라색 투명도 */
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none; /* 클릭 방해 안 되도록 설정 */
+  }
+
+  /* 우측 조금 더 진한 작은 보라색 원형 장식 */
+  &::after {
+    content: "";
+    position: absolute;
+    right: -50px;
+    bottom: -60px;
+    width: 120px;
+    height: 120px;
+    background: rgba(219, 215, 255, 0.4);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* 카드 안의 텍스트나 내용이 원형 장식 위에 잘 보이도록 설정 */
+  > * {
+    position: relative;
+    z-index: 2;
   }
 `;
 
@@ -182,7 +218,6 @@ export const MoreButton = styled.button`
   }
 `;
 
-// [피그마 테이블 규격: 744px × 261.85px, thead 헤더 높이: 46px]
 export const TableContainer = styled.div`
   width: 744px;
   height: 262px;
@@ -273,7 +308,6 @@ export const EmptyDocIconImg = styled.img`
   margin-bottom: 12px;
 `;
 
-// [3. 하단 영역: 791px × 321px]
 export const BottomRow = styled.div`
   width: 791px;
   height: 321px;
@@ -435,7 +469,6 @@ export const InviteButton = styled.button`
   }
 `;
 
-// [4. 사이드바 - 문서 모아보기: 387px × 866px]
 export const SidebarCard = styled.div`
   width: 387px;
   height: 866px;
@@ -590,8 +623,10 @@ export const VersionSelect = styled.select`
   }
 `;
 
-// [5. 알림 바 및 빈 상태]
 export const NotificationBar = styled.div`
+  grid-column: 1 / -1; /* 메인 + 사이드바 1202px 가로 폭 전체를 채움 */
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;

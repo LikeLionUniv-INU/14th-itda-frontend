@@ -27,7 +27,7 @@ export const Banner = styled.div`
   background: linear-gradient(135deg, #efeefe 0%, #e0e7ff 100%);
   border-radius: 12px;
   padding: 30px 40px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 
   display: flex;
   align-items: center;
@@ -71,6 +71,7 @@ export const ProjectGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-bottom: 20px;
+  gap: 15px;
 `;
 
 export const ProjectCard = styled.div`
@@ -80,8 +81,6 @@ export const ProjectCard = styled.div`
   padding: 20px;
   cursor: pointer;
   transition: transform 0.1s ease;
-  margin-right: 15px;
-  margin-bottom: 15px;
 
   h4 {
     font-size: 15px;
@@ -166,4 +165,72 @@ export const ProjectIcon = styled.div`
   width: 80px;
   height: 80px;
   margin-bottom: 12px;
+`;
+
+export const NotificationBar = styled.div`
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ebf2ff;
+  border: 1px solid #bed8ff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 10px;
+`;
+
+export const NotificationLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+export const NotificationIconBox = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #dce8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f65f6;
+  flex-shrink: 0;
+`;
+
+export const NotificationTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666666;
+  }
+`;
+
+export const NotificationButton = styled.button`
+  background-color: #2f65f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #1d4ed8;
+  }
 `;

@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import CreateProjectModal from "../../components/Modal/CreateProjectModal";
 import JoinProjectModal from "../../components/Modal/JoinProjectModal";
 import { getDashboardApi } from "../../api/dashboard";
+import { getTeamNotifications, markNotificationAsRead } from "../../api/teamApi";
 import * as S from "./MainDoc.styles";
 
 export default function MainDoc({
@@ -14,25 +15,46 @@ export default function MainDoc({
 }) {
   const navigate = useNavigate();
 
-  // 대시보드 상태 관리 (홈과 동일한 패턴)
   const [userInfo, setUserInfo] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState(null);
 
-  // 모달 제어 상태
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-  // GET /api/dashboard 데이터 불러오기 (홈과 동일하게 유저 정보 + 전체 대시보드 데이터 연동)
+  // 팀 알림 조회 API 명세서 반영
+  const fetchNotificationData = async (projectsList) => {
+    try {
+      if (!projectsList || projectsList.length === 0) return;
+
+      for (const project of projectsList) {
+        const teamId = project.id;
+        const notiRes = await getTeamNotifications(teamId);
+        const notifications = notiRes?.data?.data || notiRes?.data || [];
+
+        if (Array.isArray(notifications) && notifications.length > 0) {
+          setNotification({ ...notifications[0], teamId: teamId });
+          break;
+        }
+      }
+    } catch (error) {
+      console.error("알림 데이터를 가져오는데 실패했습니다.", error);
+    }
+  };
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getDashboardApi();
-
       const resData = response.data?.data || response.data || response;
+      
       if (resData) {
         if (resData.user) setUserInfo(resData.user);
         if (resData.recentDocuments) setDocuments(resData.recentDocuments);
+        if (resData.projects) {
+          await fetchNotificationData(resData.projects);
+        }
       }
     } catch (error) {
       console.error("문서 목록 데이터를 가져오는데 실패했습니다.", error);
@@ -45,7 +67,54 @@ export default function MainDoc({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // 모달 열기 핸들러
+  const handleReadNotification = async () => {
+    if (!notification) return;
+
+    const notifId = notification.id;
+    const teamId = notification.teamId;
+    const docId = notification.documentId || notification.docId;
+    const versionToUse = notification.afterVersion || notification.version || 1;
+
+    if (teamId && notifId) {
+      try {
+        await markNotificationAsRead(teamId, notifId);
+      } catch (error) {
+        console.error("알림 읽음 처리 실패:", error);
+      }
+    }
+
+    setNotification(null);
+
+    if (docId) {
+      if (onSelectDocument) {
+        onSelectDocument(docId, versionToUse);
+      } else {
+        navigate(`/doc-edit/${docId}`, {
+          state: { docId, teamId, version: versionToUse },
+        });
+      }
+    }
+  };
+
+  const renderNotificationTitle = (noti) => {
+    if (!noti) return "";
+    if (noti.title) return noti.title;
+    const { documentName, beforeVersion, afterVersion } = noti;
+    if (beforeVersion !== undefined && afterVersion !== undefined) {
+      return `${documentName || "문서"}_version${beforeVersion}이 수정되어 version${afterVersion}가 업로드 되었습니다.`;
+    }
+    return `${documentName || "문서"}가 수정되었습니다.`;
+  };
+
+  const renderNotificationSub = (noti) => {
+    if (!noti) return "";
+    if (noti.sender) return `${noti.sender} 님께서 업로드 하셨어요.`;
+    const firstName = noti.performedByFirstName || "";
+    const lastName = noti.performedByLastName || "";
+    const author = `${lastName}${firstName}`.trim();
+    return author ? `${author} 님께서 업로드 하셨어요.` : "";
+  };
+
   const handleOpenCreateModal = () => {
     if (onCreateProject) onCreateProject();
     else setIsCreateOpen(true);
@@ -56,7 +125,6 @@ export default function MainDoc({
     else setIsJoinOpen(true);
   };
 
-  // 프로젝트 생성/참여 완료 시 처리
   const handleModalSuccess = (result) => {
     setIsCreateOpen(false);
     setIsJoinOpen(false);
@@ -69,7 +137,6 @@ export default function MainDoc({
     }
   };
 
-  // 표시할 유저 이름 (firstName + lastName)
   const displayUserName = userInfo
     ? `${userInfo.lastName || ""}${userInfo.firstName || ""}`.trim() || "사용자"
     : "사용자";
@@ -92,20 +159,41 @@ export default function MainDoc({
       />
 
       <S.Content>
-        {/* 상단 배너 */}
+        {notification && (
+          <S.NotificationBar>
+            <S.NotificationLeft>
+              <S.NotificationIconBox>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </S.NotificationIconBox>
+              <S.NotificationTextContainer>
+                <h4>{renderNotificationTitle(notification)}</h4>
+                <p>
+                  {renderNotificationSub(notification)}
+                  {notification.createdAt && (
+                    <span style={{ marginLeft: "12px", color: "#8a8a8a" }}>
+                      {notification.createdAt.replace("T", " ").slice(0, 16)}
+                    </span>
+                  )}
+                </p>
+              </S.NotificationTextContainer>
+            </S.NotificationLeft>
+            <S.NotificationButton onClick={handleReadNotification}>
+              확인하기
+            </S.NotificationButton>
+          </S.NotificationBar>
+        )}
+
         <S.Banner>
           <S.BannerText>
             <h2>안녕하세요, {displayUserName}님!</h2>
-            <p>
-              여러 언어의 문서를 하나의 기준으로 관리하고,
-              <br />
-              글로벌 팀과 함께 효율적으로 협업해 보세요!
-            </p>
+            <p>여러 언어의 문서를 하나의 기준으로 관리하고,<br />글로벌 팀과 함께 효율적으로 협업해 보세요!</p>
           </S.BannerText>
           <S.Popup />
         </S.Banner>
 
-        {/* 최근 문서 */}
         <S.SectionHeader>최근 문서</S.SectionHeader>
 
         {documents.length === 0 ? (
@@ -126,7 +214,6 @@ export default function MainDoc({
               </tr>
             </thead>
             <tbody>
-              {/* 메인 홈과 달리 전체 문서 목록을 보여주도록 slice 제거 */}
               {documents.map((doc) => (
                 <tr
                   key={doc.id}
@@ -142,11 +229,7 @@ export default function MainDoc({
                   <td>{doc.teamProjectName || "-"}</td>
                   <td>{doc.language || "-"}</td>
                   <td>v{doc.latestVersion}</td>
-                  <td>
-                    {doc.updatedAt
-                      ? new Date(doc.updatedAt).toLocaleDateString()
-                      : "-"}
-                  </td>
+                  <td>{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -154,19 +237,8 @@ export default function MainDoc({
         )}
       </S.Content>
 
-      {/* 프로젝트 생성 모달 */}
-      <CreateProjectModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSuccess={handleModalSuccess}
-      />
-
-      {/* 프로젝트 참여 모달 */}
-      <JoinProjectModal
-        isOpen={isJoinOpen}
-        onClose={() => setIsJoinOpen(false)}
-        onSuccess={handleModalSuccess}
-      />
+      <CreateProjectModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSuccess={handleModalSuccess} />
+      <JoinProjectModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} onSuccess={handleModalSuccess} />
     </S.PageWrapper>
   );
 }

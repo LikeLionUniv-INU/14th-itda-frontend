@@ -61,6 +61,40 @@ export const BannerCard = styled.div`
   justify-content: space-between;
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    right: -60px;
+    bottom: 60px;
+    width: 130px;
+    height: 130px;
+    background: rgba(219, 215, 255, 0.4);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -50px;
+    bottom: -60px;
+    width: 120px;
+    height: 120px;
+    background: rgba(219, 215, 255, 0.4);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 2;
+  }
 `;
 
 export const BannerTitle = styled.h2`
@@ -121,44 +155,38 @@ export const MiniAvatar = styled.div`
 `;
 
 export const SectionTitle = styled.h2`
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  color: #3b28cc;
+  color: #111827;
   margin-bottom: 16px;
 `;
 
-// [수정] width: 100%로 지정하여 배너와 폭 맞춤
+/* 📌 TableContainer는 아예 쓰지 않거나, 필요하다면 단순히 패딩 없는 빈 Wrapper로 대체 */
 export const TableContainer = styled.div`
-  background: #ffffff;
-  border: 1px solid #eaeaea;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  padding: 20px 24px;
   width: 100%;
-  box-sizing: border-box;
 `;
 
-// [수정] width: 100%로 지정
 export const Table = styled.table`
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
+  background: transparent; /* 외부 박스 없이 투명 배경 */
 
   thead tr {
-    background-color: #f5f3fd;
-    height: 46px;
+    background-color: #f5f3fd; /* 연보라색 헤더 배경 */
+    height: 48px;
   }
 
   th {
     color: #6b7280;
     font-size: 13px;
     font-weight: 600;
-    padding: 0 24px;
+    padding: 0 20px;
     text-align: left;
     vertical-align: middle;
 
+    /* 헤더의 양 끝만 둥글게 처리 */
     &:first-child {
       border-top-left-radius: 8px;
       border-bottom-left-radius: 8px;
@@ -171,8 +199,9 @@ export const Table = styled.table`
 
   tbody tr {
     cursor: pointer;
-    height: 48px;
+    height: 52px;
     transition: background-color 0.15s ease;
+    background-color: #ffffff; /* 각 행은 흰색 배경 유지 */
 
     &:hover {
       background-color: #faf5ff;
@@ -180,20 +209,23 @@ export const Table = styled.table`
   }
 
   td {
-    padding: 0 24px;
+    padding: 0 20px;
     font-size: 13.5px;
-    font-weight: 700;
+    font-weight: 600;
     color: #111827;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0; /* 행 사이에만 가로 선 추가 */
     vertical-align: middle;
+
+    &:last-child {
+      color: #111827;
+      font-weight: 600;
+    }
 
     &.doc-name,
     &.doc-title {
       font-weight: 700;
       color: #111827;
       cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 3px;
     }
   }
 `;

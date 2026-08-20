@@ -109,7 +109,6 @@ export default function TeamProject({ onNavigate }) {
       const docs = data.documents || data.docs || [];
       const initialMap = {};
       docs.forEach((doc) => {
-        // 최신 버전으로 기본값 세팅
         initialMap[doc.id] =
           doc.latestVersion ||
           (doc.versions && doc.versions[doc.versions.length - 1]) ||
@@ -142,12 +141,24 @@ export default function TeamProject({ onNavigate }) {
 
   const handleReadNotification = async () => {
     if (!notification) return;
+
+    const docId = notification.documentId || notification.docId;
+    const versionToUse =
+      notification.afterVersion ||
+      notification.version ||
+      selectedVersions[docId] ||
+      1;
+
     try {
       await markNotificationAsRead(teamId, notification.id);
-      setNotification(null);
     } catch (error) {
       console.error("알림 읽음 처리 실패:", error);
+    } finally {
       setNotification(null);
+
+      if (docId) {
+        handleDocClick(docId, versionToUse);
+      }
     }
   };
 
@@ -220,11 +231,9 @@ export default function TeamProject({ onNavigate }) {
     project.isLeader === true ||
     project.role === "LEADER";
 
-  // [핵심] 최신 버전을 가지고 이동하는 핸들러
   const handleDocClick = (docId, targetVersion) => {
     const versionToUse = targetVersion || selectedVersions[docId] || 1;
     if (isLeader) {
-      // 리더: 최신 버전 정보를 넘겨주며 수정 페이지로 이동
       navigate(`/doc-edit/${docId}`, {
         state: {
           docId,
@@ -233,7 +242,6 @@ export default function TeamProject({ onNavigate }) {
         },
       });
     } else {
-      // 멤버: 최신 버전 정보를 넘겨주며 비교/확인 페이지로 이동
       navigate(`/doc-compare/${docId}`, {
         state: {
           docId,
@@ -291,35 +299,44 @@ export default function TeamProject({ onNavigate }) {
         onExit={() => (onNavigate ? onNavigate("home") : navigate("/home"))}
       />
 
+      {/* 오른쪽 사이드바 포함 상단 전체 영역에 알림 배치 */}
+      {notification && (
+        <div
+          style={{
+            width: "1202px",
+            margin: "28px auto 0 auto",
+            boxSizing: "border-box",
+          }}
+        >
+          <S.NotificationBar>
+            <S.NotificationLeft>
+              <S.NotificationIconBox>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </S.NotificationIconBox>
+              <S.NotificationTextContainer>
+                <h4>{renderNotificationTitle(notification)}</h4>
+                <p>{renderNotificationSub(notification)}</p>
+              </S.NotificationTextContainer>
+            </S.NotificationLeft>
+            <S.NotificationButton onClick={handleReadNotification}>
+              확인하기
+            </S.NotificationButton>
+          </S.NotificationBar>
+        </div>
+      )}
+
       <S.Container>
         <S.MainSection>
-          {notification && (
-            <S.NotificationBar>
-              <S.NotificationLeft>
-                <S.NotificationIconBox>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </S.NotificationIconBox>
-                <S.NotificationTextContainer>
-                  <h4>{renderNotificationTitle(notification)}</h4>
-                  <p>{renderNotificationSub(notification)}</p>
-                </S.NotificationTextContainer>
-              </S.NotificationLeft>
-              <S.NotificationButton onClick={handleReadNotification}>
-                확인하기
-              </S.NotificationButton>
-            </S.NotificationBar>
-          )}
-
           {/* 프로젝트 배너 */}
           <S.BannerCard>
             <S.BannerTitle>{project.name || project.title}</S.BannerTitle>
@@ -516,7 +533,6 @@ export default function TeamProject({ onNavigate }) {
 
                   return (
                     <S.DocItemCard key={doc.id}>
-                      {/* [핵심] 블록 클릭 시 선택된/최신 버전을 가지고 이동 */}
                       <S.DocItemLeft
                         onClick={() => handleDocClick(doc.id, targetVer)}
                       >
