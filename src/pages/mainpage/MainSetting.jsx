@@ -186,7 +186,7 @@ export default function MainSetting({
       await changeEmailApi({ password, newEmail });
       alert("이메일이 변경되었습니다. 다시 로그인해 주세요.");
       localStorage.clear();
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       alert(error.response?.data?.message || "이메일 변경 실패");
     }
@@ -205,7 +205,7 @@ export default function MainSetting({
       await deleteAccountApi({ password });
       alert("회원 탈퇴가 완료되었습니다.");
       localStorage.clear();
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       alert(error.response?.data?.message || "회원 탈퇴 실패");
     }
