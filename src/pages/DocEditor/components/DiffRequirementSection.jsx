@@ -27,7 +27,6 @@ export default function DiffRequirementSection({
     <S.Container>
       <S.Title>요구사항 작성</S.Title>
 
-      {/* 1. 상단 직무별 탭 */}
       <S.TabList>
         {ROLES.map((role) => (
           <S.TabItem
