@@ -11,6 +11,8 @@ import { getDocumentDetail } from "../../api/documentApi";
 import { getTeamDetail } from "../../api/teamApi";
 import * as S from "./DocEditor.styles";
 
+const INITIAL_ROLES = ["공통", "기획", "프론트", "백엔드", "디자인"];
+
 export default function DocViewPage() {
   const { docId: paramDocId, documentId } = useParams();
   const docId = paramDocId || documentId;
@@ -35,12 +37,12 @@ export default function DocViewPage() {
     if (!docId) return;
 
     try {
-      // 1. 현재 계정의 언어 자동 추출 (en, ja 등)
+      // 1. 현재 계정의 언어 최우선 추출 (localStorage 또는 state)
       let resolvedLang =
-        passedState.language ||
-        passedState.lang ||
         localStorage.getItem("userLanguage") ||
         localStorage.getItem("language") ||
+        passedState.language ||
+        passedState.lang ||
         "";
 
       if (!resolvedLang && teamId) {
@@ -127,7 +129,7 @@ export default function DocViewPage() {
             }
           });
 
-          // 탭별 핀 번호 재정렬 (각 탭 독립적으로 1부터)
+          // 탭별 핀 번호 재정렬
           const pinNumberLookup = {};
           INITIAL_ROLES.forEach((role) => {
             pinMap[role].forEach((pin, idx) => {
