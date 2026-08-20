@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Header from "../../components/Header";
 import FileIcon from "../../assets/image/file.svg";
-import * as S from "./TeamProject.styles";
-
 import CreateDocumentModal from "../../components/Modal/CreateDocumentModal";
 import InviteModal from "../../components/Modal/InviteModal";
+import { getRelativeTime } from "../../components/dateUtil";
+import * as S from "./TeamProject.styles";
 
 import {
   getTeamDetail,
@@ -13,6 +13,7 @@ import {
   getTeamNotifications,
   markNotificationAsRead,
 } from "../../api/teamApi";
+import { getDocumentVersions } from "../../api/documentApi";
 
 const getLanguageFullName = (langCode) => {
   if (!langCode) return "-";
@@ -41,42 +42,6 @@ const getLanguagesDisplay = (languages, fallback) => {
   return getLanguageFullName(fallback);
 };
 
-const getRelativeTime = (dateString) => {
-  if (!dateString) return "방금 전";
-  const now = new Date();
-
-  let formatted = dateString;
-  if (
-    typeof dateString === "string" &&
-    !dateString.endsWith("Z") &&
-    !dateString.includes("+")
-  ) {
-    formatted = dateString.replace(" ", "T");
-  }
-
-  const past = new Date(formatted);
-  if (isNaN(past.getTime())) return "방금 전";
-
-  const diffInMinutes = Math.floor(
-    (now.getTime() - past.getTime()) / (1000 * 60),
-  );
-
-  if (diffInMinutes < 1) return "방금 전";
-  if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}시간 전`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays}일 전`;
-
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) return `${diffInMonths}달 전`;
-
-  return `${Math.floor(diffInMonths / 12)}년 전`;
-};
-
-// 성(lastName)이 있으면 성의 첫 글자, 없으면 name의 첫 글자를 추출하도록 수정
 const getInitial = (member) => {
   if (!member) return "";
   const target = member.lastName || member.name || member.firstName || "";
@@ -95,6 +60,7 @@ export default function TeamProject({ onNavigate }) {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const [selectedVersions, setSelectedVersions] = useState({});
+  const [docLatestTimes, setDocLatestTimes] = useState({});
   const [notification, setNotification] = useState(null);
 
   const fetchTeamData = async () => {
@@ -125,6 +91,32 @@ export default function TeamProject({ onNavigate }) {
         initialMap[dId] = Number(ver);
       });
       setSelectedVersions(initialMap);
+
+      // 명세서 8번 API (GET /api/documents/{documentId}/versions)로 각 문서의 최신 버전 updatedAt 추출
+      if (docs.length > 0) {
+        const timeMap = {};
+        await Promise.allSettled(
+          docs.map(async (doc) => {
+            const dId = doc.id || doc.documentId;
+            try {
+              const vRes = await getDocumentVersions(dId);
+              const vList = vRes?.data?.data || vRes?.data || [];
+              if (Array.isArray(vList) && vList.length > 0) {
+                // 버전 번호가 가장 큰 최신 버전 추출
+                const latestVerObj = vList.reduce(
+                  (prev, curr) =>
+                    Number(curr.version) > Number(prev.version) ? curr : prev,
+                  vList[0],
+                );
+                timeMap[dId] = latestVerObj.updatedAt || latestVerObj.createdAt;
+              }
+            } catch (err) {
+              console.warn(`문서(${dId}) 버전 목록 조회 스킵:`, err);
+            }
+          }),
+        );
+        setDocLatestTimes(timeMap);
+      }
     } catch (error) {
       console.error("팀 정보 조회 실패:", error);
     } finally {
@@ -228,13 +220,11 @@ export default function TeamProject({ onNavigate }) {
     project.isLeader === true ||
     project.role === "LEADER";
 
-  // 문서 클릭 이동 분기 핸들러 (리더: docEdit / 팀원: Ver.1은 docView, Ver.2 이상은 docCompare)
   const handleDocClick = (docId, targetVersion) => {
     const versionToUse = Number(targetVersion || selectedVersions[docId] || 1);
     localStorage.setItem("currentTeamId", String(teamId));
 
     if (isLeader) {
-      // 1. 팀장 -> 문서 수정 페이지
       navigate(`/doc-edit/${docId}`, {
         state: {
           docId,
@@ -243,9 +233,7 @@ export default function TeamProject({ onNavigate }) {
         },
       });
     } else {
-      // 2. 팀원
       if (versionToUse === 1) {
-        // Version 1 -> 수정 요약 없는 순수 작성 문서 확인 뷰어
         navigate(`/doc-view/${docId}`, {
           state: {
             docId,
@@ -254,7 +242,6 @@ export default function TeamProject({ onNavigate }) {
           },
         });
       } else {
-        // Version 2 이상 -> 수정 문서 확인 (비교 및 요약)
         navigate(`/doc-compare/${docId}`, {
           state: {
             docId,
@@ -274,10 +261,7 @@ export default function TeamProject({ onNavigate }) {
   const members = project.members || [];
   const inviteCode = project.inviteCode || "";
 
-  // 상단 배너 멤버 아바타 (객체 자체를 전달해 성 기준 이니셜 추출)
-  const memberInitials = members
-    .slice(0, 3)
-    .map((m) => getInitial(m));
+  const memberInitials = members.slice(0, 3).map((m) => getInitial(m));
   const extraMemberCount = members.length - 3;
 
   const hasDocs = docs.length > 0;
@@ -401,7 +385,7 @@ export default function TeamProject({ onNavigate }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {docs.slice(0, 5).map((doc, idx) => {
+                    {docs.slice(0, 5).map((doc) => {
                       const docId = doc.id || doc.documentId;
                       const latestVer =
                         selectedVersions[docId] ||
@@ -412,12 +396,20 @@ export default function TeamProject({ onNavigate }) {
                         doc.version ||
                         1;
 
+                      // API로부터 가져온 최신 버전의 실제 updatedAt 매핑
+                      const realUpdatedTime =
+                        docLatestTimes[docId] || doc.updatedAt || doc.createdAt;
+
                       return (
                         <tr
                           key={docId}
                           onClick={() => handleDocClick(docId, latestVer)}
+                          style={{ cursor: "pointer" }}
                         >
-                          <td className={idx < 2 ? "doc-title" : "plain-title"}>
+                          <td
+                            className="plain-title"
+                            style={{ textDecoration: "none" }}
+                          >
                             <span>{doc.name || doc.title}</span>
                           </td>
                           <td>
@@ -427,14 +419,7 @@ export default function TeamProject({ onNavigate }) {
                             )}
                           </td>
                           <td>ver.{latestVer}</td>
-                          <td>
-                            {getRelativeTime(
-                              doc.updatedAt ||
-                                doc.lastUpdatedAt ||
-                                doc.modifiedAt ||
-                                doc.createdAt,
-                            )}
-                          </td>
+                          <td>{getRelativeTime(realUpdatedTime)}</td>
                         </tr>
                       );
                     })}
@@ -465,7 +450,6 @@ export default function TeamProject({ onNavigate }) {
                   {activities.map((act) => (
                     <S.ActivityItem key={act.id}>
                       <S.ActivityAvatar>
-                        {/* 활동 내역의 유저 정보(lastName 우선) */}
                         {getInitial({
                           lastName: act.lastName || act.performedByLastName,
                           name: act.userName || act.performedByFirstName,
@@ -499,10 +483,7 @@ export default function TeamProject({ onNavigate }) {
                 {members.map((member) => (
                   <S.MemberItem key={member.id}>
                     <S.MemberLeft>
-                      <S.MemberAvatar>
-                        {/* 프로젝트 멤버 목록 (lastName 우선) */}
-                        {getInitial(member)}
-                      </S.MemberAvatar>
+                      <S.MemberAvatar>{getInitial(member)}</S.MemberAvatar>
                       <S.MemberName>
                         {member.name ||
                           `${member.lastName || ""} ${member.firstName || ""}`.trim()}
@@ -532,6 +513,7 @@ export default function TeamProject({ onNavigate }) {
           </S.BottomRow>
         </S.MainSection>
 
+        {/* 사이드바 - 문서 모아보기 */}
         <S.SidebarSection>
           <S.SidebarCard>
             <S.SidebarHeader>
@@ -552,6 +534,9 @@ export default function TeamProject({ onNavigate }) {
                     doc.version ||
                     1;
 
+                  const realUpdatedTime =
+                    docLatestTimes[docId] || doc.updatedAt || doc.createdAt;
+
                   return (
                     <S.DocItemCard key={docId}>
                       <S.DocItemLeft
@@ -567,13 +552,7 @@ export default function TeamProject({ onNavigate }) {
                             )}
                           </p>
                           <p className="time">
-                            최종 업데이트{" "}
-                            {getRelativeTime(
-                              doc.updatedAt ||
-                                doc.lastUpdatedAt ||
-                                doc.modifiedAt ||
-                                doc.createdAt,
-                            )}
+                            최종 업데이트 {getRelativeTime(realUpdatedTime)}
                           </p>
                         </S.DocInfo>
                       </S.DocItemLeft>
