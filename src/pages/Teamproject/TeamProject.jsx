@@ -92,7 +92,6 @@ export default function TeamProject({ onNavigate }) {
       });
       setSelectedVersions(initialMap);
 
-      // 명세서 8번 API (GET /api/documents/{documentId}/versions)로 각 문서의 최신 버전 updatedAt 추출
       if (docs.length > 0) {
         const timeMap = {};
         await Promise.allSettled(
@@ -102,7 +101,6 @@ export default function TeamProject({ onNavigate }) {
               const vRes = await getDocumentVersions(dId);
               const vList = vRes?.data?.data || vRes?.data || [];
               if (Array.isArray(vList) && vList.length > 0) {
-                // 버전 번호가 가장 큰 최신 버전 추출
                 const latestVerObj = vList.reduce(
                   (prev, curr) =>
                     Number(curr.version) > Number(prev.version) ? curr : prev,
@@ -224,33 +222,37 @@ export default function TeamProject({ onNavigate }) {
     const versionToUse = Number(targetVersion || selectedVersions[docId] || 1);
     localStorage.setItem("currentTeamId", String(teamId));
 
-    if (isLeader) {
-      navigate(`/doc-edit/${docId}`, {
+    if (versionToUse === 1) {
+      navigate(`/doc-view/${docId}`, {
+        state: {
+          docId,
+          teamId,
+          version: 1,
+        },
+      });
+    } else {
+      navigate(`/doc-compare/${docId}`, {
         state: {
           docId,
           teamId,
           version: versionToUse,
         },
       });
-    } else {
-      if (versionToUse === 1) {
-        navigate(`/doc-view/${docId}`, {
-          state: {
-            docId,
-            teamId,
-            version: 1,
-          },
-        });
-      } else {
-        navigate(`/doc-compare/${docId}`, {
-          state: {
-            docId,
-            teamId,
-            version: versionToUse,
-          },
-        });
-      }
     }
+  };
+
+  const handleEditClick = (e, docId, targetVersion) => {
+    e.stopPropagation();
+    const versionToUse = Number(targetVersion || selectedVersions[docId] || 1);
+    localStorage.setItem("currentTeamId", String(teamId));
+
+    navigate(`/doc-edit/${docId}`, {
+      state: {
+        docId,
+        teamId,
+        version: versionToUse,
+      },
+    });
   };
 
   const docs = project.documents || project.docs || [];
@@ -397,7 +399,6 @@ export default function TeamProject({ onNavigate }) {
                         doc.version ||
                         1;
 
-                      // API로부터 가져온 최신 버전의 실제 updatedAt 매핑
                       const realUpdatedTime =
                         docLatestTimes[docId] || doc.updatedAt || doc.createdAt;
 
@@ -427,7 +428,9 @@ export default function TeamProject({ onNavigate }) {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <S.TableEditButton
-                                onClick={() => handleDocClick(docId, latestVer)}
+                                onClick={(e) =>
+                                  handleEditClick(e, docId, latestVer)
+                                }
                               >
                                 수정하기
                               </S.TableEditButton>
@@ -499,7 +502,9 @@ export default function TeamProject({ onNavigate }) {
                       <S.MemberAvatar>{getInitial(member)}</S.MemberAvatar>
                       <S.MemberName>
                         {member.name ||
-                          `${member.lastName || ""} ${member.firstName || ""}`.trim()}
+                          `${member.lastName || ""} ${
+                            member.firstName || ""
+                          }`.trim()}
                       </S.MemberName>
                     </S.MemberLeft>
                     <S.RoleBadge
