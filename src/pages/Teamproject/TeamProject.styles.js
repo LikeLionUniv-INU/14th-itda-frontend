@@ -166,7 +166,6 @@ export const MiniAvatar = styled.div`
   }
 `;
 
-// [2. 최근 문서 카드: 792px × 356.74px]
 export const RecentDocsCard = styled.div`
   width: 792px;
   height: 357px;

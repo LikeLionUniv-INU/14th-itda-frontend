@@ -6,7 +6,7 @@ export const Header = styled.header`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: ${(props) => (props.$type === "project" ? "780px" : "270px")};
+  gap: ${(props) => (props.$type === "project" ? "900px" : "300px")};
 
   height: 64px;
   background: #fff;

@@ -7,6 +7,41 @@ import { getDashboardApi } from "../../api/dashboard";
 import { getTeamDetail, getTeamNotifications, markNotificationAsRead } from "../../api/teamApi";
 import * as S from "./MainHome.styles";
 
+const getRelativeTime = (dateString) => {
+  if (!dateString) return "방금 전";
+  const now = new Date();
+
+  let formatted = dateString;
+  if (
+    typeof dateString === "string" &&
+    !dateString.endsWith("Z") &&
+    !dateString.includes("+")
+  ) {
+    formatted = dateString.replace(" ", "T");
+  }
+
+  const past = new Date(formatted);
+  if (isNaN(past.getTime())) return "방금 전";
+
+  const diffInMinutes = Math.floor(
+    (now.getTime() - past.getTime()) / (1000 * 60),
+  );
+
+  if (diffInMinutes < 1) return "방금 전";
+  if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}시간 전`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays}일 전`;
+
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths}달 전`;
+
+  return `${Math.floor(diffInMonths / 12)}년 전`;
+};
+
 export default function MainHome({
   onNavigate,
   onCreateProject,
@@ -179,7 +214,7 @@ export default function MainHome({
                     {renderNotificationSub(notification)}
                     {notification.createdAt && (
                       <span style={{ marginLeft: "12px", color: "#8a8a8a" }}>
-                        {notification.createdAt.replace("T", " ").slice(0, 16)}
+                        {getRelativeTime(notification.createdAt)}
                       </span>
                     )}
                   </p>
@@ -270,7 +305,14 @@ export default function MainHome({
                   <td>{doc.teamProjectName || "-"}</td>
                   <td>{doc.language}</td>
                   <td>v{doc.latestVersion}</td>
-                  <td>{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : "-"}</td>
+                  <td>
+                    {getRelativeTime(
+                      doc.updatedAt ||
+                        doc.lastUpdatedAt ||
+                        doc.modifiedAt ||
+                        doc.createdAt,
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
