@@ -74,40 +74,42 @@ export default function Header({
   return (
     <>
       <S.Header $type={type}>
-        <S.HeaderLeft>
-          <S.Logo />
-          {!isProject && showNav && (
-            <S.Nav>
-              <S.MenuItem to="/home">홈</S.MenuItem>
-              <S.MenuItem to="/project">프로젝트</S.MenuItem>
-              <S.MenuItem to="/doc">문서</S.MenuItem>
-              <S.MenuItem to="/set">설정</S.MenuItem>
-            </S.Nav>
-          )}
-        </S.HeaderLeft>
+        <S.HeaderInner>
+          <S.HeaderLeft>
+            <S.Logo />
+            {!isProject && showNav && (
+              <S.Nav>
+                <S.MenuItem to="/home">홈</S.MenuItem>
+                <S.MenuItem to="/project">프로젝트</S.MenuItem>
+                <S.MenuItem to="/doc">문서</S.MenuItem>
+                <S.MenuItem to="/set">설정</S.MenuItem>
+              </S.Nav>
+            )}
+          </S.HeaderLeft>
 
-        <S.HeaderRight>
-          {isProject ? (
-            <>
-              {onCreateDoc && (
-                <S.DocCreateButton onClick={onCreateDoc}>
-                  문서 생성
-                </S.DocCreateButton>
-              )}
-              <S.ExitButton onClick={handleExit}>나가기</S.ExitButton>
-            </>
-          ) : (
-            <>
-              <S.ProjectCreateButton onClick={handleOpenCreate}>
-                프로젝트 생성 <Plus size={16} />
-              </S.ProjectCreateButton>
-              <S.ProjectEnterButton onClick={handleOpenJoin}>
-                프로젝트 입장
-              </S.ProjectEnterButton>
-              <S.Avatar title={userName}>{displayInitial}</S.Avatar>
-            </>
-          )}
-        </S.HeaderRight>
+          <S.HeaderRight>
+            {isProject ? (
+              <>
+                {onCreateDoc && (
+                  <S.DocCreateButton onClick={onCreateDoc}>
+                    문서 생성
+                  </S.DocCreateButton>
+                )}
+                <S.ExitButton onClick={handleExit}>나가기</S.ExitButton>
+              </>
+            ) : (
+              <>
+                <S.ProjectCreateButton onClick={handleOpenCreate}>
+                  프로젝트 생성 <Plus size={16} />
+                </S.ProjectCreateButton>
+                <S.ProjectEnterButton onClick={handleOpenJoin}>
+                  프로젝트 입장
+                </S.ProjectEnterButton>
+                <S.Avatar title={userName}>{displayInitial}</S.Avatar>
+              </>
+            )}
+          </S.HeaderRight>
+        </S.HeaderInner>
       </S.Header>
 
       {/* 프로젝트 생성 모달 */}

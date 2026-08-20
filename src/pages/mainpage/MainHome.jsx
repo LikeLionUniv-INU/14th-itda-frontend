@@ -270,11 +270,14 @@ export default function MainHome({
                 <h4>{p.name}</h4>
                 <p className="langs">{Array.isArray(p.memberLanguages) ? p.memberLanguages.join(", ") : p.defaultLanguage}</p>
                 <S.AvatarGroup>
-                  {p.members?.map((m, idx) => (
-                    <S.MiniAvatar key={idx}>
-                      {typeof m === "string" ? m.charAt(0).toUpperCase() : "U"}
-                    </S.MiniAvatar>
-                  ))}
+                  {p.members?.map((m, idx) => {
+                    const initialText = m.initial || m.lastName?.charAt(0) || "U";
+                    return (
+                      <S.MiniAvatar key={idx} title={`${m.lastName || ""} ${m.firstName || ""}`.trim()}>
+                      {initialText.toUpperCase()}
+                      </S.MiniAvatar>
+                    );
+                  })}
                 </S.AvatarGroup>
               </S.ProjectCard>
             ))}

@@ -8,9 +8,10 @@ export const PageWrapper = styled.div`
 `;
 
 export const Container = styled.div`
-  max-width: 1040px;
+  max-width: 1202px; /* 1040px에서 1202px로 변경하여 다른 페이지와 너비 통일 */
   margin: 32px auto;
-  padding: 0 16px;
+  padding: 0 24px; /* 양옆 패딩을 다른 페이지(24px)와 일치시킴 */
+  box-sizing: border-box;
   display: flex;
   gap: 20px;
   align-items: flex-start;
